@@ -97,45 +97,74 @@ just use the data downloaded for AsMi
 ```{r}
 options(prism.path = "Q:/Research/All_Projects_by_Species/Astragalus SPECIES/Astragalus_microcymbus/PRISM_asmiclimate")
 
+#Precipitation total, rain and snow
+get_prism_monthlys(type="ppt", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
+#Maximum temperature (average)
+get_prism_monthlys(type="tmax", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
+#Minimum temperature (average)
+get_prism_monthlys(type="tmin", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
+
+
 erbrlatlong <- data.frame(Lat = 38.5434, Long = -105.2184)
 
-maxs <- grep("tmax", ls_prism_data(absPath=TRUE)[,2])
-mins <- grep("tmin", ls_prism_data(absPath = TRUE)[,2])
-ppt <- grep("ppt", ls_prism_data(absPath = TRUE)[,2])
+# don't want provisional
+maxs <- grep("tmax_stable", ls_prism_data(absPath=TRUE)[,2])
+mins <- grep("tmin_stable", ls_prism_data(absPath = TRUE)[,2])
+ppt <- grep("ppt_stable", ls_prism_data(absPath = TRUE)[,2])
 
 avgTemps.max <- lapply(maxs, function(x){
   rastertemps <- raster(ls_prism_data(absPath=TRUE)[x,2])
-  data.frame(data = extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = ls_prism_data()[x,])
+  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = ls_prism_data()[x,])
 })
 
 avgTemps.min <- lapply(mins, function(x){
   rastertemps <- raster(ls_prism_data(absPath=TRUE)[x,2])
-  data.frame(data = extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = ls_prism_data()[x,])
+  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = ls_prism_data()[x,])
 })
 
 avgPrecip <- lapply(ppt, function(x){
   rastertemps <- raster(ls_prism_data(absPath=TRUE)[x,2])
-  data.frame(data = extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = ls_prism_data()[x,])
+  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = ls_prism_data()[x,])
 })
 
 mins.avg <- do.call(rbind, avgTemps.min)
 maxs.avg <- do.call(rbind, avgTemps.max)
 ppt.avg <- do.call(rbind, avgPrecip)
 
-erbr.climate <- cbind(mins.avg,maxs.avg[,1],ppt.avg[,1])
-names(erbr.climate) <- c("tmin","date","tmax","ppt")
+mins.avg$Year <- as.numeric(substr(vapply(strsplit(mins.avg$date, '_'), 
+                                   function(x) x[5], character(1)), 1,4))
+mins.avg$Month <- as.numeric(substr(vapply(strsplit(mins.avg$date, '_'), 
+                                   function(x) x[5], character(1)), 5,6))
+
+
+maxs.avg$Year <- as.numeric(substr(vapply(strsplit(maxs.avg$date, '_'), 
+                                   function(x) x[5], character(1)), 1,4))
+maxs.avg$Month <- as.numeric(substr(vapply(strsplit(maxs.avg$date, '_'), 
+                                   function(x) x[5], character(1)), 5,6))
+
+
+ppt.avg$Year <- as.numeric(substr(vapply(strsplit(ppt.avg$date, '_'), 
+                                   function(x) x[5], character(1)), 1,4))
+ppt.avg$Month <- as.numeric(substr(vapply(strsplit(ppt.avg$date, '_'), 
+                                   function(x) x[5], character(1)), 5,6))
+
+
+erbr.climate <- merge(mins.avg[,-2],maxs.avg[,-2], by = c("Year","Month")) 
+erbr.climate <- merge(erbr.climate, ppt.avg[,-2], by =c("Year","Month") )
+names(erbr.climate) <- c("Year","Month", "tmin","tmax","ppt")
 
 #Pull out month and year
 #date is a factor
-erbr.climate$date <- as.character(erbr.climate$date)
+# erbr.climate$date <- as.character(erbr.climate$date)
 
 #split by _ select the YYYYMM numbers
-erbr.climate$Year <- as.numeric(substr(vapply(strsplit(erbr.climate$date, '_'), 
-                                   function(x) x[5], character(1)), 1,4))
-erbr.climate$Month <- as.numeric(substr(vapply(strsplit(erbr.climate$date, '_'), 
-                                   function(x) x[5], character(1)), 5,6))
+# erbr.climate$Year <- as.numeric(substr(vapply(strsplit(erbr.climate$date, '_'), 
+#                                    function(x) x[5], character(1)), 1,4))
+# erbr.climate$Month <- as.numeric(substr(vapply(strsplit(erbr.climate$date, '_'), 
+#                                    function(x) x[5], character(1)), 5,6))
 
-erbr.c <- erbr.climate[,-2]
+# erbr.c <- erbr.climate[,-2]
+erbr.c <- erbr.climate
 erbr.c$Prev12 <- erbr.c$Year
 erbr.c$Prev12[erbr.c$Month > 7] <- erbr.c$Year[erbr.c$Month > 7]+1
 ```
@@ -147,7 +176,9 @@ plotppt <- aggregate(erbr.climate$ppt, by=list(erbr.climate$Year), "sum" )
 
 ggplot(plotppt, aes(Group.1,x))+
   geom_line()+
-  theme_bw()
+  theme_bw()+
+  xlab("Year")+
+  ylab("sum of ppt per year")
 
 mean(plotppt$x)
 ```
@@ -158,29 +189,31 @@ Demography
 
 Figure 2
 ```{r}
-jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig2.jpg"),
-     width=250, height=125,units='mm', res=300)
+# jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig2.jpg"),
+#      width=250, height=125,units='mm', res=300)
 
-ggplot(erbr.summary, aes(Year, SumOfRosettes,colour = Site, shape = Site))+
-  stat_summary(fun.y = mean, position=position_dodge(width=0.5),
-               fun.ymin = function(x) mean(x) - std.error(x),
-               fun.ymax = function(x) mean(x) + std.error(x),
-               geom = "errorbar")+
-   stat_summary(fun.y = mean, position=position_dodge(width=0.5),
-               fun.ymin = function(x) mean(x) - std.error(x),
-               fun.ymax = function(x) mean(x) + std.error(x),
-               geom = "point")+
-  stat_summary(fun.y = mean,
-               geom = "line")+
-  theme_bw() +
-  ylab("Average rosettes per transect")+
-  scale_color_manual(values=c("#000000","#7e7e7e"),
-                     labels = c("Garden Park East","Garden Park West"))+
-  scale_shape_manual(values=c(1,2),
-                     labels = c("Garden Park East","Garden Park West"))+
-  theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank()) 
+ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig2.jpg", sep=""),
+  ggplot(erbr.summary, aes(Year, SumOfRosettes  ,colour = Site, shape = Site))+
+    stat_summary(fun = mean, position=position_dodge(width=0.5),
+                 fun.min = function(x) mean(x) - std.error(x),
+                 fun.max = function(x) mean(x) + std.error(x),
+                 geom = "errorbar")+
+     stat_summary(fun = mean, position=position_dodge(width=0.5),
+                 fun.min = function(x) mean(x) - std.error(x),
+                 fun.max = function(x) mean(x) + std.error(x),
+                 geom = "point")+
+    stat_summary(fun = mean,
+                 geom = "line")+
+    theme_bw() +
+    ylab("Average rosettes per transect")+
+    scale_color_manual(values=c("#000000","#7e7e7e"),
+                       labels = c("Garden Park East","Garden Park West"))+
+    scale_shape_manual(values=c(1,2),
+                       labels = c("Garden Park East","Garden Park West"))+
+    theme(legend.justification=c(1,1), legend.position=c(0.85,1), legend.background = element_blank()) ,
+width=250, height=125,units='mm', dpi=300)
   
-dev.off()
+# dev.off()
 ```
 
 Count PVA
@@ -199,31 +232,34 @@ sapply(GPW[,1:3], function(x) exp(x))
 
 Figure 3a
 ```{r}
-jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig3a.jpg"),
-     width=100, height=75,units='mm', res=300)
+# jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig3a.jpg"),
+#      width=100, height=75,units='mm', res=300)
 
-ggplot(erbr.summary, aes(Year, SumOfInfl,colour = Site, shape = Site))+
-  stat_summary(fun.y = mean, position=position_dodge(width=0.5),
-               fun.ymin = function(x) mean(x) - std.error(x),
-               fun.ymax = function(x) mean(x) + std.error(x),
-               geom = "errorbar")+
-   stat_summary(fun.y = mean, position=position_dodge(width=0.5),
-               fun.ymin = function(x) mean(x) - std.error(x),
-               fun.ymax = function(x) mean(x) + std.error(x),
-               geom = "point")+
-  stat_summary(fun.y = mean, position=position_dodge(width=0.5),
-               geom = "line")+
-  theme_bw() +
-  ggtitle("a)") +
-  theme(plot.title=element_text(hjust=0))+
-  ylab("Average inflorescences per transect")+
-  scale_color_manual(values=c("#000000","#7e7e7e"),
-                     labels = c("Garden Park East","Garden Park West"))+
-  scale_shape_manual(values=c(1,2),
-                     labels = c("Garden Park East","Garden Park West"))+
-  theme(legend.justification=c(1,1), legend.position=c(1,1),legend.background = element_blank()) 
 
-dev.off()
+ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig3a.jpg", sep=""),
+  ggplot(erbr.summary, aes(Year, SumOfInfl,colour = Site, shape = Site))+
+    stat_summary(fun = mean, position=position_dodge(width=0.5),
+                 fun.min = function(x) mean(x) - std.error(x),
+                 fun.max = function(x) mean(x) + std.error(x),
+                 geom = "errorbar")+
+     stat_summary(fun = mean, position=position_dodge(width=0.5),
+                 fun.min = function(x) mean(x) - std.error(x),
+                 fun.max = function(x) mean(x) + std.error(x),
+                 geom = "point")+
+    stat_summary(fun = mean, position=position_dodge(width=0.5),
+                 geom = "line")+
+    theme_bw() +
+    ggtitle("a)") +
+    theme(plot.title=element_text(hjust=0))+
+    ylab("Average inflorescences per transect")+
+    scale_color_manual(values=c("#000000","#7e7e7e"),
+                       labels = c("Garden Park East","Garden Park West"))+
+    scale_shape_manual(values=c(1,2),
+                       labels = c("Garden Park East","Garden Park West"))+
+    theme(legend.justification=c(1,1), legend.position=c(1,1),legend.background = element_blank()) ,
+ width=100, height=75,units='mm', dpi=300)
+
+# dev.off()
 ```
 
 Figure 3b
@@ -579,7 +615,7 @@ ggplot(mintemp, aes(Prev12, tmin))+
                 ymin=-Inf, ymax=Inf),
             fill= "grey", alpha = 0.03)+
   scale_x_continuous(breaks = seq(1995,currentyr,by = 2))+  
-  ylab(expression("Average maximum temperature ("~degree*C~"previous Aug-Jul)"))+
+  ylab(expression("Average minimum temperature ("~degree*C~"previous Aug-Jul)"))+
   xlab("Survey year")+
   ggtitle("b)") +
   theme(plot.title=element_text(hjust=0))
@@ -712,6 +748,26 @@ xyplot(logSumOfInfl ~ Rust|Site, erbr.all,
 summary(lm(logSumOfRosettes ~ tmin, data = erbr.all))
 
 summary(lm(logSumOfRosettes ~ ppt, data = erbr.all))
+
+
+summary(lmer(SumOfRosettes ~ Year|Site, data = erbr.all))
+xyplot(SumOfRosettes ~ Year|Site, erbr.all,
+       type = c("g","p","r"),
+       index = function(x,y) coef(lm(y ~ x))[1],
+       xlab = "Year",
+       ylab = "Rosettes", aspect = "xy")
+
+ggplot(erbr.all, aes(as.factor(Year), SumOfRosettes))+
+  geom_boxplot()+
+  facet_grid(~Site)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+ggplot(erbr.all, aes(as.factor(Year), SumOfInfl))+
+  geom_boxplot()+
+  facet_grid(~Site)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
 ```
 
 #Figure 7 as one
@@ -861,6 +917,10 @@ summary(lm(sinsqInflperRos ~ ppt, data = erbr.all))
 # More Results
 transformed browsed inflorescences per total inflor
 ```{r}
+
+erbr.all.t1 <- subset(merge(erbr.all, erbr.all, by = c("Site","Transect")), Year.x == Year.y-1)
+
+
 lmer(sinsqInflBrperInfl ~ tmin + (1|Site), data = erbr.all)
 
 summary(lmer(sinsqInflBrperInfl ~ tmin + (1|Site), data = erbr.all))
@@ -945,8 +1005,6 @@ table(erbr.all$Transect, erbr.all$Year)
 #Get year before conditions
 # Year.y = t+1
 # Year.x = t
-erbr.all.t1 <- subset(merge(erbr.all, erbr.all, by = c("Site","Transect")), Year.x == Year.y-1)
-
 
 # AICc
 lm1 <- lm(logSumOfRosettes.y~Site, erbr.all.t1)
@@ -983,6 +1041,9 @@ scatterplotMatrix(~ppt.y+tmin.y+tmax.y+ppt.x+tmin.x+tmax.x,
                  data=erbr.all.t1,
                  reg.line=FALSE,
                  smoother="")
+
+
+
 ```
 
 # above is too many models for the data I have. Think through what might be impacting rosettes. Maybe multiple years of drought and rust or just current or just past climate or interaction of a couple years in a row of climate. 
