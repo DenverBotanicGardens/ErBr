@@ -23,6 +23,7 @@ library(car)
 library(lme4)
 require(AICcmodavg)
 library(lattice)
+library(patchwork)
 
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
   library(grid)
@@ -103,14 +104,31 @@ get_prism_monthlys(type="ppt", mon = 1:12, keepZip = FALSE, years = (currentyr-1
 get_prism_monthlys(type="tmax", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
 #Minimum temperature (average)
 get_prism_monthlys(type="tmin", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
+```
+cleanup
+```{r}
+
+get_prism_monthlys(type="ppt", mon = 5:12, keepZip = FALSE, years = 2020)
+#Maximum temperature (average)
+get_prism_monthlys(type="tmax", mon = 5:12, keepZip = FALSE, years = 2020)
+#Minimum temperature (average)
+get_prism_monthlys(type="tmin", mon = 5T:12, keepZip = FALSE, years = 2020)
+
+```
 
 
+```{r}
 erbrlatlong <- data.frame(Lat = 38.5434, Long = -105.2184)
 
-# don't want provisional
-maxs <- grep("tmax_stable", ls_prism_data(absPath=TRUE)[,2])
-mins <- grep("tmin_stable", ls_prism_data(absPath = TRUE)[,2])
-ppt <- grep("ppt_stable", ls_prism_data(absPath = TRUE)[,2])
+# ls_prism_data(absPath=TRUE)[,2][duplicated(str_split(ls_prism_data(absPath=TRUE)[,2]))]
+# don't want provisional, don't want duplicates - can either delete from folder or tell R to ignore duplicates
+maxs <- grep("tmax", ls_prism_data(absPath=TRUE)[,2])
+mins <- grep("tmin", ls_prism_data(absPath = TRUE)[,2])
+ppt <- grep("ppt", ls_prism_data(absPath = TRUE)[,2])
+
+length(maxs) # 490
+length(mins) # 490
+length(ppt) # 490
 
 avgTemps.max <- lapply(maxs, function(x){
   rastertemps <- raster(ls_prism_data(absPath=TRUE)[x,2])
@@ -148,6 +166,10 @@ ppt.avg$Year <- as.numeric(substr(vapply(strsplit(ppt.avg$date, '_'),
 ppt.avg$Month <- as.numeric(substr(vapply(strsplit(ppt.avg$date, '_'), 
                                    function(x) x[5], character(1)), 5,6))
 
+table(ppt.avg$Year, ppt.avg$Month)
+# Missing May - Dec of 2020
+table(maxs.avg$Year, maxs.avg$Month)
+# double in 2018, double a few in 2019, missing most of 2020, Now double in 2019 
 
 erbr.climate <- merge(mins.avg[,-2],maxs.avg[,-2], by = c("Year","Month")) 
 erbr.climate <- merge(erbr.climate, ppt.avg[,-2], by =c("Year","Month") )
@@ -163,6 +185,8 @@ names(erbr.climate) <- c("Year","Month", "tmin","tmax","ppt")
 # erbr.climate$Month <- as.numeric(substr(vapply(strsplit(erbr.climate$date, '_'), 
 #                                    function(x) x[5], character(1)), 5,6))
 
+# Something is not right, 1 month per year but more for 2018-2020
+table(erbr.climate$Month, erbr.climate$Year )
 # erbr.c <- erbr.climate[,-2]
 erbr.c <- erbr.climate
 erbr.c$Prev12 <- erbr.c$Year
@@ -235,8 +259,7 @@ Figure 3a
 # jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig3a.jpg"),
 #      width=100, height=75,units='mm', res=300)
 
-
-ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig3a.jpg", sep=""),
+fig3a <- 
   ggplot(erbr.summary, aes(Year, SumOfInfl,colour = Site, shape = Site))+
     stat_summary(fun = mean, position=position_dodge(width=0.5),
                  fun.min = function(x) mean(x) - std.error(x),
@@ -256,8 +279,8 @@ ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/E
                        labels = c("Garden Park East","Garden Park West"))+
     scale_shape_manual(values=c(1,2),
                        labels = c("Garden Park East","Garden Park West"))+
-    theme(legend.justification=c(1,1), legend.position=c(1,1),legend.background = element_blank()) ,
- width=100, height=75,units='mm', dpi=300)
+    theme(legend.justification=c(1,1), legend.position=c(1,1),legend.background = element_blank())
+
 
 # dev.off()
 ```
@@ -269,19 +292,16 @@ Figure 3b
 erbr.summary$InflperRos <- erbr.summary$SumOfInfl/erbr.summary$SumOfRosettes
 erbr.summary$InflperRos[is.na(erbr.summary$InflperRos)] <- 0
 
-jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig3b.jpg"),
-     width=100, height=75,units='mm', res=300)
-
-ggplot(erbr.summary, aes(Year, InflperRos,colour = Site, shape = Site))+
-  stat_summary(fun.y = mean, position=position_dodge(width=0.5),
-               fun.ymin = function(x) mean(x) - std.error(x),
-               fun.ymax = function(x) mean(x) + std.error(x),
+fig3b <- ggplot(erbr.summary, aes(Year, InflperRos,colour = Site, shape = Site))+
+  stat_summary(fun = mean, position=position_dodge(width=0.5),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
                geom = "errorbar")+
-   stat_summary(fun.y = mean, position=position_dodge(width=0.5),
-               fun.ymin = function(x) mean(x) - std.error(x),
-               fun.ymax = function(x) mean(x) + std.error(x),
+   stat_summary(fun = mean, position=position_dodge(width=0.5),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
                geom = "point")+
-  stat_summary(fun.y = mean, position=position_dodge(width=0.5),
+  stat_summary(fun = mean, position=position_dodge(width=0.5),
                geom = "line")+
   theme_bw() +
   ggtitle("b)") +
@@ -293,7 +313,38 @@ ggplot(erbr.summary, aes(Year, InflperRos,colour = Site, shape = Site))+
                      labels = c("Garden Park East","Garden Park West"))+
   theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank()) 
 
-dev.off()
+# jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig3b.jpg"),
+#      width=100, height=75,units='mm', res=300)
+
+# ggplot(erbr.summary, aes(Year, InflperRos,colour = Site, shape = Site))+
+#   stat_summary(fun.y = mean, position=position_dodge(width=0.5),
+#                fun.ymin = function(x) mean(x) - std.error(x),
+#                fun.ymax = function(x) mean(x) + std.error(x),
+#                geom = "errorbar")+
+#    stat_summary(fun.y = mean, position=position_dodge(width=0.5),
+#                fun.ymin = function(x) mean(x) - std.error(x),
+#                fun.ymax = function(x) mean(x) + std.error(x),
+#                geom = "point")+
+#   stat_summary(fun.y = mean, position=position_dodge(width=0.5),
+#                geom = "line")+
+#   theme_bw() +
+#   ggtitle("b)") +
+#   theme(plot.title=element_text(hjust=0))+
+#   ylab("Average inflorescences per rosettes")+
+#   scale_color_manual(values=c("#000000","#7e7e7e"),
+#                      labels = c("Garden Park East","Garden Park West"))+
+#   scale_shape_manual(values=c(1,2),
+#                      labels = c("Garden Park East","Garden Park West"))+
+#   theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank()) 
+
+
+ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig3ab.jpg", sep=""), 
+       fig3a + fig3b,
+ width=200, height=75,units='mm', dpi=300)
+
+# dev.off()
+
+
 
 ```
 
@@ -329,19 +380,19 @@ ggplot(agg.erbr, aes(drought,SumOfRosettes, colour = Site))+
 
 Figure 5a
 ```{r}
-jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig5a.jpg"),
-     width=120, height=100,units='mm', res=300)
+# jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig5a.jpg"),
+#      width=120, height=100,units='mm', res=300)
 
-ggplot(erbr.summary, aes( Year,SumOfArea,colour = Site, shape = Site))+
-  stat_summary(fun.y = mean, position=position_dodge(width=0.5),
-               fun.ymin = function(x) mean(x) - std.error(x),
-               fun.ymax = function(x) mean(x) + std.error(x),
+fig5a <- ggplot(erbr.summary, aes( Year,SumOfArea,colour = Site, shape = Site))+
+  stat_summary(fun = mean, position=position_dodge(width=0.5),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
                geom = "errorbar")+
-   stat_summary(fun.y = mean, position=position_dodge(width=0.5),
-               fun.ymin = function(x) mean(x) - std.error(x),
-               fun.ymax = function(x) mean(x) + std.error(x),
+   stat_summary(fun = mean, position=position_dodge(width=0.5),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
                geom = "point")+
-  stat_summary(fun.y = mean, position=position_dodge(width=0.5),
+  stat_summary(fun = mean, position=position_dodge(width=0.5),
                geom = "line")+
   theme_bw() +
   ggtitle("a)") +
@@ -353,7 +404,7 @@ ggplot(erbr.summary, aes( Year,SumOfArea,colour = Site, shape = Site))+
                      labels = c("Garden Park East","Garden Park West"))+
   theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank()) 
 
-dev.off()
+# dev.off()
 ```
 
 Figure 5b
@@ -361,19 +412,19 @@ Figure 5b
 
 erbr.summary$RosperArea <- erbr.summary$SumOfRosettes/erbr.summary$SumOfArea
 
-jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig5b.jpg"),
-     width=120, height=100,units='mm', res=300)
+# jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig5b.jpg"),
+#      width=120, height=100,units='mm', res=300)
 
-ggplot(erbr.summary, aes(Year,RosperArea,colour = Site, shape = Site))+
-  stat_summary(fun.y = mean, position=position_dodge(width=0.5),
-               fun.ymin = function(x) mean(x) - std.error(x),
-               fun.ymax = function(x) mean(x) + std.error(x),
+fig5b <- ggplot(erbr.summary, aes(Year,RosperArea,colour = Site, shape = Site))+
+  stat_summary(fun = mean, position=position_dodge(width=0.5),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
                geom = "errorbar")+
-   stat_summary(fun.y = mean, position=position_dodge(width=0.5),
-               fun.ymin = function(x) mean(x) - std.error(x),
-               fun.ymax = function(x) mean(x) + std.error(x),
+   stat_summary(fun = mean, position=position_dodge(width=0.5),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
                geom = "point")+
-  stat_summary(fun.y = mean, position=position_dodge(width=0.5),
+  stat_summary(fun = mean, position=position_dodge(width=0.5),
                geom = "line")+
   theme_bw() +
   ggtitle("b)") +
@@ -385,7 +436,7 @@ ggplot(erbr.summary, aes(Year,RosperArea,colour = Site, shape = Site))+
                      labels = c("Garden Park East","Garden Park West"))+
   theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank()) 
 
-dev.off()
+# dev.off()
 
 ```
 
@@ -394,19 +445,19 @@ Figure 5c
 
 erbr.summary$InflperArea <- erbr.summary$SumOfInfl/erbr.summary$SumOfArea
 
-jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig5c.jpg"),
-     width=120, height=100,units='mm', res=300)
+# jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig5c.jpg"),
+#      width=120, height=100,units='mm', res=300)
 
-ggplot(erbr.summary, aes(Year,InflperArea,colour = Site, shape = Site))+
-  stat_summary(fun.y = mean, position=position_dodge(width=0.5),
-               fun.ymin = function(x) mean(x) - std.error(x),
-               fun.ymax = function(x) mean(x) + std.error(x),
+fig5c <- ggplot(erbr.summary, aes(Year,InflperArea,colour = Site, shape = Site))+
+  stat_summary(fun = mean, position=position_dodge(width=0.5),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
                geom = "errorbar")+
-   stat_summary(fun.y = mean, position=position_dodge(width=0.5),
-               fun.ymin = function(x) mean(x) - std.error(x),
-               fun.ymax = function(x) mean(x) + std.error(x),
+   stat_summary(fun = mean, position=position_dodge(width=0.5),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
                geom = "point")+
-  stat_summary(fun.y = mean, position=position_dodge(width=0.5),
+  stat_summary(fun = mean, position=position_dodge(width=0.5),
                geom = "line")+
   theme_bw() +
   ggtitle("c)") +
@@ -418,26 +469,27 @@ ggplot(erbr.summary, aes(Year,InflperArea,colour = Site, shape = Site))+
                      labels = c("Garden Park East","Garden Park West"))+
   theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank()) 
 
-dev.off()
+
+ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig5abc.jpg", sep=""), 
+       (fig5a | fig5b)/(fig5c | plot_spacer()),
+ width=240, height=200,units='mm', dpi=300)
 
 ```
 
 Figure 6a
 ```{r}
 
-jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig6a.jpg"),
-     width=120, height=100,units='mm', res=300)
 
-ggplot(erbr.summary, aes(Year,SumOfBrowsedInfl,colour = Site, shape = Site))+
-  stat_summary(fun.y = mean, position=position_dodge(width=0.25),
-               fun.ymin = function(x) mean(x) - std.error(x),
-               fun.ymax = function(x) mean(x) + std.error(x),
+fig6a <- ggplot(erbr.summary, aes(Year,SumOfBrowsedInfl,colour = Site, shape = Site))+
+  stat_summary(fun = mean, position=position_dodge(width=0.25),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
                geom = "errorbar")+
-   stat_summary(fun.y = mean, position=position_dodge(width=0.25),
-               fun.ymin = function(x) mean(x) - std.error(x),
-               fun.ymax = function(x) mean(x) + std.error(x),
+   stat_summary(fun = mean, position=position_dodge(width=0.25),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
                geom = "point")+
-  stat_summary(fun.y = mean, position=position_dodge(width=0.25),
+  stat_summary(fun = mean, position=position_dodge(width=0.25),
                geom = "line")+
   theme_bw() +
   ggtitle("a)") +
@@ -449,26 +501,29 @@ ggplot(erbr.summary, aes(Year,SumOfBrowsedInfl,colour = Site, shape = Site))+
                      labels = c("Garden Park East","Garden Park West"))+
   theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank()) 
 
-dev.off()
+
 ```
 
-Figure 5b
+Figure 6b
 ```{r}
+
 erbr.summary$InflBrperInfl <- erbr.summary$SumOfBrowsedInfl/erbr.summary$SumOfInfl
 
-jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig5b.jpg"),
-     width=120, height=100,units='mm', res=300)
+# hist(erbr.summary$InflBrperInfl[erbr.summary$Year == 2020])
+# hist(erbr.summary$SumOfInfl[erbr.summary$Year==2020])
+# erbr.summary$SumOfBrowsedInfl[erbr.summary$Year == 2020] # no browsed inflorescence in 2020
+# table(erbr.raw$Br[erbr.raw$Year==2020])
 
-ggplot(erbr.summary, aes(Year,InflBrperInfl,colour = Site, shape = Site))+
-  stat_summary(fun.y = mean, position=position_dodge(width=0.25),
-               fun.ymin = function(x) mean(x) - std.error(x),
-               fun.ymax = function(x) mean(x) + std.error(x),
+fig6b <- ggplot(erbr.summary, aes(Year,InflBrperInfl,colour = Site, shape = Site))+
+  stat_summary(fun = mean, position=position_dodge(width=0.25),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
                geom = "errorbar")+
-   stat_summary(fun.y = mean, position=position_dodge(width=0.25),
-               fun.ymin = function(x) mean(x) - std.error(x),
-               fun.ymax = function(x) mean(x) + std.error(x),
+   stat_summary(fun = mean, position=position_dodge(width=0.25),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
                geom = "point")+
-  stat_summary(fun.y = mean, position=position_dodge(width=0.25),
+  stat_summary(fun = mean, position=position_dodge(width=0.25),
                geom = "line")+
   theme_bw() +
   ggtitle("b)") +
@@ -481,8 +536,10 @@ ggplot(erbr.summary, aes(Year,InflBrperInfl,colour = Site, shape = Site))+
   theme(legend.justification=c(0,1), legend.position=c(0,1), legend.background = element_blank()) +
   scale_y_continuous(labels = percent)
 
-dev.off()
 
+ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig6ab.jpg", sep=""), 
+       fig6a + fig6b,
+ width=240, height=100,units='mm', dpi=300)
 ```
 
 # PCoA but AICc model seleciton would make more sense
@@ -573,11 +630,7 @@ precip <- aggregate(ppt~Prev12,
 
 mean(precip$ppt)
 
-
-jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig4a.jpg"),
-     width=150, height=130,units='mm', res=300)
-
-ggplot(precip[precip$Prev12>1994&precip$Prev12<=currentyr,], aes(Prev12, ppt))+
+fig4a <- ggplot(precip[precip$Prev12>1994&precip$Prev12<=currentyr,], aes(Prev12, ppt))+
   geom_line()+
   geom_hline(linetype = "dashed", aes(yintercept = mean(ppt)))+
   annotate("text", x=1998, y=mean(precip$ppt)-5, label=paste(round(mean(precip$ppt),0),"mm", sep=""))+
@@ -586,15 +639,13 @@ ggplot(precip[precip$Prev12>1994&precip$Prev12<=currentyr,], aes(Prev12, ppt))+
                 ymin=-Inf, ymax=Inf),
             fill= "grey", alpha = 0.03)+
   scale_x_continuous(breaks = seq(1995,currentyr,by = 2))+
-  ylab("Annual precipition (mm previous Aug=Jul)")+
+  ylab("Annual precipition (mm previous Aug-Jul)")+
   xlab("Survey year")+
   ggtitle("a)") +
   theme(plot.title=element_text(hjust=0))
 
-dev.off()
-```
+#figure 4b
 
-```{r}
 mintemp <- aggregate(tmin~Prev12,
                      data = erbr.c, mean)
 
@@ -602,11 +653,7 @@ mintemp <- mintemp[mintemp$Prev12>1994&mintemp$Prev12<=currentyr,]
 
 meantempmin <- mean(mintemp$tmin)
 
-
-jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig4b.jpg"),
-     width=150, height=130,units='mm', res=300)
-
-ggplot(mintemp, aes(Prev12, tmin))+
+fig4b <- ggplot(mintemp, aes(Prev12, tmin))+
   geom_line()+
   geom_hline(linetype = "dashed", aes(yintercept = mean(tmin)))+
   annotate("text", x=1995, y=mean(mintemp$tmin)+0.06, label=bquote(.(round(meantempmin,1)))) +
@@ -620,23 +667,21 @@ ggplot(mintemp, aes(Prev12, tmin))+
   ggtitle("b)") +
   theme(plot.title=element_text(hjust=0))
 
-dev.off()
 ```
-
+figure 4c
 ```{r}
 maxtemp <- aggregate(tmax~Prev12,
                      data = erbr.c, mean)
 
+# is it missing data in most recent year? 
+table(erbr.c$Month[erbr.c$Prev12 == 2020]) # Yeah! Only has 1 may-july each, one november, 8 everything else
+table(erbr.c$Month[erbr.c$Prev12 == 2018]) # Yeah! Only has 1 may-july each, one november, 8 everything else
+
+
 maxtemp <- maxtemp[maxtemp$Prev12>1994&maxtemp$Prev12<=currentyr,]
 meantempmax <- mean(maxtemp$tmax)
 
-
-
-jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig4c.jpg"),
-     width=150, height=130,units='mm', res=300)
-
-
-ggplot(maxtemp, aes(Prev12, tmax))+
+fig4c <- ggplot(maxtemp, aes(Prev12, tmax))+
   geom_line()+
   geom_hline(linetype = "dashed", aes(yintercept = mean(tmax)))+
   annotate("text", x=1994.7, y=mean(maxtemp$tmax)+0.09, 
@@ -651,8 +696,11 @@ ggplot(maxtemp, aes(Prev12, tmax))+
   ggtitle("c)") +
   theme(plot.title=element_text(hjust=0))
 
-dev.off()
 
+ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig4abc.jpg", sep=""), 
+       # (fig4a | fig4b)/(fig4c | plot_spacer()),
+       fig4a + fig4b + fig4c + plot_layout(ncol = 2),
+ width=240, height=200,units='mm', dpi=300)
 ```
 
 
@@ -671,7 +719,7 @@ hist(erbr.all$SumOfInfl)
 
 hist(log(erbr.all$SumOfRosettes+1))
 hist(log(erbr.all$SumOfArea+1))
-hist(log(erbr.all$SumOfInfl+1))
+hist(log(erbr.all$SumOfInfl+1)) # negative binomial? lots of zeros, zero inflated 
 
 erbr.all$logSumOfRosettes <- log(erbr.all$SumOfRosettes+1)
 erbr.all$logSumOfArea <- log(erbr.all$SumOfArea+1)
@@ -773,10 +821,10 @@ ggplot(erbr.all, aes(as.factor(Year), SumOfInfl))+
 #Figure 7 as one
 ```{r}
 
-op <- par(no.readonly = TRUE)
+# op <- par(no.readonly = TRUE)
 
 #Plot 1 7a
-plot1<- ggplot(erbr.all, aes(tmax, SumOfRosettes, colour = Site))+
+fig7a <- ggplot(erbr.all, aes(tmax, SumOfRosettes, colour = Site))+
   geom_point()+
   stat_smooth(method="lm")+
   theme_bw()+
@@ -794,7 +842,7 @@ plot1<- ggplot(erbr.all, aes(tmax, SumOfRosettes, colour = Site))+
         legend.background = element_rect(fill=alpha(0.9))) 
 
 # Plot 2 7a second
-plot2<- ggplot(erbr.all, aes(ppt, SumOfRosettes, colour = Site))+
+fig7a2 <- ggplot(erbr.all, aes(ppt, SumOfRosettes, colour = Site))+
   geom_point()+
   stat_smooth(method="lm")+
   theme_bw()+
@@ -812,7 +860,7 @@ plot2<- ggplot(erbr.all, aes(ppt, SumOfRosettes, colour = Site))+
         legend.background = element_rect(fill=alpha(0.9))) 
 
 # plot 3
-plot3<-ggplot(erbr.all, aes(tmax, logSumOfInfl, colour = Site))+
+fig7b <-ggplot(erbr.all, aes(tmax, logSumOfInfl, colour = Site))+
   geom_point()+
   stat_smooth(method="lm")+
   theme_bw()+
@@ -830,7 +878,7 @@ plot3<-ggplot(erbr.all, aes(tmax, logSumOfInfl, colour = Site))+
         legend.background = element_rect(fill=alpha(0.9))) 
 
 # plot 4
-plot4<-ggplot(erbr.all, aes(ppt, logSumOfInfl, colour = Site))+
+fig7b2 <-ggplot(erbr.all, aes(ppt, logSumOfInfl, colour = Site))+
   geom_point()+
   stat_smooth(method="lm")+
   theme_bw()+
@@ -847,7 +895,7 @@ plot4<-ggplot(erbr.all, aes(ppt, logSumOfInfl, colour = Site))+
   theme(legend.justification=c(0,1), legend.position=c(0,1),
         legend.background = element_rect(fill=alpha(0.9))) 
 
-plot5<-ggplot(erbr.all, aes(tmax, sinsqInflperRos, colour = Site))+
+fig7c <-ggplot(erbr.all, aes(tmax, sinsqInflperRos, colour = Site))+
   geom_point()+
   stat_smooth(method="lm")+
   theme_bw()+
@@ -863,7 +911,7 @@ plot5<-ggplot(erbr.all, aes(tmax, sinsqInflperRos, colour = Site))+
   theme(legend.justification=c(0,1), legend.position=c(0,1),
         legend.background = element_rect(fill=alpha(0.8))) 
 
-plot6<-ggplot(erbr.all, aes(ppt, sinsqInflperRos, colour = Site))+
+fig7c2 <-ggplot(erbr.all, aes(ppt, sinsqInflperRos, colour = Site))+
   geom_point()+
   stat_smooth(method="lm")+
   theme_bw()+
@@ -881,14 +929,13 @@ plot6<-ggplot(erbr.all, aes(ppt, sinsqInflperRos, colour = Site))+
 
 
 
-jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig7.jpg"),
+jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig7abc.jpg"),
      width=190.5*1.2, height=254*1.2,units='mm', res=300)
 
-multiplot(plot1,plot3,plot5,plot2,plot4,plot6, cols=2)
+fig7a + fig7a2 + fig7b + fig7b2 + fig7c +fig7c2 + plot_layout(ncol =2)
+
 dev.off()
 
-
-par(op)
 ```
 
 
