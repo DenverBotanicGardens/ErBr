@@ -1,0 +1,485 @@
+---
+title: "BLM_popbio_MPM"
+author: "Michelle DePrenger-Levin"
+date: "6/3/2021"
+output: html_document
+---
+
+load packages
+```{r}
+rm(list=ls())
+
+library(popbio)
+library(ggplot2)
+library(MuMIn)
+library(lme4)
+library(patchwork)
+
+```
+
+Gather demographic data 
+```{r}
+BLM_erbr_popbio <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_demography_20210603.csv")
+
+# removed rows before alive but kept first dead
+BLM_erbr_lag <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_demolag_20210603.csv")
+
+# by numbered transects 1:87 and years 1:5
+newPlts <- read.csv( "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLMnewplts_climate_20210601.csv")
+         
+climate_erbr <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_climate_20210601.csv")
+
+seasonAllsites <- read.csv(file = "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/2021_Eriogonum-brandegeei_climate.csv")
+seasonAllsites <- seasonAllsites[,-1]
+
+# reshape(dats_BLM, idvar = names(dats_BLM)[c(1:8,12:15)], timevar = "Group.2", direction = "wide") # 
+
+climate_wide <- reshape(seasonAllsites, idvar = c("Group.3","Group.1"), timevar = "Group.2", direction = "wide")
+names(climate_wide) <- c("Year","Site","Tmean.summer","Ppt.summer","Tmean.winter","Ppt.winter","Tmean.fall","Ppt.fall")
+
+table(climate_wide$Site)
+# BLM_erbr_lag$SiteName <- names(table(climate_wide$Site))[1]
+# BLM_erbr_lag$SiteName[grep("CG",BLM_erbr_lag$Site)] <- names(table(climate_wide$Site))[2]
+# BLM_erbr_lag$SiteName[grep("DGBLM",BLM_erbr_lag$Site)] <- names(table(climate_wide$Site))[3]
+# BLM_erbr_lag$SiteName[grep("GPQ",BLM_erbr_lag$Site)] <- names(table(climate_wide$Site))[6]
+# head(BLM_erbr_lag)
+# 
+# BLM_erbr_popbio$SiteName <- names(table(climate_wide$Site))[1]
+# BLM_erbr_popbio$SiteName[grep("CG",BLM_erbr_popbio$Site)] <- names(table(climate_wide$Site))[2]
+# BLM_erbr_popbio$SiteName[grep("DGBLM",BLM_erbr_popbio$Site)] <- names(table(climate_wide$Site))[3]
+# BLM_erbr_popbio$SiteName[grep("GPQ",BLM_erbr_popbio$Site)] <- names(table(climate_wide$Site))[6]
+# head(BLM_erbr_popbio)
+# 
+# # Which tags have missing data?
+# missingtags <- BLM_erbr_lag$Tag[BLM_erbr_lag$lagforsurv > 1]
+# BLM_erbr_lag[BLM_erbr_lag$Tag == missingtags[1],]
+# BLM_erbr_lag[BLM_erbr_lag$Tag == missingtags[2],]
+# BLM_erbr_lag[BLM_erbr_lag$Tag == missingtags[3],] # missing 2018 but should be dead in 2020
+# BLM_erbr_lag[BLM_erbr_lag$Tag == missingtags[4],] # missing in 2017 and 2018 but should be dead in 2020
+# BLM_erbr_lag[BLM_erbr_lag$Tag == missingtags[5],] ## if it's the first year, don't save*****
+
+head(climate_wide[climate_wide$Year > 2015,])
+names(climate_wide)[3:8]
+climate_wide_scaled <- climate_wide
+climate_wide_scaled[names(climate_wide)[3:8]] <- lapply(climate_wide[names(climate_wide)[3:8]], scale) # dividing centered (subtracted means)
+head(climate_wide_scaled[climate_wide_scaled$Year > 2015,])
+
+# BLM_erbr_lag <- merge(BLM_erbr_lag, climate_wide, by.x = c("SiteName","Year"), by.y = c("Site","Year"))
+# BLM_erbr_popbio <- merge(BLM_erbr_popbio, climate_wide, by.x = c("SiteName","Year"), by.y = c("Site","Year"))
+
+# some first year deads got through, can't figure out how (from 2021_IntegratedPopulationModels_BLM-DBG-CNHP_formatdata)
+BLM_erbr_lag <- BLM_erbr_lag[!(BLM_erbr_lag$Year == 2016 & is.na(BLM_erbr_lag$Stage)),]
+
+BLM_erbr_lag$SiteName <- "BigBend_BLM"
+BLM_erbr_lag$SiteName[grep("CG", BLM_erbr_lag$Site)] <- "CastleGarden_BLM"
+BLM_erbr_lag$SiteName[grep("DGBLM", BLM_erbr_lag$Site)] <- "Droney_BLM"
+BLM_erbr_lag$SiteName[grep("GPQ", BLM_erbr_lag$Site)] <- "GardenParkQuarry_BLM"
+
+BLM_erbr_lag_scaled <- merge(BLM_erbr_lag[,-1], climate_wide_scaled, 
+                             by.x = c("SiteName","Year"),
+                             by.y = c("Site","Year"))
+# BLM_erbr_popbio_scaled <- merge(BLM_erbr_popbio, climate_wide_scaled, by.x = c("SiteName","Year"), by.y = c("Site","Year"))
+
+
+# BLM_erbr_popbio$StageName <- "vegetative"
+# BLM_erbr_popbio$StageName[BLM_erbr_popbio$Stage == 1] <- "reproductive"
+
+#
+# BLM_erbr_lag$StageName <- "vegetative"
+# BLM_erbr_lag$StageName[BLM_erbr_lag$Stage == 1] <- "reproductive"
+
+
+BLM_erbr_lag_scaled$StageName <- NA
+BLM_erbr_lag_scaled$StageName[BLM_erbr_lag_scaled$Stage == 0] <- "vegetative"
+BLM_erbr_lag_scaled$StageName[BLM_erbr_lag_scaled$Stage == 1] <- "reproductive"
+
+
+```
+
+Format for popbio projection.matrix  
+Use the lag from BLM_erbr_lag to determine the previous time with data to base the missing stage off of
+```{r}
+# BLM_erbr <- subset(merge(BLM_erbr_popbio, BLM_erbr_popbio, by = c("Site","Tag","Tag..","Transect","Meter")), sort=FALSE, Year.x == Year.y - 1)
+# head(BLM_erbr)
+
+# This has lag and survival info!!
+# BLM_erbr2 <- subset(merge(BLM_erbr_lag, BLM_erbr_lag, by = c("Site","Tag","Tag..","Transect","Meter")), sort=FALSE, Year.x == Year.y - 1)
+# head(BLM_erbr2)
+BLM_erbr_lag_scaled <- BLM_erbr_lag_scaled[,c("SiteName","Site","Year","Tag","Stage","StageName","surv","lagsrtstg",
+                                              "Tmean.summer", "Ppt.summer","Tmean.winter", "Ppt.winter", 
+                                              "Tmean.fall",    "Ppt.fall")]
+# BLM_erbr_lag_scaled$Stage <- as.factor(BLM_erbr_lag_scaled$Stage)
+# BLM_erbr_lag_scaled$surv <- as.factor(BLM_erbr_lag_scaled$surv)
+
+BLM_erbr_scaled <- subset(merge(BLM_erbr_lag_scaled, BLM_erbr_lag_scaled, by = c("SiteName","Site","Tag")), 
+                          sort=FALSE, Year.x == Year.y - 1)
+head(BLM_erbr_scaled)
+
+# climatevars <- names(BLM_erbr)[c(9:14,19:24)]  # names(BLM_erbr)[c(9:14,18:23)]
+# BLM_erbr_scaled <- BLM_erbr
+# BLM_erbr_scaled[climatevars] <- lapply(BLM_erbr_scaled[climatevars], scale) # dividing centered (subtracted means) values by SD
+
+# head(BLM_erbr);head(BLM_erbr_scaled)
+
+
+```
+
+#####################################################################################################
+#####################################################################################################   
+Skip down     
+#####################################################################################################    
+#####################################################################################################
+Stage
+Impute missing data from stage prior and climate - get mean and SD and pull from that distribution to fill in missing data
+Pr(stage = veg|stage_t-1 + climate)
+Need logistic function to model p(X) with output between 0 and 1 for all values of X
+p(X) = exp(beta0 + beta1X)/(1+exp(beta0 + beta1X)) or the 'odds ratio'
+```{r}
+BLM_erbr_naomit <- BLM_erbr[complete.cases(BLM_erbr),]
+BLM_erbr_scaled_naomit <- BLM_erbr_scaled[complete.cases(BLM_erbr_scaled),]
+```
+
+```{r}
+## Full global model
+global.stage <- glmer(Stage.y ~ Stage.x * (Tmean.summer.y + Ppt.summer.y +
+                                             Tmean.winter.y + Ppt.winter.y + 
+                                             Tmean.fall.y + Ppt.fall.y) +
+                        (1|Year.y) + (1|Site), family = binomial(link = 'logit'), na.action = 'na.fail', 
+                      data = BLM_erbr_naomit)
+
+dredge.stage <- dredge(global.stage, fixed = 'Stage.x', beta='none', trace=2) # no subset rule
+
+top.stage <- get.models(dredge.stage, subset = c(1:10))
+top.stage[[1]]
+top.stage[[2]]
+AICc(top.stage[[1]])
+
+dredge.stage.scale <- dredge(global.stage.scale, fixed = 'Stage.x', beta='none', trace=2) 
+
+
+saveRDS(top.stage, "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels/20210604_topStageOutput_ErBr.rds")
+saveRDS(dredge.stage, "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels/20210604_DredgeStageOutput_ErBr.rds")
+```
+
+
+```{r}
+load("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels/20210604_topStageOutput_ErBr.rds")
+load("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels/20210604_DredgeStageOutput_ErBr.rds")
+
+# Best models 
+subset(dredge.stage, delta < 2)
+avg.stage.model <- model.avg(dredge.stage, subset = delta < 2)
+summary(avg.stage.model)
+avg.stage.model$formula
+
+# As the mean winter temperature decreases more likely to be reproductive if reproductive previous census, less likely if vegetative previous census
+ggplot(BLM_erbr_naomit, aes(Tmean.winter.y, Stage.y, colour = as.factor(Stage.x)))+
+  geom_point()+
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), se = FALSE)+
+  theme_bw()
+
+# More likely to be reproductive as Ppt.summer increases when already reproductive previous census
+ggplot(BLM_erbr_naomit, aes(Ppt.summer.y, Stage.y, colour = as.factor(Stage.x)))+
+  geom_point()+
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), se = FALSE)+
+  theme_bw()
+```
+
+
+Does scaling matter? 
+```{r}
+
+global.stage.scale <- glmer(Stage.y ~ Stage.x * (Tmean.summer.y + Ppt.summer.y +
+                                             Tmean.winter.y + Ppt.winter.y + 
+                                             Tmean.fall.y + Ppt.fall.y) +
+                        (1|Year.y) + (1|Site), family = binomial(link = 'logit'), na.action = 'na.fail', 
+                        data = BLM_erbr_scaled_naomit)
+
+dredge.stage.scale <- dredge(global.stage.scale, fixed = 'Stage.x', beta='none', trace=2) # no subset rule
+
+top.stage <- get.models(dredge.stage, subset = c(1:10))
+top.stage[[1]]
+top.stage[[2]]
+AICc(top.stage[[1]])
+
+
+```
+
+
+
+Model averaging (full assumes zero and includes all parameters in all models, subset is averaged only when included)
+Call:
+model.avg(object = dredge.stage, subset = delta < 2)
+
+Component models: 
+‘1/2/3/4/5/6/7/8/11/12/13’    ‘1/2/3/4/5/6/7/8/10/11/12/13’ ‘1/2/3/4/5/6/7/10/11/12/13’   ‘1/2/3/4/5/6/7/10/12/13’      
+‘1/2/3/4/5/6/7/8/9/11/12/13’ 
+
+Coefficients: 
+       (Intercept)  Ppt.fall.y Ppt.summer.y Ppt.winter.y Tmean.fall.y Tmean.summer.y Tmean.winter.y   Stage.x Ppt.fall.y:Stage.x
+full     -29.36835 -0.05975914   0.01654357   0.07927566    0.7541635       1.472726       -2.54938 -9.190407       -0.006395690
+subset   -29.36835 -0.05975914   0.01654357   0.07927566    0.7541635       1.472726       -2.54938 -9.190407       -0.009407495
+       Stage.x:Tmean.fall.y Stage.x:Tmean.summer.y Stage.x:Tmean.winter.y Ppt.winter.y:Stage.x Ppt.summer.y:Stage.x
+full              0.3409999              0.5252012             -0.4985333          0.005474952        -0.0001553554
+subset            0.4029056              0.5252012             -0.4985333          0.010238488        -0.0011330106
+
+Impute for missing   
+But some might be truly dead, need ones that are really the missing ones. 
+```{r}
+modelimpute <- glmer(Stage.y ~ Stage.x + Ppt.fall.y + Ppt.summer.y + Ppt.winter.y + Tmean.summer.y + Tmean.winter.y + 
+                       Tmean.fall.y + Ppt.fall.y:Stage.x +  Tmean.fall.y:Stage.x + 
+                       Tmean.summer.y:Stage.x + Tmean.winter.y:Stage.x + 
+                       (1 | Year.y) + (1 | Site), 
+                     data = BLM_erbr_scaled_naomit, # BLM_erbr_naomit, 
+                     family = binomial(link = "logit"), 
+                     na.action = na.fail)
+
+# Which need to be imputed
+# probabilities on logit scale, log-odds; "response" gives predicted probabilities
+# prob_stage <- predict(modelimpute, newdata = data2impute, type="response")
+# stage <- unlist(lapply(prob_stage, function(p) rbinom(n = 1, size = 1, prob = p)))
+
+
+# grab the previous measure to become Stage.x
+tags2impute <- unique(BLM_erbr2$Tag[BLM_erbr2$lagsrtstg.y > 1])
+
+for(tt in tags2impute){
+  imputeTag <- BLM_erbr2[BLM_erbr2$Tag == tt,]
+  # last stage recorded
+  # Last good year data through Years to impute
+  years2impute <- (imputeTag$Year.y[imputeTag$lagsrtstg.y > 1] - 
+                            imputeTag$lagsrtstg.y[imputeTag$lagsrtstg.y > 1]):(imputeTag$Year.y[imputeTag$lagsrtstg.y > 1]-1)
+  for(yy in years2impute) {
+    # where stage.x is there, stage.y is missing
+    Stage <- rbinom(n = 1, size = 1, prob = predict(modelimpute, 
+                                                    newdata = BLM_erbr2[BLM_erbr2$Tag == tt & BLM_erbr2$Year.x == yy,],
+                                                    type="response"))
+    BLM_erbr2$Stage.y[BLM_erbr2$Tag == tt & BLM_erbr2$Year.x == yy] <- 
+      BLM_erbr2$Stage.x[BLM_erbr2$Tag == tt & BLM_erbr2$Year.x == yy+1] <- Stage
+  }
+}
+
+table(BLM_erbr2$Stage.x, BLM_erbr2$Stage.y) # no more NAs! But there is 
+
+
+```
+#####################################################################################################
+#####################################################################################################  
+END   
+#####################################################################################################    
+#####################################################################################################     
+
+
+# just use the models from DBG data 
+Probability of reproducing: 
+     i.e. stage_t ~ stage_t-1 (size for DBG) + winter precip_t + winter temp_t + summer precip_t
+          stage.y ~ stage.x                  + Ppt.winter.y      + Tmean.winter.y + Ppt.summer.y             
+```{r}
+# BLM_erbr_scaled has .x and next year .y
+# BLM_erbr_lag_scaled is just a row per year and tag
+
+modelimpute <- glmer(Stage.y ~ Stage.x + Ppt.winter.y + Tmean.winter.x + Ppt.summer.y +
+                       (1 | Year.y) + (1 | SiteName), 
+                     # data = BLM_erbr_scaled_naomit, # BLM_erbr_naomit, 
+                     data = BLM_erbr_scaled[complete.cases(BLM_erbr_scaled),],
+                     family = binomial(link = "logit"), 
+                     na.action = na.fail)
+
+summary(modelimpute)
+```
+
+```{r}
+# The precip and temperature a full year before 
+TempWinter <- ggplot(BLM_erbr_scaled[complete.cases(BLM_erbr_scaled),], # BLM_erbr_scaled_naomit, 
+                     aes(Tmean.winter.x, Stage.y, colour = as.factor(Stage.x)))+
+  geom_point()+
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), se = FALSE)+
+  theme_bw()+
+  scale_colour_discrete(name = expression(Stage[t-1]),
+                        labels = c("Vegetative","Reproductive"))+
+  ylab(expression(Stage[t]))+
+  xlab(expression("Mean winter temperature"[t]))
+
+
+# More likely to be reproductive as Ppt.summer increases when already reproductive previous census
+PptSummer <- ggplot(BLM_erbr_scaled[complete.cases(BLM_erbr_scaled),], # BLM_erbr_scaled_naomit, 
+                    aes(Ppt.summer.y, Stage.y, colour = as.factor(Stage.x)))+
+  geom_point()+
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), se = FALSE)+
+  theme_bw()+
+  scale_colour_discrete(name = expression(Stage[t-1]),
+                        labels = c("Vegetative","Reproductive"))+
+  ylab(expression(Stage[t]))+
+  xlab(expression("Summer Precipitation"[t]))
+
+PptWinter <- ggplot(BLM_erbr_scaled[complete.cases(BLM_erbr_scaled),], # BLM_erbr_scaled_naomit,
+                    aes(Ppt.winter.y, Stage.y, colour = as.factor(Stage.x)))+
+  geom_point()+
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), se = FALSE)+
+  theme_bw()+
+  scale_colour_discrete(name = expression(Stage[t-1]),
+                        labels = c("Vegetative","Reproductive"))+
+  ylab(expression(Stage[t]))+
+  xlab(expression("Winter Precipitation"[t]))
+
+
+ggsave("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integrated_figures/ImputeBLMdata.jpg",
+       TempWinter/PptSummer/PptWinter,
+width=120, height=240,units='mm', dpi=300)
+
+```
+
+```{r}
+# BLM_erbr2_scaled <- subset(merge(BLM_erbr_lag, BLM_erbr_lag, by = c("Site","Tag","Tag..","Transect","Meter")), sort=FALSE, Year.x == Year.y - 1)
+# head(BLM_erbr2)
+# BLM_erbr2_scaled
+
+# grab the previous measure to become Stage.x
+# tags2impute <- unique(BLM_erbr2$Tag[BLM_erbr2$lagsrtstg.y > 1])
+
+## Impute these first BLM_erbr_scaled[is.na(BLM_erbr_scaled$Stage.y) == TRUE & 
+                                              # is.na(BLM_erbr_scaled$Stage.x) == FALSE,]
+
+# tags2impute <- unique(BLM_erbr2_scaled$Tag[BLM_erbr2_scaled$lagsrtstg.y > 1])
+# Use the ones not merged yet
+head(BLM_erbr_lag_scaled)
+
+table(BLM_erbr_lag_scaled$lagsrtstg)
+# BLM_erbr_lag_scaled[BLM_erbr_lag_scaled$lagsrtstg < 0,]
+# BLM_erbr_lag_scaled[BLM_erbr_lag_scaled$Tag == "GPQ_12_142",] ## ?? How did these get negative lags? 
+
+tags2impute <- unique(BLM_erbr_lag_scaled$Tag[BLM_erbr_lag_scaled$lagsrtstg > 0])
+# tags2impute <- unique(BLM_erbr_lag_scaled$Tag[BLM_erbr_lag_scaled$lagsrtstg == 2])
+# tt <- tags2impute[1]
+tt <- "CG_1_2386"
+
+for(tt in tags2impute){
+  # imputeTag <- BLM_erbr2[BLM_erbr2$Tag == tt,]
+  # imputeTag <- BLM_erbr2_scaled[BLM_erbr2_scaled$Tag == tt,]
+  imputeTag <- BLM_erbr_lag_scaled[BLM_erbr_lag_scaled$Tag == tt,]
+  # last stage recorded
+  # Last good year data through Years to impute
+  # years2impute <- (imputeTag$Year.y[imputeTag$lagsrtstg.y > 1] - 
+  #                           imputeTag$lagsrtstg.y[imputeTag$lagsrtstg.y > 1]):(imputeTag$Year.y[imputeTag$lagsrtstg.y > 1]-1)
+  years2impute <- (imputeTag$Year[imputeTag$lagsrtstg > 0] - 
+                            imputeTag$lagsrtstg[imputeTag$lagsrtstg > 0]):(imputeTag$Year[imputeTag$lagsrtstg > 0]-1)
+  for(yy in years2impute) {
+    # where stage.x is there, stage.y is missing
+    Stage <- rbinom(n = 1, size = 1, 
+                    prob = predict(modelimpute,
+                                   newdata = BLM_erbr_scaled[BLM_erbr_scaled$Tag == tt & BLM_erbr_scaled$Year.x == yy,],
+                                   type="response"))
+    BLM_erbr_lag_scaled$Stage[BLM_erbr_lag_scaled$Tag == tt & BLM_erbr_lag_scaled$Year == yy+1] <- Stage
+    BLM_erbr_scaled$Stage.y[BLM_erbr_scaled$Tag == tt & BLM_erbr_scaled$Year.x == yy] <-
+      BLM_erbr_scaled$Stage.x[BLM_erbr_scaled$Tag == tt & BLM_erbr_scaled$Year.x == yy+1] <- Stage
+    
+    if(Stage == 1){
+      BLM_erbr_lag_scaled$StageName[BLM_erbr_lag_scaled$Tag == tt & BLM_erbr_lag_scaled$Year == yy+1] <-
+        BLM_erbr_scaled$StageName.y[BLM_erbr_scaled$Tag == tt & BLM_erbr_scaled$Year.x == yy] <-
+        BLM_erbr_scaled$StageName.x[BLM_erbr_scaled$Tag == tt & BLM_erbr_scaled$Year.x == yy+1] <- "reproductive"
+    } else {
+      BLM_erbr_lag_scaled$StageName[BLM_erbr_lag_scaled$Tag == tt & BLM_erbr_lag_scaled$Year == yy+1] <- 
+        BLM_erbr_scaled$StageName.y[BLM_erbr_scaled$Tag == tt & BLM_erbr_scaled$Year.x == yy] <-
+        BLM_erbr_scaled$StageName.x[BLM_erbr_scaled$Tag == tt & BLM_erbr_scaled$Year.x == yy+1] <- "vegetative"
+    }
+  } # end sequential imputing
+}
+
+# table(BLM_erbr2$Stage.x, BLM_erbr2$Stage.y) 
+table(BLM_erbr_scaled$Stage.x, BLM_erbr_scaled$Stage.y) 
+
+# BLM_erbr_scaled[BLM_erbr_scaled$Tag == tt,]
+
+BLM_erbr_scaled[BLM_erbr_scaled$Tag %in% tags2impute,]
+BLM_erbr_lag_scaled[BLM_erbr_lag_scaled$Tag == "CG_3_585",] # Hummm, that first year shouldn't be saved! 
+BLM_erbr_scaled[BLM_erbr_scaled$Tag == "CG_3_585",]
+BLM_erbr_scaled[BLM_erbr_scaled$Year.x == 2016 & is.na(BLM_erbr_scaled$Stage.x),]
+
+
+head(BLM_erbr_scaled)
+BLM_erbr2 <- BLM_erbr_scaled
+```
+
+
+
+
+
+Use popbio to construct stage-structured projection matrices from transition tables
+```{r}
+head(BLM_erbr2) # now imputed missing data
+BLM_erbr2[BLM_erbr2$lagsrtstg.x > 0,]
+# Stage 0 == vegetative; 1 == reproductive
+# names(BLM_erbr2)[c(1:2,7,9,11,14:19,21,23,25,28:33)]
+# BLM_MPM <- BLM_erbr2[,c(1:2,7,9,11,14:19,21,23,25,28:33)]
+
+BLM_MPM <- BLM_erbr2 # c("Site","Tag","SiteName.x","Year.x","Stage.x","StageName.x","surv.x",
+                        # "Tmean.summer.x","Ppt.summer.x","Tmean.winter.x","Ppt.winter.x","Tmean.fall.x","Ppt.fall.x",
+                        # "Year.y","StageName.y","surv.y",
+                        # "Tmean.summer.y","Ppt.summer.y","Tmean.winter.y","Ppt.winter.y","Tmean.fall.y","Ppt.fall.y")]
+names(BLM_MPM) <- c("SiteName","Site","Tag","Year","StageNum","Stage","surv","lag",names(BLM_MPM)[9:14],
+                    "Year1","FateNum","Fate","surv1","lag1",names(BLM_MPM)[20:25])
+
+# order stage and fate columns
+BLM_MPM$Stage <- ordered(BLM_MPM$Stage, levels = c("vegetative","reproductive"))
+BLM_MPM$Fate <- ordered(BLM_MPM$Fate, levels = c("vegetative","reproductive"))
+
+
+# Add anonymous reproduction based on the proportional reproductive outputs of flowering plants and total number of seedlings at the end of the projection interval 
+BLM_newplts <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_newplts.csv")
+BLM_MPM <- merge(BLM_MPM, BLM_newplts, by = c("Year","SiteName","Site"))
+
+
+# BLM_MPM$StageNum <- as.numeric(as.character(BLM_MPM$StageNum))
+# BLM_MPM$FateNum <- as.numeric(as.character(BLM_MPM$FateNum))
+
+# Assign random number of fruit per reproductive individual; NAs will produce errors
+BLM_MPM$fruit <- sapply(BLM_MPM$StageNum, function(s) rpois(1,s))^2
+
+head(BLM_MPM)
+# if vegetative then no fruit
+table(BLM_MPM$StageNum, BLM_MPM$fruit)
+
+## count reproductive plants in year t and seedlings in year t+1
+# splitdf <- split(BLM_MPM, list(BLM_MPM$Site, BLM_MPM$Year), drop = TRUE) 
+# x <- splitdf[[35]] # 2 new plants
+x <- splitdf[[119]]
+
+
+BLM_reproplts <- lapply(split(BLM_MPM, list(BLM_MPM$Site, BLM_MPM$Year), drop = TRUE ), function(x){
+  repro <- sum(x$StageNum)
+  perc.repro <- repro/(nrow(x))
+  # repro.seedlings1 <- repro/x$num.newPlts1[1]
+  if(is.na(x$num.newPlts[1]) ==  TRUE){
+    x$seedling <- 0
+  } else {
+    x$seedling <- x$fruit / sum(x$fruit, na.rm = TRUE)*x$num.newPlts[1] # anonymous contribution
+  }
+  
+  # transition frequency table for T matrix
+  tf <- table(x$Fate, x$Stage)
+  T.mat <- prop.table(tf,2)
+  
+  
+  fert <- tapply(x$seedling, x$Stage, mean)
+  F.mat <- T.mat * 0
+  F.mat[1,] <- fert
+  
+  A.mat <- T.mat + F.mat
+  A.mat
+  # dfout <- x[,c(1:3,7:12,15:20)]
+  # data.frame(dfout[!duplicated(dfout),],repro,perc.repro)
+})
+
+
+table(BLM_MPM$Site)
+
+mean(BLM_reproplts[grep("BB", names(BLM_reproplts))], na.rm = TRUE)
+lapply(BLM_reproplts[grep("BB", names(BLM_reproplts))], function(x) lambda(x))
+mean(BLM_reproplts[grep("CG", names(BLM_reproplts))], na.rm = TRUE)
+mean(BLM_reproplts[grep("DGBLM", names(BLM_reproplts))], na.rm = TRUE)
+mean(BLM_reproplts[grep("GPQ", names(BLM_reproplts))], na.rm = TRUE)
+
+
+```
+
+
