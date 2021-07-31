@@ -19,13 +19,16 @@ library(patchwork)
 
 Gather demographic data 
 ```{r}
-BLM_erbr_popbio <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_demography_20210603.csv")
+# BLM_erbr_popbio <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_demography_20210603.csv")
+
+BLM_erbr_newplts <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_newplts.csv")
 
 # removed rows before alive but kept first dead
 BLM_erbr_lag <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_demolag_20210603.csv")
 
+
 # by numbered transects 1:87 and years 1:5
-newPlts <- read.csv( "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLMnewplts_climate_20210601.csv")
+# newPlts <- read.csv( "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLMnewplts_climate_20210601.csv")
          
 climate_erbr <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_climate_20210601.csv")
 
@@ -49,8 +52,8 @@ climate_wide_scaled <- climate_wide
 climate_wide_scaled[names(climate_wide)[3:8]] <- lapply(climate_wide[names(climate_wide)[3:8]], scale) # dividing centered (subtracted means)
 head(climate_wide_scaled[climate_wide_scaled$Year > 2015,])
 
-# some first year deads got through, can't figure out how (from 2021_IntegratedPopulationModels_BLM-DBG-CNHP_formatdata)
-BLM_erbr_lag <- BLM_erbr_lag[!(BLM_erbr_lag$Year == 2016 & is.na(BLM_erbr_lag$Stage)),]
+# some first year deads got through !!fixed, duplicate tags!! (from 2021_IntegratedPopulationModels_BLM-DBG-CNHP_formatdata)
+# BLM_erbr_lag <- BLM_erbr_lag[!(BLM_erbr_lag$Year == 2016 & is.na(BLM_erbr_lag$Stage)),]
 
 BLM_erbr_lag$SiteName <- "BigBend_BLM"
 BLM_erbr_lag$SiteName[grep("CG", BLM_erbr_lag$Site)] <- "CastleGarden_BLM"
@@ -153,14 +156,10 @@ width=120, height=240,units='mm', dpi=300)
 ```{r}
 # Use the ones not merged yet
 head(BLM_erbr_lag_scaled)
-
+head(BLM_erbr_newplts)
 table(BLM_erbr_lag_scaled$lagsrtstg)
 
 tags2impute <- unique(BLM_erbr_lag_scaled$Tag[BLM_erbr_lag_scaled$lagsrtstg > 0])
-# tags2impute <- unique(BLM_erbr_lag_scaled$Tag[BLM_erbr_lag_scaled$lagsrtstg == 2])
-# tt <- tags2impute[1]
-# tt <- "CG_1_2386"
-# tt <- "CG_3_2293"
 
 for(tt in tags2impute){
   
