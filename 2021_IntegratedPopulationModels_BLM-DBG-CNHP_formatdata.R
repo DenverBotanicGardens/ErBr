@@ -210,6 +210,7 @@ dats_BLM <- BLM_erbr.2
 ## Make transect & year values numerical to use in jags as random effects 
 dats_BLM$TransectNew.num <- as.factor(dats_BLM$Site)
 dats_BLM$TransectNew.num <- as.numeric(dats_BLM$TransectNew.num) # unique number per transect across sites
+table(dats_BLM$TransectNew.num, dats_BLM$SiteName)
 TransectNew.num <- dats_BLM$TransectNew.num
 table(TransectNew.num) # index for each transect; BigBend TransectNum.new == 1:53
 
@@ -229,6 +230,8 @@ years <- years[order(years)]
 dats_BLM.newPlts <- as.data.frame(rep(unique(dats_BLM$TransectNew.num), each=length(years)))
 colnames(dats_BLM.newPlts) <- "TransectNew.num"
 dats_BLM.newPlts$Year.num <- rep(years) # Now just a data frame with unique Transect number for each year
+# remove years 1 and 2 from transects < 54; Big Bend
+dats_BLM.newPlts <- dats_BLM.newPlts[!(dats_BLM.newPlts$TransectNew.num < 54 & dats_BLM.newPlts$Year.num < 3),]
 
 ## Identify new plants 
 newPlts <- dats_BLM[!is.na(dats_BLM$Stage),] %>% group_by(Tag) %>% slice(which.min(Year))   #Identify rows with 1st appearance for each plt
