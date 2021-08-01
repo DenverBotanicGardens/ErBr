@@ -1,6 +1,8 @@
 # BLM data ingestion
 
 
+rm(list=ls())
+
 ## LOAD PACKAGES AND FUNCTIONS --------------------------------------------------------------------
 # format data
 library(dplyr)
@@ -34,19 +36,7 @@ GardenParkQuarry <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservat
 # 2018-2020
 BigBend <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2021_Eriogonum-brandegeei_SSA/Eriogonum-brandegeei_BLM_demographicdata/2021_BLM_demographicdata_BigBend.csv")
 
-# which columns are NA 
-allNAcol <- apply(CastleGarden, 1, function(r) which(is.na(r)))
-CastleGarden[388,] # in this example, no data in 2016, new in 2017, missing in 2018, dead in 2020
-allRECORDcol <- apply(CastleGarden, 1, function(r) which(!is.na(r)))
-# remove all dead in col[4] (first year) through to first real data (col > 4) and remove all NA in 2020 through previous missing
-# keep all NA between a non-NA within cols 4 - length
-
-
-
-head(BigBend)
-head(CastleGarden)
 # Pivot data from wide to long
-
 seasonAllsites <- read.csv(file = "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/2021_Eriogonum-brandegeei_climate.csv")
 seasonAllsites <- seasonAllsites[,-1]
 
@@ -86,19 +76,10 @@ BigBend[!is.na(BigBend$Stage),]
 
 
 BLM_erbr <- do.call(rbind, list(CastleGarden, DroneyGulch_BLM, GardenParkQuarry, BigBend))
-# BLM_erbr <- BLM_erbr[!(BLM_erbr$Year == 2020 & is.na(BLM_erbr$Stage)),] # remove plants not seen the last year
-# BLM_erbr <- BLM_erbr[!(BLM_erbr$Year == 2016 & is.na(BLM_erbr$Stage)),] # or first year
-as.data.frame(BLM_erbr)
-
-
-table(BLM_erbr$Year, BLM_erbr$Stage)
-table(BLM_erbr$Site)
-# BLM_erbr <- BLM_erbr[!is.na(BLM_erbr$Stage),] # Remove all rows where there is no recorded information for Stage (I think there is some missing data)
 
 # Make a unique tag per plant; Site is the transect and Site name
 BLM_erbr$Tag <- paste(BLM_erbr$Site, BLM_erbr$Tag.., sep="_")
-BLM_erbr[is.na(BLM_erbr$Stage),] # leading NAs to a new plant, tail NAs mean dead, middle are missing
-
+BLM_erbr <- BLM_erbr[!duplicated(BLM_erbr),]
 # write.csv(BLM_erbr, file = "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_demography_20210603.csv",
 #           row.names = FALSE)
 
@@ -122,19 +103,21 @@ dats_BLM$lagforsurv <- 0  #Another lag variable that givens values out to the fi
 # Unlike DBG data, there are rows with NA in the middle already, no need to add those in
 
 tags <- unique(dats_BLM$Tag) 
-# tt <- tags[100]
-# tt <- "CG_9_2271"
-# tt <- "CG_4_2316"
-# tt <- "CG_1_2228"
-# tt <- "CG_10_230"
+
 # dats_BLM[dats_BLM$Tag == tt,]
+# tt <- "BB_10_152" # need first year to be removed, save = 0
+# tt <- "BB_27_816"
 
 for (tt in tags){
   stglines <- which(dats_BLM$Tag==tt) 
+  if(length(stglines) > 5){
+    print(tt)
+    print(stglines)
+    }
   stgs <- dats_BLM$Stage[stglines]   
   goodstgslines <- stglines[is.na(stgs)==FALSE] 
   
-  badstglines <- stglines[is.na(stgs)==TRUE] #For determining row representing 1st year dead with DBG data, in BLM is missing years
+  badstglines <- stglines[is.na(stgs)==TRUE] # & stglines != stglines[1]] #For determining row representing 1st year dead with DBG data, in BLM is missing years
   badyrs <- dats_BLM$Year[badstglines] # years with missing data     
   goodyrs <- dats_BLM$Year[goodstgslines] # years with data
   
@@ -152,7 +135,7 @@ for (tt in tags){
   }
   
   # Check it:
-  # dats_BLM[stglines,]
+  dats_BLM[stglines,]
   ## set lag years for NAs of survival and stage within good years
   if (length(badyrs)>0 && length(goodyrs)>0 && any(badyrs < max(goodyrs, na.rm = TRUE) &
                                                    badyrs > min(goodyrs, na.rm = TRUE))) { # max(badyrs,na.rm=TRUE) < max(goodyrs,na.rm=TRUE)) {
@@ -179,31 +162,12 @@ for (tt in tags){
     } # End setting lag
   }
   
-  
 # Separate either need pull years of stage and next one... to get into JAGS. 
 ## scale to zero mean and var = 1 or not? needing to convert back to original scale, didn't to show/see if it matters
-
-dats_BLM_nosave  <- dats_BLM[dats_BLM$save != 0,]
-dats_BLM_nosave[dats_BLM_nosave$Tag ==  "BB_43_2078",]
-dats_BLM[dats_BLM$Tag == "BB_43_2078",]
-
-tagsnewdead <- dats_BLM$Tag[dats_BLM$save==0]  
-dats_BLM[dats_BLM$Tag == "CG_1_2228",] # Inf for lag should be 0, first year seen?
-dats_BLM[dats_BLM$Tag %in% tagsnewdead[-c(1:10)],] 
-
 dats_BLM <- dats_BLM[dats_BLM$save==1,]        #Remove NA rows that are not in middle of the data
-# dats_BLM$surv[!is.na(dats_BLM$Stage)] <- 1      #Change survival/ alive to 1 if plant is non-zero size, even for last year when we don't know
-# dats_BLM$lagforsurv[is.infinite(dats_BLM$lagforsurv)] <- dats_BLM$lagsrtstg[is.infinite(dats_BLM$lagsrtstg)] <- 0
 
-table(dats_BLM$surv, dats_BLM$Year) 
-dats_BLM[dats_BLM$Year == 2020 & dats_BLM$surv == 0,]
-
-write.csv(dats_BLM, file = "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_demolag_20210603.csv")
-
-## Save BLM_erbr as something else
-# BLM_erbr_rawdata <- BLM_erbr
-head(BLM_erbr)
-head(dats_BLM)
+### ???
+BLM_erbr <- dats_BLM
 # Add site names to BLM_erbr to match climate - but need dats_BLM to have climate
 table(seasonAllsites$Group.3)
 table(BLM_erbr$Site)
@@ -211,33 +175,20 @@ BLM_erbr$SiteName <- "CastleGarden_BLM"
 BLM_erbr$SiteName[grep("DGBLM", BLM_erbr$Site)] <- "Droney_BLM"
 BLM_erbr$SiteName[grep("GPQ", BLM_erbr$Site)] <- "GardenParkQuarry_BLM"
 BLM_erbr$SiteName[grep("BB", BLM_erbr$Site)] <- "BigBend_BLM"
-
-
-
-table(BLM_erbr$SiteName)
-BLM_erbr.2 <- merge(BLM_erbr, seasonAllsites, by.x = c("Year", "SiteName"), by.y = c("Group.1","Group.3"))
-head(BLM_erbr.2)
 ## ADD IN CLIMATE VARIABLES ----------------------------------------------------------
-# clim3seas.names <- c("PptFall","PptWinter","PptSummer","TempFall","TempWinter","TempSummer")
-
-# BLM_erbr.2[, clim3seas.names] <- NA
-
-# for (cc in 1:nrow(clim3seas)) {
-#   BLM_erbr.2$PptFall[which(BLM_erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Tot_fall_ppt[cc]
-#   BLM_erbr.2$PptWinter[which(BLM_erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Tot_winter_ppt[cc]
-#   BLM_erbr.2$PptSummer[which(BLM_erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Tot_summer_ppt[cc]
-#   
-#   BLM_erbr.2$TempFall[which(BLM_erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Mean_fall_temp[cc]
-#   BLM_erbr.2$TempWinter[which(BLM_erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Mean_winter_temp[cc]
-#   BLM_erbr.2$TempSummer[which(BLM_erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Mean_summer_temp[cc]
-# }
+clim2merge <- reshape(seasonAllsites, idvar = c("Group.1","Group.3"), timevar = "Group.2", direction = "wide")
+clim2merge[names(clim2merge)[3:8]] <- lapply(clim2merge[names(clim2merge)[3:8]], scale) # dividing centered (subtracted means)
+BLM_erbr.2 <- merge(BLM_erbr, clim2merge, by.x = c("Year", "SiteName"), by.y = c("Group.1","Group.3"))
+head(BLM_erbr.2)
 ## -----------------------------------------------------------------------------------
+
+#################################################################################################
+# write.csv(dats_BLM, file = "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_demolag_20210603.csv")
+write.csv(BLM_erbr.2, file = "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_demolag_20210603.csv")
+
 
 
 ## MAKE TRANSECT UNIQUE (ie. transect, site combo) FOR USE AS PREDICTOR VARIABLE -----
-# BLM_erbr.2$TransectNew <- NA
-# BLM_erbr.2$TransectNew[which(BLM_erbr.2$Site=="Garden Park East")] <- paste("E.",BLM_erbr.2$Transect[which(BLM_erbr.2$Site=="Garden Park East")], sep='')
-# BLM_erbr.2$TransectNew[which(BLM_erbr.2$Site=="Garden Park West")] <- paste("W.",BLM_erbr.2$Transect[which(BLM_erbr.2$Site=="Garden Park West")], sep='')
 BLM_erbr.2$TransectNew <- BLM_erbr.2$Site
 ## -----------------------------------------------------------------------------------
 
@@ -249,15 +200,7 @@ BLM_erbr.2$TransectNew <- BLM_erbr.2$Site
 # BLM_erbr.2$InflYesNo[BLM_erbr.2$InflNew == 0] <- 0
 BLM_erbr.2$InflYesNo <- BLM_erbr.2$Stage
 ## -----------------------------------------------------------------------------------
-
-
-## KEEP RELEVANT COLUMNS ONLY --------------------------------------------------------
-# erbr.3 <- BLM_erbr.2 %>% dplyr::select(!c(Transect, Tag, X, Y, DiameterX, DiameterY, Rust, BrType, InflBr, Comments, save)) 
-## -----------------------------------------------------------------------------------
-
 ###############################################################################################
-
-
 
 
 ###############################################################################################
@@ -269,7 +212,6 @@ dats_BLM$TransectNew.num <- as.factor(dats_BLM$Site)
 dats_BLM$TransectNew.num <- as.numeric(dats_BLM$TransectNew.num) # unique number per transect across sites
 TransectNew.num <- dats_BLM$TransectNew.num
 table(TransectNew.num) # index for each transect; BigBend TransectNum.new == 1:53
-table(dats_BLM$TransectNew.num, dats_BLM$Year, dats_BLM$SiteName)
 
 dats_BLM$Year.num <- as.factor(dats_BLM$Year)
 dats_BLM$Year.num <- as.numeric(dats_BLM$Year.num)   
@@ -278,7 +220,7 @@ table(Year.num) # index for each year survey; 1:5 == 2016:2020
 
 ## Make a linear index of transect-year combos
 yrtranscombo <- 100*dats_BLM$TransectNew.num+dats_BLM$Year.num # Big bend first year == 3 == 2018 for <= 5300
-table(yrtranscombo)
+table(yrtranscombo) # BB has only 2018-2020
 
 ## Make dataframe w new plts (that are likely recent seedlings) for each transect & yr ------------
 ## Make df that will hold data containing new plants
@@ -293,7 +235,6 @@ newPlts <- dats_BLM[!is.na(dats_BLM$Stage),] %>% group_by(Tag) %>% slice(which.m
 newPlts <- newPlts[newPlts$Year!=2016,]                           #Remove 2016 (first year of data collection) - 2018 first year for Big Bend
 newPlts[which(newPlts$SiteName == "BigBend_BLM" & newPlts$Year == 2018),]
 newPlts <- newPlts[-(which(newPlts$SiteName == "BigBend_BLM" & newPlts$Year == 2018)),]
-# sz.cutoff <- 5                                                    #Sz cutoff, above which plt was likely not recently a seedling 
 newPlts <- newPlts[newPlts$Stage == 0,]                   #Remove if reproductive, likely not reproductive if a first year plant
 num.newPlts <- newPlts %>% group_by(TransectNew.num, Year.num) %>% summarise(num.newPlts=n())  #Count num new plts per yr & transect
 
@@ -302,7 +243,7 @@ dats_BLM.newPlts <- left_join(dats_BLM.newPlts, num.newPlts, by=c("TransectNew.n
 dats_BLM.newPlts$num.newPlts[is.na(dats_BLM.newPlts$num.newPlts)] <- 0   #Change NAs (no new plants) to zeros
 dats_BLM.newPlts$num.newPlts[dats_BLM.newPlts$Year.num==1] <- NA         #Change new plts in 2016 (yr 1) to NA
 dats_BLM.newPlts[dats_BLM.newPlts$Year.num==3 & dats_BLM.newPlts$TransectNew.num < 54,]
-dats_BLM.newPlts$num.newPlts[dats_BLM.newPlts$Year.num==3 & dats_BLM.newPlts$TransectNew.num < 54] <- NA # change new plts in 2016-2018 at Big Bend to NA
+# dats_BLM.newPlts$num.newPlts[dats_BLM.newPlts$Year.num==3 & dats_BLM.newPlts$TransectNew.num < 54] <- NA # change new plts in 2016-2018 at Big Bend to NA
 
 ## Add column so new plts in t+1 match year t
 dats_BLM.newPlts <- dats_BLM.newPlts %>% mutate(num.newPlts1=lead(num.newPlts)) 
@@ -314,50 +255,11 @@ write.csv(BLM_newplts, file = "C:/Users/DePrengm/Denver Botanic Gardens/Conserva
      row.names = FALSE)
 
 ## Add climate variables to new plants data 
+dats_BLM.newPlts <- merge(dats_BLM, dats_BLM.newPlts, by = c("TransectNew.num","Year.num"))
+write.csv(dats_BLM.newPlts, file = "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_newplts.csv",
+          row.names = FALSE)
 
-# repeats for every tag at every site:year values_fill = NA, Need a sequence column, Tag..,Tag,Site,Meter,SiteName,Transect,Year,Stage,
-# TransectNew,InflYesNo,TransectNew.num,Year.num dats_BLM, 
-# dats_BLM_wide <- dats_BLM %>% 
-#   # dplyr::select(-c(Tag..,Transect,SiteName)) %>% 
-#   group_by(Group.2) %>%
-#   mutate(rn = row_number()) %>%
-#   pivot_wider(id_cols = c(Year, Stage, Tag, TransectNew.num,Year.num), names_from = Group.2, values_from = c(meanTmean, TotPpt)) %>% #,  values_fn = function(x) max(x, na.rm = TRUE))
-#   select(-rn)
-dats_BLM_wide <- reshape(dats_BLM, idvar = names(dats_BLM)[c(1:8,12:15)], timevar = "Group.2", direction = "wide") # 
-
-# Big bend and droney are the same
-ggplot(dats_BLM_wide, aes(Year, meanTmean.summer, colour = SiteName))+
-  geom_jitter(height = 0.05, width = 0.05)+
-  geom_line()
-
-ggplot(dats_BLM_wide, aes(Year, TotPpt.fall, colour = SiteName))+
-  geom_jitter()+
-  geom_line()
-
-# dats_BLM.clim <- dats_BLM %>% dplyr::select(c(Year.num, PptFall, PptWinter, PptSummer, TempFall, TempWinter, TempSummer)) 
-# clim <- unique(dats_BLM.clim)
-# dats_BLM.newPlts <- dplyr::left_join(dats_BLM.newPlts, clim, by="Year.num")
-dats_BLM.clim <- dats_BLM_wide[,names(dats_BLM_wide)[c(11:18)]]
-dats_BLM.clim <- dats_BLM.clim[!duplicated(dats_BLM.clim$TransectNew.num),]
-dats_BLM.newPlts <- merge(dats_BLM.newPlts, dats_BLM.clim, by = c("Year.num","TransectNew.num"))
-dats_BLM.newPlts <- dats_BLM.newPlts %>% mutate(TotPpt.fall1=lead(TotPpt.fall), 
-                                                TotPpt.winter1=lead(TotPpt.winter), 
-                                                TotPpt.summer1=lead(TotPpt.summer),
-                                                meanTmean.fall1=lead(meanTmean.fall), 
-                                                meanTmean.winter1=lead(meanTmean.winter),
-                                                meanTmean.summer1=lead(meanTmean.summer))  
-## Note: variables with '1' at the end (e.g. num.newPlts1, PptFall1) represent t+1 data   ## Why would you want next year climate data?
-
-
-## ???
-## Remove lines that correspond to transect-year combos that are not in the main data file
-## Note: GP East Transect 6 & 7 do not have data from 2004, 2005, or 2006. 
-# dats_BLM.newPlts$yrtranscombo=100*dats_BLM.newPlts$TransectNew.num+dats_BLM.newPlts$Year.num
-# yrtrans.unq <- unique(yrtranscombo)
-# dats_BLM.newPlts <- dats_BLM.newPlts[dats_BLM.newPlts$yrtranscombo %in% yrtrans.unq,]
 dats_BLM.newPlts[dats_BLM.newPlts$TransectNew.num < 54,]
-
-# dats_BLM.newPlts <- dats_BLM.newPlts[is.na(dats_BLM.newPlts$num.newPlts1) == FALSE,]
 
 newplts <- dats_BLM.newPlts$num.newPlts1
 newplt.trans <- dats_BLM.newPlts$TransectNew.num
@@ -368,8 +270,8 @@ newPltlines <- length(dats_BLM.newPlts$TransectNew.num)
 ## Make a linear index of transect-year combos for new plts
 newplt.yrtranscombo=100*newplt.trans+newplt.yr 
 ## ------------------------------------------------------------------------------------------------
-write.csv(dats_BLM.clim, file = "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_climate_20210601.csv",
-          row.names = FALSE)
+# write.csv(dats_BLM.clim, file = "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_climate_20210601.csv",
+          # row.names = FALSE)
 write.csv(dats_BLM.newPlts, file = "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLMnewplts_climate_20210601.csv",
           row.names = FALSE)
 

@@ -1,0 +1,1454 @@
+---
+title: "ErBr_report"
+author: "Michelle DePrenger-Levin"
+date: "October 31, 2016"
+output: html_document
+---
+Clean slate
+```{r}
+rm(list=ls(all=TRUE))
+
+```
+
+###Packages
+```{r}
+library(prism)
+library(ggplot2)
+library(raster)
+library(plotrix)
+library(devtools)
+library(RCurl)
+library(scales)
+library(car)
+library(lme4)
+require(AICcmodavg)
+library(lattice)
+library(patchwork)
+
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+```
+
+
+Functions   
+```{r}
+# StagePVA_Function.R
+script <- getURL("https://raw.githubusercontent.com/DenverBotanicGardens/ErBr/master/CountPVA.R",
+                 ssl.verifypeer = FALSE)
+eval(parse(text = script))
+
+```
+
+###Data    
+Download Raw Data and and Summary Table
+<https://research.botanicgardens.org/admin/>
+```{r}
+currentyr <- as.numeric(format(as.Date(Sys.Date(),format="%Y-%m-%d"), "%Y"))
+rawdatapath <- paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/", 
+                     currentyr,"_ErBr/rawdata_",
+                     currentyr, ".csv", collapse = '', sep = '')
+
+erbr.raw <- read.csv(path.expand(rawdatapath), na.strings = "na")
+
+summarypath <- paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/", 
+                     currentyr,"_ErBr/summarytable_",
+                     currentyr, ".csv", collapse = '', sep = '')
+erbr.summary <- read.csv(path.expand(summarypath), na.strings = "na")
+
+erbr.cleora <- erbr.summary[erbr.summary$Site == "Cleora" & erbr.summary$Year == 2004,]
+erbr.summary <- erbr.summary[erbr.summary$Site != "Cleora",]
+erbr.summary$Site <- factor(erbr.summary$Site)
+```
+
+# Climate Data
+just use the data downloaded for AsMi
+```{r}
+options(prism.path = "Q:/Research/All_Projects_by_Species/Astragalus SPECIES/Astragalus_microcymbus/PRISM_asmiclimate")
+
+#Precipitation total, rain and snow
+get_prism_monthlys(type="ppt", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
+#Maximum temperature (average)
+get_prism_monthlys(type="tmax", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
+#Minimum temperature (average)
+get_prism_monthlys(type="tmin", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
+```
+cleanup
+```{r}
+
+get_prism_monthlys(type="ppt", mon = 5:12, keepZip = FALSE, years = 2020)
+#Maximum temperature (average)
+get_prism_monthlys(type="tmax", mon = 5:12, keepZip = FALSE, years = 2020)
+#Minimum temperature (average)
+get_prism_monthlys(type="tmin", mon = 5:12, keepZip = FALSE, years = 2020)
+
+```
+
+
+```{r}
+erbrlatlong <- data.frame(Lat = 38.5434, Long = -105.2184)
+
+# ls_prism_data(absPath=TRUE)[,2][duplicated(str_split(ls_prism_data(absPath=TRUE)[,2]))]
+# don't want provisional, don't want duplicates - can either delete from folder or tell R to ignore duplicates
+maxs <- grep("tmax", ls_prism_data(absPath=TRUE)[,2])
+mins <- grep("tmin", ls_prism_data(absPath = TRUE)[,2])
+ppt <- grep("ppt", ls_prism_data(absPath = TRUE)[,2])
+
+length(maxs) # 490
+length(mins) # 490
+length(ppt) # 490
+
+avgTemps.max <- lapply(maxs, function(x){
+  rastertemps <- raster(ls_prism_data(absPath=TRUE)[x,2])
+  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = ls_prism_data()[x,])
+})
+
+avgTemps.min <- lapply(mins, function(x){
+  rastertemps <- raster(ls_prism_data(absPath=TRUE)[x,2])
+  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = ls_prism_data()[x,])
+})
+
+avgPrecip <- lapply(ppt, function(x){
+  rastertemps <- raster(ls_prism_data(absPath=TRUE)[x,2])
+  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = ls_prism_data()[x,])
+})
+
+mins.avg <- do.call(rbind, avgTemps.min)
+maxs.avg <- do.call(rbind, avgTemps.max)
+ppt.avg <- do.call(rbind, avgPrecip)
+
+mins.avg$Year <- as.numeric(substr(vapply(strsplit(mins.avg$date, '_'), 
+                                   function(x) x[5], character(1)), 1,4))
+mins.avg$Month <- as.numeric(substr(vapply(strsplit(mins.avg$date, '_'), 
+                                   function(x) x[5], character(1)), 5,6))
+
+
+maxs.avg$Year <- as.numeric(substr(vapply(strsplit(maxs.avg$date, '_'), 
+                                   function(x) x[5], character(1)), 1,4))
+maxs.avg$Month <- as.numeric(substr(vapply(strsplit(maxs.avg$date, '_'), 
+                                   function(x) x[5], character(1)), 5,6))
+
+
+ppt.avg$Year <- as.numeric(substr(vapply(strsplit(ppt.avg$date, '_'), 
+                                   function(x) x[5], character(1)), 1,4))
+ppt.avg$Month <- as.numeric(substr(vapply(strsplit(ppt.avg$date, '_'), 
+                                   function(x) x[5], character(1)), 5,6))
+
+table(ppt.avg$Year, ppt.avg$Month)
+# Missing May - Dec of 2020
+table(maxs.avg$Year, maxs.avg$Month)
+# double in 2018, double a few in 2019, missing most of 2020, Now double in 2019 
+
+erbr.climate <- merge(mins.avg[,-2],maxs.avg[,-2], by = c("Year","Month")) 
+erbr.climate <- merge(erbr.climate, ppt.avg[,-2], by =c("Year","Month") )
+names(erbr.climate) <- c("Year","Month", "tmin","tmax","ppt")
+
+#Pull out month and year
+#date is a factor
+# erbr.climate$date <- as.character(erbr.climate$date)
+
+#split by _ select the YYYYMM numbers
+# erbr.climate$Year <- as.numeric(substr(vapply(strsplit(erbr.climate$date, '_'), 
+#                                    function(x) x[5], character(1)), 1,4))
+# erbr.climate$Month <- as.numeric(substr(vapply(strsplit(erbr.climate$date, '_'), 
+#                                    function(x) x[5], character(1)), 5,6))
+
+# Something is not right, 1 month per year but more for 2018-2020
+table(erbr.climate$Month, erbr.climate$Year )
+# erbr.c <- erbr.climate[,-2]
+erbr.c <- erbr.climate
+erbr.c$Prev12 <- erbr.c$Year
+erbr.c$Prev12[erbr.c$Month > 7] <- erbr.c$Year[erbr.c$Month > 7]+1
+```
+
+```{r}
+head(erbr.c)
+
+plotppt <- aggregate(erbr.climate$ppt, by=list(erbr.climate$Year), "sum" )
+
+ggplot(plotppt, aes(Group.1,x))+
+  geom_line()+
+  theme_bw()+
+  xlab("Year")+
+  ylab("sum of ppt per year")
+
+mean(plotppt$x)
+```
+
+Demography     
+    
+    Was "SumOfRosettes"
+
+Figure 2
+```{r}
+# jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig2.jpg"),
+#      width=250, height=125,units='mm', res=300)
+
+ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig2.jpg", sep=""),
+  ggplot(erbr.summary, aes(Year, SumOfRosettes  ,colour = Site, shape = Site))+
+    stat_summary(fun = mean, position=position_dodge(width=0.5),
+                 fun.min = function(x) mean(x) - std.error(x),
+                 fun.max = function(x) mean(x) + std.error(x),
+                 geom = "errorbar")+
+     stat_summary(fun = mean, position=position_dodge(width=0.5),
+                 fun.min = function(x) mean(x) - std.error(x),
+                 fun.max = function(x) mean(x) + std.error(x),
+                 geom = "point")+
+    stat_summary(fun = mean,
+                 geom = "line")+
+    theme_bw() +
+    ylab("Average rosettes per transect")+
+    scale_color_manual(values=c("#000000","#7e7e7e"),
+                       labels = c("Garden Park East","Garden Park West"))+
+    scale_shape_manual(values=c(1,2),
+                       labels = c("Garden Park East","Garden Park West"))+
+    theme(legend.justification=c(1,1), legend.position=c(0.85,1), legend.background = element_blank()) ,
+width=250, height=125,units='mm', dpi=300)
+  
+# dev.off()
+```
+
+Count PVA
+```{r}
+gpe.summary <- aggregate(SumOfRosettes ~ Year,
+                         data = erbr.summary[erbr.summary$Site == "Garden Park East",], mean)
+gpw.summary <- aggregate(SumOfRosettes ~ Year,
+                         data = erbr.summary[erbr.summary$Site == "Garden Park West",], mean)
+
+GPE <- CountPVA(gpe.summary, "Year","SumOfRosettes")
+GPW <- CountPVA(gpw.summary, "Year","SumOfRosettes")
+
+sapply(GPE[,1:3], function(x) exp(x))
+sapply(GPW[,1:3], function(x) exp(x))
+```
+
+Figure 3a
+```{r}
+# jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig3a.jpg"),
+#      width=100, height=75,units='mm', res=300)
+
+fig3a <- 
+  ggplot(erbr.summary, aes(Year, SumOfInfl,colour = Site, shape = Site))+
+    stat_summary(fun = mean, position=position_dodge(width=0.5),
+                 fun.min = function(x) mean(x) - std.error(x),
+                 fun.max = function(x) mean(x) + std.error(x),
+                 geom = "errorbar")+
+     stat_summary(fun = mean, position=position_dodge(width=0.5),
+                 fun.min = function(x) mean(x) - std.error(x),
+                 fun.max = function(x) mean(x) + std.error(x),
+                 geom = "point")+
+    stat_summary(fun = mean, position=position_dodge(width=0.5),
+                 geom = "line")+
+    theme_bw() +
+    ggtitle("a)") +
+    theme(plot.title=element_text(hjust=0))+
+    ylab("Average inflorescences per transect")+
+    scale_color_manual(values=c("#000000","#7e7e7e"),
+                       labels = c("Garden Park East","Garden Park West"))+
+    scale_shape_manual(values=c(1,2),
+                       labels = c("Garden Park East","Garden Park West"))+
+    theme(legend.justification=c(1,1), legend.position=c(1,1),legend.background = element_blank())
+
+
+# dev.off()
+```
+
+Figure 3b
+```{r}
+
+# inflorescences per rosette
+erbr.summary$InflperRos <- erbr.summary$SumOfInfl/erbr.summary$SumOfRosettes
+erbr.summary$InflperRos[is.na(erbr.summary$InflperRos)] <- 0
+
+fig3b <- ggplot(erbr.summary, aes(Year, InflperRos,colour = Site, shape = Site))+
+  stat_summary(fun = mean, position=position_dodge(width=0.5),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
+               geom = "errorbar")+
+   stat_summary(fun = mean, position=position_dodge(width=0.5),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
+               geom = "point")+
+  stat_summary(fun = mean, position=position_dodge(width=0.5),
+               geom = "line")+
+  theme_bw() +
+  ggtitle("b)") +
+  theme(plot.title=element_text(hjust=0))+
+  ylab("Average inflorescences per rosettes")+
+  scale_color_manual(values=c("#000000","#7e7e7e"),
+                     labels = c("Garden Park East","Garden Park West"))+
+  scale_shape_manual(values=c(1,2),
+                     labels = c("Garden Park East","Garden Park West"))+
+  theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank()) 
+
+# jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig3b.jpg"),
+#      width=100, height=75,units='mm', res=300)
+
+# ggplot(erbr.summary, aes(Year, InflperRos,colour = Site, shape = Site))+
+#   stat_summary(fun.y = mean, position=position_dodge(width=0.5),
+#                fun.ymin = function(x) mean(x) - std.error(x),
+#                fun.ymax = function(x) mean(x) + std.error(x),
+#                geom = "errorbar")+
+#    stat_summary(fun.y = mean, position=position_dodge(width=0.5),
+#                fun.ymin = function(x) mean(x) - std.error(x),
+#                fun.ymax = function(x) mean(x) + std.error(x),
+#                geom = "point")+
+#   stat_summary(fun.y = mean, position=position_dodge(width=0.5),
+#                geom = "line")+
+#   theme_bw() +
+#   ggtitle("b)") +
+#   theme(plot.title=element_text(hjust=0))+
+#   ylab("Average inflorescences per rosettes")+
+#   scale_color_manual(values=c("#000000","#7e7e7e"),
+#                      labels = c("Garden Park East","Garden Park West"))+
+#   scale_shape_manual(values=c(1,2),
+#                      labels = c("Garden Park East","Garden Park West"))+
+#   theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank()) 
+
+
+ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig3ab.jpg", sep=""), 
+       fig3a + fig3b,
+ width=200, height=75,units='mm', dpi=300)
+
+# dev.off()
+
+
+
+```
+
+# Demography
+Averages before and after 2011
+```{r}
+erbr.summary$drought <- "before"
+erbr.summary$drought[erbr.summary$Year > 2010] <- "after"
+erbr.summary$drought <- factor(erbr.summary$drought, levels = c("before","after"))
+
+agg.erbr <- aggregate(SumOfRosettes ~ Site + drought, data=erbr.summary, mean)
+agg.erbr$SE <- aggregate(SumOfRosettes ~ Site + drought, data=erbr.summary, std.error)[,3]
+agg.erbr$SD <- aggregate(SumOfRosettes ~ Site + drought, data=erbr.summary, sd)[,3]
+
+agg.erbr
+```
+
+#Really? Those are defined as drought how?
+```{r}
+ggplot(agg.erbr, aes(drought,SumOfRosettes, colour = Site))+
+  geom_point()+
+  geom_errorbar(aes(ymax=SumOfRosettes + SE, ymin=SumOfRosettes - SE), width=0.1)+
+  theme_bw()+
+  xlab("Drought conditions (2011-2013)")+
+  ylab("Average rosettes")+
+  scale_color_manual(values=c("#000000","#7e7e7e"),
+                     labels = c("Garden Park East","Garden Park West"))+
+  scale_shape_manual(values=c(1,2),
+                     labels = c("Garden Park East","Garden Park West"))+
+  theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank())
+
+```
+
+Figure 5a
+```{r}
+# jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig5a.jpg"),
+#      width=120, height=100,units='mm', res=300)
+
+fig5a <- ggplot(erbr.summary, aes( Year,SumOfArea,colour = Site, shape = Site))+
+  stat_summary(fun = mean, position=position_dodge(width=0.5),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
+               geom = "errorbar")+
+   stat_summary(fun = mean, position=position_dodge(width=0.5),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
+               geom = "point")+
+  stat_summary(fun = mean, position=position_dodge(width=0.5),
+               geom = "line")+
+  theme_bw() +
+  ggtitle("a)") +
+  theme(plot.title=element_text(hjust=0))+
+  ylab(expression("Average basal area (cm"^2~") per transect"))+
+  scale_color_manual(values=c("#000000","#7e7e7e"),
+                     labels = c("Garden Park East","Garden Park West"))+
+  scale_shape_manual(values=c(1,2),
+                     labels = c("Garden Park East","Garden Park West"))+
+  theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank()) 
+
+# dev.off()
+```
+
+Figure 5b
+```{r}
+
+erbr.summary$RosperArea <- erbr.summary$SumOfRosettes/erbr.summary$SumOfArea
+
+# jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig5b.jpg"),
+#      width=120, height=100,units='mm', res=300)
+
+fig5b <- ggplot(erbr.summary, aes(Year,RosperArea,colour = Site, shape = Site))+
+  stat_summary(fun = mean, position=position_dodge(width=0.5),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
+               geom = "errorbar")+
+   stat_summary(fun = mean, position=position_dodge(width=0.5),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
+               geom = "point")+
+  stat_summary(fun = mean, position=position_dodge(width=0.5),
+               geom = "line")+
+  theme_bw() +
+  ggtitle("b)") +
+  theme(plot.title=element_text(hjust=0))+
+  ylab(expression("Average rosettes per basal area (cm"^2~")"))+
+  scale_color_manual(values=c("#000000","#7e7e7e"),
+                     labels = c("Garden Park East","Garden Park West"))+
+  scale_shape_manual(values=c(1,2),
+                     labels = c("Garden Park East","Garden Park West"))+
+  theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank()) 
+
+# dev.off()
+
+```
+
+Figure 5c
+```{r}
+
+erbr.summary$InflperArea <- erbr.summary$SumOfInfl/erbr.summary$SumOfArea
+
+# jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig5c.jpg"),
+#      width=120, height=100,units='mm', res=300)
+
+fig5c <- ggplot(erbr.summary, aes(Year,InflperArea,colour = Site, shape = Site))+
+  stat_summary(fun = mean, position=position_dodge(width=0.5),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
+               geom = "errorbar")+
+   stat_summary(fun = mean, position=position_dodge(width=0.5),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
+               geom = "point")+
+  stat_summary(fun = mean, position=position_dodge(width=0.5),
+               geom = "line")+
+  theme_bw() +
+  ggtitle("c)") +
+  theme(plot.title=element_text(hjust=0))+
+  ylab(expression("Average inflorescences per basal area (cm"^2~")"))+
+  scale_color_manual(values=c("#000000","#7e7e7e"),
+                     labels = c("Garden Park East","Garden Park West"))+
+  scale_shape_manual(values=c(1,2),
+                     labels = c("Garden Park East","Garden Park West"))+
+  theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank()) 
+
+
+ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig5abc.jpg", sep=""), 
+       (fig5a | fig5b)/(fig5c | plot_spacer()),
+ width=240, height=200,units='mm', dpi=300)
+
+```
+
+Figure 6a
+```{r}
+
+
+fig6a <- ggplot(erbr.summary, aes(Year,SumOfBrowsedInfl,colour = Site, shape = Site))+
+  stat_summary(fun = mean, position=position_dodge(width=0.25),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
+               geom = "errorbar")+
+   stat_summary(fun = mean, position=position_dodge(width=0.25),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
+               geom = "point")+
+  stat_summary(fun = mean, position=position_dodge(width=0.25),
+               geom = "line")+
+  theme_bw() +
+  ggtitle("a)") +
+  theme(plot.title=element_text(hjust=0))+
+  ylab("Average browsed inflorescences per transect")+
+  scale_color_manual(values=c("#000000","#7e7e7e"),
+                     labels = c("Garden Park East","Garden Park West"))+
+  scale_shape_manual(values=c(1,2),
+                     labels = c("Garden Park East","Garden Park West"))+
+  theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank()) 
+
+
+```
+
+Figure 6b
+```{r}
+
+erbr.summary$InflBrperInfl <- erbr.summary$SumOfBrowsedInfl/erbr.summary$SumOfInfl
+
+# hist(erbr.summary$InflBrperInfl[erbr.summary$Year == 2020])
+# hist(erbr.summary$SumOfInfl[erbr.summary$Year==2020])
+# erbr.summary$SumOfBrowsedInfl[erbr.summary$Year == 2020] # no browsed inflorescence in 2020
+# table(erbr.raw$Br[erbr.raw$Year==2020])
+
+fig6b <- ggplot(erbr.summary, aes(Year,InflBrperInfl,colour = Site, shape = Site))+
+  stat_summary(fun = mean, position=position_dodge(width=0.25),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
+               geom = "errorbar")+
+   stat_summary(fun = mean, position=position_dodge(width=0.25),
+               fun.min = function(x) mean(x) - std.error(x),
+               fun.max = function(x) mean(x) + std.error(x),
+               geom = "point")+
+  stat_summary(fun = mean, position=position_dodge(width=0.25),
+               geom = "line")+
+  theme_bw() +
+  ggtitle("b)") +
+  theme(plot.title=element_text(hjust=0))+
+  ylab("Percent browsed inflorescences")+
+  scale_color_manual(values=c("#000000","#7e7e7e"),
+                     labels = c("Garden Park East","Garden Park West"))+
+  scale_shape_manual(values=c(1,2),
+                     labels = c("Garden Park East","Garden Park West"))+
+  theme(legend.justification=c(0,1), legend.position=c(0,1), legend.background = element_blank()) +
+  scale_y_continuous(labels = percent)
+
+
+ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig6ab.jpg", sep=""), 
+       fig6a + fig6b,
+ width=240, height=100,units='mm', dpi=300)
+```
+
+# PCoA but AICc model seleciton would make more sense
+Climate
+Garden Park
+seasons:   
+    Winter: November-January (11-1)      
+    Spring: February-April (2-4)   
+    Summer: May-July (5-7)   
+    Fall: August-October (8-10)   
+```{r}
+erbr.c$season <- "winter"
+erbr.c$season[erbr.c$Month >1 & erbr.c$Month <5] <- "spring"
+erbr.c$season[erbr.c$Month >4 & erbr.c$Month <8] <- "summer"
+erbr.c$season[erbr.c$Month >7 & erbr.c$Month <11] <- "fall"
+
+erbr.c.summary <- aggregate(cbind(tmin,tmax,ppt)~season+Prev12, 
+                            data = erbr.c, mean, na.rm=TRUE)
+
+#cutoff <- 0.65
+#cutoff <- 0.75
+
+cutoff <- 0.5
+
+season <- reshape(erbr.c.summary[erbr.c.summary$Prev12 < currentyr+1 &
+                                   erbr.c.summary$Prev12 > 1994,],
+                  idvar="Prev12",
+                  timevar="season",
+                  direction="wide")
+
+cor.table<-cor(season[,-1])
+data <- as.data.frame(as.table(cor.table))
+data[with(data, order(Freq)),]
+
+combins <- combn(colnames(cor.table),2,FUN=function(x) paste(x,collapse="_"))
+cor.data <- data[data$Var1 != data$Var2, ]
+data <- cor.data[paste(cor.data$Var1, cor.data$Var2, sep="_") %in% combins,]
+exclude <- paste(data$Var2[abs(data$Freq)>cutoff],sep=",")
+
+# Correlated
+pairs(season[,c(grep(paste(exclude, collapse = "|"),
+                     names(season), value = TRUE))])
+
+# Not correlated??
+pairs(season[,c(grep(paste(exclude, collapse = "|"),
+                     names(season), value = TRUE, invert=TRUE))])
+
+
+#Which are correlated? 
+data[abs(data$Freq)>cutoff,]
+
+tomatch <- c("Prev12",exclude)
+
+forpca <- season[,c(grep(paste(tomatch, collapse="|"),
+                         names(season), value=TRUE, invert=TRUE))]
+names(forpca)
+```
+
+```{r}
+erbr.pca <- princomp(forpca,cor=TRUE)
+summary(erbr.pca)
+erbr.load <- loadings(erbr.pca)
+erbr.pc <- predict(erbr.pca)
+
+erbr.pc <- data.frame(erbr.pc,season)
+erbr.pc$Drought <- "pre"
+erbr.pc$Drought[erbr.pc$Prev12 < 2011] <- "post"
+
+```
+
+
+```{r}
+ggplot(erbr.pc, aes(Comp.1,Comp.2, colour = Drought, label = Prev12))+
+  geom_text(alpha = 0.75, angle = 45, size = 3) +
+  stat_ellipse()+
+  xlab("PC1 (26%)")+
+  ylab("PC2 (23%)")+
+  theme_bw()
+  
+
+```
+
+
+Figure 4
+```{r}
+precip <- aggregate(ppt~Prev12,
+                    data = erbr.c, sum)
+
+mean(precip$ppt)
+
+fig4a <- ggplot(precip[precip$Prev12>1994&precip$Prev12<=currentyr,], aes(Prev12, ppt))+
+  geom_line()+
+  geom_hline(linetype = "dashed", aes(yintercept = mean(ppt)))+
+  annotate("text", x=1998, y=mean(precip$ppt)-5, label=paste(round(mean(precip$ppt),0),"mm", sep=""))+
+  theme_bw()+
+  geom_rect(aes(xmin=-Inf,xmax=2003.5,
+                ymin=-Inf, ymax=Inf),
+            fill= "grey", alpha = 0.03)+
+  scale_x_continuous(breaks = seq(1995,currentyr,by = 2))+
+  ylab("Annual precipition (mm previous Aug-Jul)")+
+  xlab("Survey year")+
+  ggtitle("a)") +
+  theme(plot.title=element_text(hjust=0))
+
+#figure 4b
+
+mintemp <- aggregate(tmin~Prev12,
+                     data = erbr.c, mean)
+
+mintemp <- mintemp[mintemp$Prev12>1994&mintemp$Prev12<=currentyr,]
+
+meantempmin <- mean(mintemp$tmin)
+
+fig4b <- ggplot(mintemp, aes(Prev12, tmin))+
+  geom_line()+
+  geom_hline(linetype = "dashed", aes(yintercept = mean(tmin)))+
+  annotate("text", x=1995, y=mean(mintemp$tmin)+0.06, label=bquote(.(round(meantempmin,1)))) +
+  theme_bw()+
+  geom_rect(aes(xmin=-Inf,xmax=2003.5,
+                ymin=-Inf, ymax=Inf),
+            fill= "grey", alpha = 0.03)+
+  scale_x_continuous(breaks = seq(1995,currentyr,by = 2))+  
+  ylab(expression("Average minimum temperature ("~degree*C~"previous Aug-Jul)"))+
+  xlab("Survey year")+
+  ggtitle("b)") +
+  theme(plot.title=element_text(hjust=0))
+
+```
+figure 4c
+```{r}
+maxtemp <- aggregate(tmax~Prev12,
+                     data = erbr.c, mean)
+
+# is it missing data in most recent year? 
+table(erbr.c$Month[erbr.c$Prev12 == 2020]) # Yeah! Only has 1 may-july each, one november, 8 everything else
+table(erbr.c$Month[erbr.c$Prev12 == 2018]) # Yeah! Only has 1 may-july each, one november, 8 everything else
+
+
+maxtemp <- maxtemp[maxtemp$Prev12>1994&maxtemp$Prev12<=currentyr,]
+meantempmax <- mean(maxtemp$tmax)
+
+fig4c <- ggplot(maxtemp, aes(Prev12, tmax))+
+  geom_line()+
+  geom_hline(linetype = "dashed", aes(yintercept = mean(tmax)))+
+  annotate("text", x=1994.7, y=mean(maxtemp$tmax)+0.09, 
+           label= bquote(.(round(meantempmax,1)))) +   #~degree*C
+  theme_bw()+
+  geom_rect(aes(xmin=-Inf,xmax=2003.5,
+                ymin=-Inf, ymax=Inf),
+            fill= "grey", alpha = 0.03)+
+  scale_x_continuous(breaks = seq(1995,currentyr,by = 2))+
+  ylab(expression("Average maximum temperature ("~degree*C~"previous Aug-Jul)"))+
+  xlab("Survey year")+
+  ggtitle("c)") +
+  theme(plot.title=element_text(hjust=0))
+
+
+ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig4abc.jpg", sep=""), 
+       # (fig4a | fig4b)/(fig4c | plot_spacer()),
+       fig4a + fig4b + fig4c + plot_layout(ncol = 2),
+ width=240, height=200,units='mm', dpi=300)
+```
+
+
+```{r}
+erbr.all <- merge(erbr.summary,precip, by.x = "Year", by.y = "Prev12")
+erbr.all <- merge(erbr.all, mintemp, by.x = "Year", by.y = "Prev12")
+erbr.all <- merge(erbr.all, maxtemp, by.x = "Year", by.y = "Prev12")
+```
+
+Transformations
+```{r}
+#log transformation
+hist(erbr.all$SumOfRosettes)
+hist(erbr.all$SumOfArea)
+hist(erbr.all$SumOfInfl)
+
+hist(log(erbr.all$SumOfRosettes+1))
+hist(log(erbr.all$SumOfArea+1))
+hist(log(erbr.all$SumOfInfl+1)) # negative binomial? lots of zeros, zero inflated 
+
+erbr.all$logSumOfRosettes <- log(erbr.all$SumOfRosettes+1)
+erbr.all$logSumOfArea <- log(erbr.all$SumOfArea+1)
+erbr.all$logSumOfInfl <- log(erbr.all$SumOfInfl+1)
+
+#arcsine square root transformation
+hist(erbr.all$InflperRos)
+hist(erbr.all$RosperArea) #maybe not this one?
+hist(erbr.all$InflperArea)
+hist(erbr.all$InflBrperInfl)
+
+hist(asin(sqrt(erbr.all$InflperRos)/100))
+hist(asin(sqrt(erbr.all$RosperArea)/100)) #not all that much better
+hist(asin(sqrt(erbr.all$InflperArea)/100))
+hist(asin(sqrt(erbr.all$InflBrperInfl)/100))
+
+erbr.all$sinsqInflperRos <- asin(sqrt(erbr.all$InflperRos)/100)
+erbr.all$sinsqInflperArea <- asin(sqrt(erbr.all$InflperArea)/100)
+erbr.all$sinsqInflBrperInfl <- asin(sqrt(erbr.all$InflBrperInfl)/100)
+```
+
+```{r}
+cor(erbr.all$tmin,erbr.all$tmax)
+cor(erbr.all[,c("tmin","tmax","ppt")])
+pairs(erbr.all[,c("tmin","tmax","ppt")])
+```
+
+## Dunno, I think I'll just report a straight lm
+log transformed sum of rosettes
+```{r}
+summary(lmer(logSumOfRosettes ~ tmin + (1|Site), data = erbr.all))
+
+summary(lmer(logSumOfRosettes ~ tmin|Site, data = erbr.all))
+xyplot(logSumOfRosettes ~ tmin|Site, erbr.all,
+       type = c("g","p","r"),
+       index = function(x,y) coef(lm(y ~ x))[1],
+       xlab = "Minimum annual temperature",
+       ylab = "Rosettes (log transformed)", aspect = "xy")
+
+
+summary(lmer(SumOfRosettes ~ tmin|Site, data = erbr.all))
+xyplot(SumOfRosettes ~ tmin|Site, erbr.all,
+       type = c("g","p","r"),
+       index = function(x,y) coef(lm(y ~ x))[1],
+       xlab = "Minimum annual temperature",
+       ylab = "Rosettes", aspect = "xy")
+
+
+summary(lmer(SumOfRosettes ~ Rust|Site, data = erbr.all))
+xyplot(SumOfRosettes ~ Rust|Site, erbr.all,
+       type = c("g","p","r"),
+       index = function(x,y) coef(lm(y ~ x))[1],
+       xlab = "Rust",
+       ylab = "Rosettes", aspect = "xy")
+
+
+
+summary(lmer(SumOfInfl ~ Rust|Site, data = erbr.all))
+xyplot(SumOfInfl ~ Rust|Site, erbr.all,
+       type = c("g","p","r"),
+       index = function(x,y) coef(lm(y ~ x))[1],
+       xlab = "Rust",
+       ylab = "Inflorescences", aspect = "xy")
+
+
+summary(lmer(logSumOfInfl ~ Rust|Site, data = erbr.all))
+xyplot(logSumOfInfl ~ Rust|Site, erbr.all,
+       type = c("g","p","r"),
+       index = function(x,y) coef(lm(y ~ x))[1],
+       xlab = "Rust",
+       ylab = "Inflorescences", aspect = "xy")
+
+
+summary(lm(logSumOfRosettes ~ tmin, data = erbr.all))
+
+summary(lm(logSumOfRosettes ~ ppt, data = erbr.all))
+
+
+summary(lmer(SumOfRosettes ~ Year|Site, data = erbr.all))
+xyplot(SumOfRosettes ~ Year|Site, erbr.all,
+       type = c("g","p","r"),
+       index = function(x,y) coef(lm(y ~ x))[1],
+       xlab = "Year",
+       ylab = "Rosettes", aspect = "xy")
+
+ggplot(erbr.all, aes(as.factor(Year), SumOfRosettes))+
+  geom_boxplot()+
+  facet_grid(~Site)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+ggplot(erbr.all, aes(as.factor(Year), SumOfInfl))+
+  geom_boxplot()+
+  facet_grid(~Site)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+#Figure 7 as one
+```{r}
+
+# op <- par(no.readonly = TRUE)
+
+#Plot 1 7a
+fig7a <- ggplot(erbr.all, aes(tmax, SumOfRosettes, colour = Site))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab("")+
+  # xlab(expression("Maximum temperature"~degree*C))+
+  ylab("Rosettes per transect")+
+  theme_bw() +
+  ggtitle("a)") +
+  theme(plot.title=element_text(hjust=0))+
+  scale_color_manual(values=c("#000000","#7e7e7e"),
+                     labels = c("Garden Park East","Garden Park West"))+
+  scale_shape_manual(values=c(1,2),
+                     labels = c("Garden Park East","Garden Park West"))+
+  theme(legend.justification=c(1,1), legend.position=c(1,1),
+        legend.background = element_rect(fill=alpha(0.9))) 
+
+# Plot 2 7a second
+fig7a2 <- ggplot(erbr.all, aes(ppt, SumOfRosettes, colour = Site))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab("")+
+  # xlab("Precipitation mm")+
+  ylab("")+
+  theme_bw() +
+  ggtitle("") +
+  theme(plot.title=element_text(hjust=0))+
+  scale_color_manual(values=c("#000000","#7e7e7e"),
+                     labels = c("Garden Park East","Garden Park West"))+
+  scale_shape_manual(values=c(1,2),
+                     labels = c("Garden Park East","Garden Park West"))+
+  theme(legend.justification=c(0.21,1), legend.position=c(0.21,1),
+        legend.background = element_rect(fill=alpha(0.9))) 
+
+# plot 3
+fig7b <-ggplot(erbr.all, aes(tmax, logSumOfInfl, colour = Site))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab("")+
+  # xlab(expression("Minimum temperature"~degree*C))+
+  theme_bw() +
+  ggtitle("b)") +
+  theme(plot.title=element_text(hjust=0))+
+  ylab(expression("Inflorescences"["  log"]*" per transect"))+
+  scale_color_manual(values=c("#000000","#7e7e7e"),
+                     labels = c("Garden Park East","Garden Park West"))+
+  scale_shape_manual(values=c(1,2),
+                     labels = c("Garden Park East","Garden Park West"))+
+  theme(legend.justification=c(1,1), legend.position=c(1,1),
+        legend.background = element_rect(fill=alpha(0.9))) 
+
+# plot 4
+fig7b2 <-ggplot(erbr.all, aes(ppt, logSumOfInfl, colour = Site))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab("")+
+  # xlab("Precipitation mm")+
+  theme_bw() +
+  ggtitle("") +
+  theme(plot.title=element_text(hjust=0))+
+  ylab("")+
+  scale_color_manual(values=c("#000000","#7e7e7e"),
+                     labels = c("Garden Park East","Garden Park West"))+
+  scale_shape_manual(values=c(1,2),
+                     labels = c("Garden Park East","Garden Park West"))+
+  theme(legend.justification=c(0,1), legend.position=c(0,1),
+        legend.background = element_rect(fill=alpha(0.9))) 
+
+fig7c <-ggplot(erbr.all, aes(tmax, sinsqInflperRos, colour = Site))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab(expression("Maximum temperature"~degree*C))+
+  theme_bw() +
+  ggtitle("c)") +
+  theme(plot.title=element_text(hjust=0))+
+  ylab(expression("Inflorescences per rosette  "[sqrt("arcsine")]~"by transect"))+
+  scale_color_manual(values=c("#000000","#7e7e7e"),
+                     labels = c("Garden Park East","Garden Park West"))+
+  scale_shape_manual(values=c(1,2),
+                     labels = c("Garden Park East","Garden Park West"))+
+  theme(legend.justification=c(0,1), legend.position=c(0,1),
+        legend.background = element_rect(fill=alpha(0.8))) 
+
+fig7c2 <-ggplot(erbr.all, aes(ppt, sinsqInflperRos, colour = Site))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab("Precipitation mm")+
+  theme_bw() +
+  ggtitle("") +
+  theme(plot.title=element_text(hjust=0))+
+  ylab("")+
+  scale_color_manual(values=c("#000000","#7e7e7e"),
+                     labels = c("Garden Park East","Garden Park West"))+
+  scale_shape_manual(values=c(1,2),
+                     labels = c("Garden Park East","Garden Park West"))+
+  theme(legend.justification=c(0,1), legend.position=c(0,1),
+        legend.background = element_rect(fill=alpha(0.9))) 
+
+
+
+jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig7abc.jpg"),
+     width=190.5*1.2, height=254*1.2,units='mm', res=300)
+
+fig7a + fig7a2 + fig7b + fig7b2 + fig7c +fig7c2 + plot_layout(ncol =2)
+
+dev.off()
+
+```
+
+
+
+log transformed sum of inflorescences
+```{r}
+lmer(logSumOfInfl ~ tmin + (1|Site), data = erbr.all)
+summary(lm(logSumOfInfl ~ tmin, data = erbr.all))
+
+summary(lm(logSumOfInfl ~ ppt, data = erbr.all))
+```
+
+
+transformed inflorescences per rosette
+```{r}
+lmer(sinsqInflperRos ~ tmin + (1|Site), data = erbr.all)
+
+summary(lmer(sinsqInflperRos ~ tmin + (1|Site), data = erbr.all))
+
+summary(lm(sinsqInflperRos ~ tmin, data = erbr.all))
+
+
+summary(lm(sinsqInflperRos ~ ppt, data = erbr.all))
+```
+
+# More Results
+transformed browsed inflorescences per total inflor
+```{r}
+
+erbr.all.t1 <- subset(merge(erbr.all, erbr.all, by = c("Site","Transect")), Year.x == Year.y-1)
+
+
+lmer(sinsqInflBrperInfl ~ tmin + (1|Site), data = erbr.all)
+
+summary(lmer(sinsqInflBrperInfl ~ tmin + (1|Site), data = erbr.all))
+
+summary(lm(sinsqInflBrperInfl ~ tmin, data = erbr.all))
+
+
+summary(lm(sinsqInflBrperInfl ~ ppt, data = erbr.all))
+
+agg.erbrbrowse <- aggregate(SumOfBrowsedInfl ~ Site + drought, data=erbr.summary, mean)
+agg.erbrbrowse$Sd <- aggregate(SumOfBrowsedInfl ~ Site + drought, data=erbr.summary, sd)[,3]
+agg.erbrbrowse
+
+# Percent of browsed inflorescences
+lapply(split(erbr.summary, erbr.summary$Site), function(x){
+  avgout <- aggregate(SumOfBrowsedInfl ~ Year , data=x, mean)
+  sdout <- aggregate(SumOfBrowsedInfl ~ Year , data=x, sd)
+  avgout <- data.frame(avgout,sdout)
+  avgout[avgout[,2]==max(avgout[,2]),]
+})
+
+aggregate(SumOfBrowsedInfl ~ Site , data=erbr.summary, mean)
+aggregate(SumOfBrowsedInfl ~ Site , data=erbr.summary, sd)
+
+
+# Rust?
+lapply(split(erbr.summary, erbr.summary$Site), function(x){
+  avgout <- aggregate(Rust ~ Year , data=x, mean)
+  sdout <- aggregate(Rust ~ Year , data=x, sd)
+  avgout <- data.frame(avgout,sdout)
+  avgout[avgout[,2]==max(avgout[,2]),]
+})
+
+hist(erbr.all$Rust)
+hist(log(erbr.all$Rust))
+hist(erbr.all.t1$SumOfRosettes.x)
+hist(log(erbr.all.t1$logSumOfRosettes.x + 1))
+
+# What are in same distribution, normally distributed? 
+# use a Kolmogorov-Smirnov test to determine if the data is from a normal distribution
+ks.test(erbr.all$SumOfRosettes, rnorm(50)) # p-val < 0.0001 means low prob that came from a normal distribution
+ks.test(log(erbr.all$SumOfRosettes + 1), rnorm(50)) # p-val < 0.0001 means low prob that came from a normal 
+
+
+qqnorm(erbr.all$SumOfRosettes)
+qqline(erbr.all$SumOfRosettes)
+
+qqnorm(log(erbr.all$SumOfRosettes +1))
+qqline(log(erbr.all$SumOfRosettes +1))
+
+
+qqnorm(erbr.all$InflperRos)
+qqline(erbr.all$InflperRos)
+
+
+qqnorm(erbr.all$InflperArea)
+qqline(erbr.all$InflperArea)
+
+qqnorm(erbr.all$SumOfInfl)
+qqline(erbr.all$SumOfInfl)
+
+qqnorm(erbr.all$logSumOfInfl)
+qqline(erbr.all$logSumOfInfl)
+
+qqnorm(log(erbr.all$SumOfRosettes +1))
+qqline(log(erbr.all$SumOfRosettes +1))
+
+ks.test(erbr.all$Rust, rnorm(50)) # p-val < 0.0001 means low prob that came from a normal distribution
+
+qqnorm(erbr.all$Rust)
+qqline(erbr.all$Rust)
+
+# Rust should be a yes or no
+erbr.all$RustYN <- 0 
+erbr.all$RustYN[erbr.all$Rust>0] <- 1
+
+table(erbr.all$RustYN, erbr.all$Year)
+table(erbr.all$Transect, erbr.all$Year)
+```
+
+```{r}
+#Get year before conditions
+# Year.y = t+1
+# Year.x = t
+
+# AICc
+lm1 <- lm(logSumOfRosettes.y~Site, erbr.all.t1)
+lm2 <- lm(logSumOfRosettes.y~ppt.x, erbr.all.t1)
+lm3 <- lm(logSumOfRosettes.y~tmin.x, erbr.all.t1)
+lm4 <- lm(logSumOfRosettes.y~tmax.x, erbr.all.t1)
+lm5 <- lm(logSumOfRosettes.y~ppt.x*ppt.y, erbr.all.t1)
+lm6 <- lm(logSumOfRosettes.y~(ppt.x+tmin.x+tmax.x)^2, erbr.all.t1)
+lm7 <- lm(logSumOfRosettes.y~tmin.x*tmin.y, erbr.all.t1)
+lm8 <- lm(logSumOfRosettes.y~tmax.x*tmax.y, erbr.all.t1)
+lm9 <- lm(logSumOfRosettes.y~(ppt.y+tmin.y+tmax.y)^2, erbr.all.t1)
+lm10 <- lm(logSumOfRosettes.y~1, erbr.all.t1)
+lm11 <- lm(logSumOfRosettes.y~log(Rust.x+1)*Site, erbr.all.t1)
+lm12 <- lm(logSumOfRosettes.y~log(Rust.x+1)*ppt.x, erbr.all.t1)
+lm13 <- lm(logSumOfRosettes.y~log(Rust.x+1)*tmin.x, erbr.all.t1)
+lm14 <- lm(logSumOfRosettes.y~log(Rust.x+1)*tmax.x, erbr.all.t1)
+lm15 <- lm(logSumOfRosettes.y~log(Rust.x+1)*ppt.x*ppt.y, erbr.all.t1)
+lm16 <- lm(logSumOfRosettes.y~(log(Rust.x+1)+ppt.x+tmin.x+tmax.x)^2, erbr.all.t1)
+lm17 <- lm(logSumOfRosettes.y~(log(Rust.x+1)+tmin.x+tmin.y)^2, erbr.all.t1)
+lm18 <- lm(logSumOfRosettes.y~log(Rust.x+1)*tmax.x*tmax.y, erbr.all.t1)
+lm19 <- lm(logSumOfRosettes.y~(log(Rust.x+1) +ppt.y+tmin.y+tmax.y)^2, erbr.all.t1)
+
+lm.list <- list(lm1,lm2, lm3, lm4, lm5, lm6, lm7, lm8, lm9, lm10, lm11, lm12, lm13, lm14, lm15, lm16, lm17, lm18, lm19)
+lm.names <- as.character(unlist(lapply(lm.list,formula)))
+(lm.results <- aictab(lm.list, modnames=lm.names))
+#evidence ratio 
+for(i in 2:length(lm.list)){
+  print(exp(0.5*lm.results$Delta_AICc[i]))
+}
+
+
+scatterplotMatrix(~ppt.y+tmin.y+tmax.y+ppt.x+tmin.x+tmax.x, 
+                 diagonal = "qqplot",
+                 data=erbr.all.t1,
+                 reg.line=FALSE,
+                 smoother="")
+
+
+
+```
+
+# above is too many models for the data I have. Think through what might be impacting rosettes. Maybe multiple years of drought and rust or just current or just past climate or interaction of a couple years in a row of climate. 
+```{r}
+# AICc
+# lm1 <- lm(SumOfRosettes.x~Site, erbr.all.t1) # They are so close and similar, wouldn't assume differences between macroplots
+
+# current year can't change the number of rosettes
+lm1 <- lm(SumOfRosettes.x~as.factor(RustYN.y), erbr.all.t1)
+
+#climate in the current year
+lm2 <- lm(SumOfRosettes.x~ppt.x, erbr.all.t1)
+lm3 <- lm(SumOfRosettes.x~tmin.x, erbr.all.t1)
+lm4 <- lm(SumOfRosettes.x~tmax.x, erbr.all.t1)
+lm5 <- lm(SumOfRosettes.x~(ppt.x*tmin.x*tmax.x), erbr.all.t1)
+
+#climate in the previous year
+lm6 <- lm(SumOfRosettes.x~ppt.y, erbr.all.t1)
+lm7 <- lm(SumOfRosettes.x~tmin.y, erbr.all.t1)
+lm8 <- lm(SumOfRosettes.x~tmax.y, erbr.all.t1)
+lm9 <- lm(SumOfRosettes.x~(ppt.y*tmin.y*tmax.y), erbr.all.t1)
+
+#climate interaction of previous and current years
+lm10 <- lm(SumOfRosettes.x~ppt.x*ppt.y, erbr.all.t1)
+lm11 <- lm(SumOfRosettes.x~tmin.x*tmin.y, erbr.all.t1)
+lm12 <- lm(SumOfRosettes.x~tmax.x*tmax.y, erbr.all.t1)
+# lm13 <- lm(SumOfRosettes.x~(ppt.y*tmin.y*tmax.y*ppt.x*tmin.x*tmax.x), erbr.all.t1)
+
+# All climate interacting with rust
+lm14 <- lm(SumOfRosettes.x~ppt.y*as.factor(RustYN.y), erbr.all.t1)
+lm15 <- lm(SumOfRosettes.x~tmin.y*as.factor(RustYN.y), erbr.all.t1)
+lm16 <- lm(SumOfRosettes.x~tmax.y*as.factor(RustYN.y), erbr.all.t1)
+# lm17 <- lm(SumOfRosettes.x~(ppt.y+tmin.y+tmax.y+as.factor(RustYN.y))^2, erbr.all.t1)
+
+# Null model
+lm18 <- lm(SumOfRosettes.x~1, erbr.all.t1)
+
+# Well poop, what about reproduction, but more likely just more growth of rosettes than new seedlings but maybe not, I don't know!
+lm19 <- lm(SumOfRosettes.x~logSumOfInfl.y, erbr.all.t1)
+summary(lm19)
+
+
+lm.list <- list(lm1,lm2, lm3, lm4, lm5, lm6, lm7,lm8,lm9,lm10,lm11,lm12,
+                # lm13,
+                lm14,lm15,lm16,
+                # lm17,
+                # lm19,
+                lm18)
+lm.names <- as.character(unlist(lapply(lm.list,formula)))
+(lm.results <- aictab(lm.list, modnames=lm.names))
+#evidence ratio 
+for(i in 2:length(lm.list)){
+  print(exp(0.5*lm.results$Delta_AICc[i]))
+}
+
+evidence(lm.results)
+
+summary(lm8)
+summary(lm13)
+summary(lm9)
+
+summary(lm(SumOfRosettes.x~(ppt.y*tmin.y*tmax.y), erbr.all.t1))
+
+```
+
+
+# What is reproduction correlated to?  
+```{r}
+# AICc
+# lm1 <- lm(SumOfRosettes.x~Site, erbr.all.t1) # They are so close and similar, wouldn't assume differences between macroplots
+
+# current year can't change the number of rosettes
+lm1 <- lm(logSumOfInfl.x~as.factor(RustYN.y), erbr.all.t1)
+
+#climate in the current year
+lm2 <- lm(logSumOfInfl.x~ppt.x, erbr.all.t1)
+lm3 <- lm(logSumOfInfl.x~tmin.x, erbr.all.t1)
+lm4 <- lm(logSumOfInfl.x~tmax.x, erbr.all.t1)
+lm5 <- lm(logSumOfInfl.x~(ppt.x*tmin.x*tmax.x), erbr.all.t1)
+
+#climate in the previous year
+lm6 <- lm(logSumOfInfl.x~ppt.y, erbr.all.t1)
+lm7 <- lm(logSumOfInfl.x~tmin.y, erbr.all.t1)
+lm8 <- lm(logSumOfInfl.x~tmax.y, erbr.all.t1)
+lm9 <- lm(logSumOfInfl.x~(ppt.y*tmin.y*tmax.y), erbr.all.t1)
+
+#climate interaction of previous and current years
+lm10 <- lm(logSumOfInfl.x~ppt.x*ppt.y, erbr.all.t1)
+lm11 <- lm(logSumOfInfl.x~tmin.x*tmin.y, erbr.all.t1)
+lm12 <- lm(logSumOfInfl.x~tmax.x*tmax.y, erbr.all.t1)
+# lm13 <- lm(SumOfRosettes.x~(ppt.y*tmin.y*tmax.y*ppt.x*tmin.x*tmax.x), erbr.all.t1)
+
+# All climate interacting with rust
+lm14 <- lm(logSumOfInfl.x~ppt.y*as.factor(RustYN.y), erbr.all.t1)
+lm15 <- lm(logSumOfInfl.x~tmin.y*as.factor(RustYN.y), erbr.all.t1)
+lm16 <- lm(logSumOfInfl.x~tmax.y*as.factor(RustYN.y), erbr.all.t1)
+# lm17 <- lm(SumOfRosettes.x~(ppt.y+tmin.y+tmax.y+as.factor(RustYN.y))^2, erbr.all.t1)
+
+# Null model
+lm18 <- lm(logSumOfInfl.x~1, erbr.all.t1)
+
+
+
+lm.list <- list(lm1,lm2, lm3, lm4, lm5, lm6, lm7,lm8,lm9,lm10,lm11,lm12,
+                # lm13,
+                lm14,lm15,lm16,
+                # lm17,
+                lm18)
+lm.names <- as.character(unlist(lapply(lm.list,formula)))
+(lm.results <- aictab(lm.list, modnames=lm.names))
+#evidence ratio 
+for(i in 2:length(lm.list)){
+  print(exp(0.5*lm.results$Delta_AICc[i]))
+}
+
+evidence(lm.results)
+
+
+```
+
+
+```{r}
+ggplot(erbr.all, aes(tmin, sinsqInflBrperInfl, colour = Site))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab(expression("Minimum temperature"~degree*C))+
+  theme_bw() +
+  ggtitle("c)") +
+  theme(plot.title=element_text(hjust=0))+
+  ylab(expression("Proportion of browsed inflorescences"["  arcsine square root"]*" by transect"))+
+  scale_color_manual(values=c("#000000","#7e7e7e"),
+                     labels = c("Garden Park East","Garden Park West"))+
+  scale_shape_manual(values=c(1,2),
+                     labels = c("Garden Park East","Garden Park West"))+
+  theme(legend.justification=c(1,1), legend.position=c(1,1),
+        legend.background = element_rect(fill=alpha(0.4))) 
+
+```
+
+
+ppt and tmax more than ppt and tmin so keep tmin. but they are 71% so could keep both 
+```{r}
+erbr.all$ppt100 <- erbr.all$ppt/100
+step.lm <- step(lm(logSumOfRosettes ~ (ppt+tmin+tmax)^2, data = erbr.all))
+
+#Check for Multi-collinearity
+vif(step.lm) #Variance inflation factors
+sqrt(vif(step.lm)) > 2 # means a problem, so all are a problem
+
+#Remove tmax and keep going
+twolm <- lm(logSumOfRosettes ~ (ppt+tmin)^2, data = erbr.all)
+vif(twolm)
+
+step.lm <- step(lm(logSumOfRosettes ~ (ppt+tmin)^2, data = erbr.all))
+
+summary(step.lm)
+```
+
+tmin only signficant one
+```{r}
+erbr.all$sinsqInflperRos
+erbr.all$logSumOfInfl
+
+summary(lm(logSumOfRosettes~tmin, data=erbr.all))
+
+twoInfo <- lm(logSumOfInfl~(ppt+tmin)^2, data=erbr.all)
+vif(twoInfo)
+
+summary(lm(logSumOfInfl~tmin, data=erbr.all))
+
+summary(lm(logSumOfInfl~ppt, data=erbr.all))
+
+
+```
+
+
+```{r}
+step.lmsmall <- step(lm(logSumOfRosettes ~ (ppt+tmin)^2, data = erbr.all))
+summary(step.lmsmall)
+
+summary(lm(logSumOfRosettes~tmin, data=erbr.all))
+summary(lm(logSumOfRosettes~tmax, data=erbr.all))
+summary(lm(logSumOfRosettes~ppt, data=erbr.all))
+```
+
+#Precip not signficant but what does it look like?
+```{r}
+ggplot(erbr.all, aes(ppt, SumOfRosettes))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab("Total precipitation (previous 12 months)")+
+  ylab("Rosettes per transect")
+
+```
+
+```{r}
+ggplot(erbr.all, aes(tmin, SumOfRosettes))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab(expression("Minimum temperature"~degree*C))+
+  ylab("Rosettes per transect")
+
+```
+
+
+```{r}
+ggplot(erbr.all[erbr.all$tmin > mean(erbr.all$tmin),], aes(ppt, SumOfRosettes))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab("Total precipitation (previous 12 months)")+
+  ylab("Rosettes per transect")
+
+```
+
+```{r}
+ggplot(erbr.all[erbr.all$tmin  <= mean(erbr.all$tmin),], aes(ppt, SumOfRosettes))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab("Total precipitation (previous 12 months)")+
+  ylab("Rosettes per transect")
+
+```
+
+
+```{r}
+ggplot(erbr.all[erbr.all$tmax > mean(erbr.all$tmax),],aes(tmin, SumOfRosettes))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab("Average monthly minimum temperature (previous 12 months)")+
+  ylab("Rosettes per transect")
+
+```
+
+```{r}
+ggplot(erbr.all[erbr.all$tmax <= mean(erbr.all$tmax),], aes(tmin, SumOfRosettes))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab("Average monthly minimum temperature (previous 12 months)")+
+  ylab("Rosettes per transect")
+
+```
+
+Maximum temperatre given above and below minimum temperature
+```{r}
+ggplot(erbr.all[erbr.all$tmin <= mean(erbr.all$tmin),], aes(tmax, SumOfRosettes))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab("Average monthly maximum temperature (previous 12 months)")+
+  ylab("Rosettes per transect")
+
+```
+
+```{r}
+ggplot(erbr.all[erbr.all$tmin > mean(erbr.all$tmin),], aes(tmax, SumOfRosettes))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab("Average monthly maximum temperature (previous 12 months)")+
+  ylab("Rosettes per transect")
+
+```
+
+## Inflorescences
+```{r}
+
+ggplot(erbr.all[erbr.all$tmin <= mean(erbr.all$tmin),], aes(tmax, SumOfInfl))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab("Average monthly maximum temperature (previous 12 months)")+
+  ylab("Inflorescences per transect")
+
+```
+
+```{r}
+ggplot(erbr.all[erbr.all$tmin > mean(erbr.all$tmin),], aes(tmax, SumOfInfl))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab("Average monthly maximum temperature (previous 12 months)")+
+  ylab("Inflorescences per transect")
+
+```
+
+
+## Inflorescences
+```{r}
+
+ggplot(erbr.all[erbr.all$tmin <= mean(erbr.all$tmin),], aes(tmax, SumOfInfl))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab("Average monthly maximum temperature (previous 12 months)")+
+  ylab("Inflorescences per transect")
+
+```
+
+```{r}
+ggplot(erbr.all[erbr.all$tmin > mean(erbr.all$tmin),], aes(tmax, SumOfInfl))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab("Average monthly maximum temperature (previous 12 months)")+
+  ylab("Inflorescences per transect")
+
+```
+
+
+#InflperRos
+```{r}
+
+ggplot(erbr.all[erbr.all$tmin <= mean(erbr.all$tmin),], aes(tmax, InflperRos))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab("Average monthly maximum temperature (previous 12 months)")+
+  ylab("Inflorescences per rosettes")
+
+```
+
+```{r}
+ggplot(erbr.all[erbr.all$tmin > mean(erbr.all$tmin),], aes(tmax, InflperRos))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab("Average monthly maximum temperature (previous 12 months)")+
+  ylab("Inflorescences per rosettes")
+
+```
+
+Appendix D:
+```{r}
+head(erbr.all)
+
+appdD <- erbr.all[erbr.all$Year == 2016,
+                  c("Site","Transect","Year","SumOfRosettes","SumOfInfl","SumOfArea",
+                     "SumOfBrowsedInfl","Rust")]
+```
+
+For Becky, annual report 01232018
+```{r}
+erbr_yr <- aggregate(Rosettes~Year, data=erbr.summary, FUN=sum)
+
+ggsave("Q:/Research/MEDL_folder/ErBr_yr.jpg",device="jpeg",
+       ggplot(erbr_yr, aes(Year,Rosettes))+
+         geom_line(colour="blue")+
+         ggtitle("Eriogonum brandegeei")+
+         theme_classic()+
+         ylab("Total Population"))
+
+write.csv(erbr_yr,"Q:/Research/MEDL_folder/ErBr_yr.csv" )
+
+```
