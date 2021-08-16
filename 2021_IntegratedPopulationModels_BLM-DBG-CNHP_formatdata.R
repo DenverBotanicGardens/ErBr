@@ -80,8 +80,8 @@ BLM_erbr <- do.call(rbind, list(CastleGarden, DroneyGulch_BLM, GardenParkQuarry,
 # Make a unique tag per plant; Site is the transect and Site name
 BLM_erbr$Tag <- paste(BLM_erbr$Site, BLM_erbr$Tag.., sep="_")
 BLM_erbr <- BLM_erbr[!duplicated(BLM_erbr),]
-# write.csv(BLM_erbr, file = "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_demography_20210603.csv",
-#           row.names = FALSE)
+write.csv(BLM_erbr, file = "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_demography_20210603.csv",
+          row.names = FALSE)
 
 ## ------------------------------------------------------------------------------------------------
 
@@ -230,8 +230,9 @@ years <- years[order(years)]
 dats_BLM.newPlts <- as.data.frame(rep(unique(dats_BLM$TransectNew.num), each=length(years)))
 colnames(dats_BLM.newPlts) <- "TransectNew.num"
 dats_BLM.newPlts$Year.num <- rep(years) # Now just a data frame with unique Transect number for each year
-# remove years 1 and 2 from transects < 54; Big Bend
-dats_BLM.newPlts <- dats_BLM.newPlts[!(dats_BLM.newPlts$TransectNew.num < 54 & dats_BLM.newPlts$Year.num < 3),]
+# remove years 1 and 2 from transects < 54; Big Bend; fixed transects in Big Bend, only 10, not 53
+# dats_BLM.newPlts <- dats_BLM.newPlts[!(dats_BLM.newPlts$TransectNew.num < 54 & dats_BLM.newPlts$Year.num < 3),]
+dats_BLM.newPlts <- dats_BLM.newPlts[!(dats_BLM.newPlts$TransectNew.num < 11 & dats_BLM.newPlts$Year.num < 3),]
 
 ## Identify new plants 
 newPlts <- dats_BLM[!is.na(dats_BLM$Stage),] %>% group_by(Tag) %>% slice(which.min(Year))   #Identify rows with 1st appearance for each plt
@@ -245,7 +246,8 @@ num.newPlts <- newPlts %>% group_by(TransectNew.num, Year.num) %>% summarise(num
 dats_BLM.newPlts <- left_join(dats_BLM.newPlts, num.newPlts, by=c("TransectNew.num", "Year.num"))
 dats_BLM.newPlts$num.newPlts[is.na(dats_BLM.newPlts$num.newPlts)] <- 0   #Change NAs (no new plants) to zeros
 dats_BLM.newPlts$num.newPlts[dats_BLM.newPlts$Year.num==1] <- NA         #Change new plts in 2016 (yr 1) to NA
-dats_BLM.newPlts[dats_BLM.newPlts$Year.num==3 & dats_BLM.newPlts$TransectNew.num < 54,]
+# dats_BLM.newPlts[dats_BLM.newPlts$Year.num==3 & dats_BLM.newPlts$TransectNew.num < 54,]
+dats_BLM.newPlts[dats_BLM.newPlts$Year.num==3 & dats_BLM.newPlts$TransectNew.num < 11,]
 # dats_BLM.newPlts$num.newPlts[dats_BLM.newPlts$Year.num==3 & dats_BLM.newPlts$TransectNew.num < 54] <- NA # change new plts in 2016-2018 at Big Bend to NA
 
 ## Add column so new plts in t+1 match year t
@@ -262,7 +264,7 @@ dats_BLM.newPlts <- merge(dats_BLM, dats_BLM.newPlts, by = c("TransectNew.num","
 write.csv(dats_BLM.newPlts, file = "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_newplts.csv",
           row.names = FALSE)
 
-dats_BLM.newPlts[dats_BLM.newPlts$TransectNew.num < 54,]
+dats_BLM.newPlts[dats_BLM.newPlts$TransectNew.num < 11,]
 
 newplts <- dats_BLM.newPlts$num.newPlts1
 newplt.trans <- dats_BLM.newPlts$TransectNew.num
