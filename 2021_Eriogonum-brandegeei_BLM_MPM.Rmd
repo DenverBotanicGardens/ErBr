@@ -505,12 +505,35 @@ ggplot(SD_BLM, aes(Water.Deficit.x, lmbd))+
 BLM and DBG together!
 ```{r}
 head(DBG_GP)
+str(DBG_GP)
+DBG_GP$YEAR <- as.numeric(as.character(DBG_GP$YEAR))
 DBG_GP$Center1 <- "CanonCity"
+DBG_GP <- merge(DBG_GP, WD[WD$Months == "Annual",], by.x = c("YEAR","Center1"), by.y = c("Year","Center")) 
+DBG_GP$Year1 <- DBG_GP$YEAR+1
+DBG_GP <- merge(DBG_GP, WD[WD$Months == "Annual",], by.x = c("Center1","Months","Year1"), by.y = c("Center","Months","Year"))
+
+medianLmbd <- aggregate(LAMBDA ~ TRANSECT + YEAR + Year1 + Water.Deficit.x + Water.Deficit.y + Center1, 
+                        median, data = DBG_GP)
+# medianLmbd <- merge(medianLmbd, WD[WD$Center == "CanonCity" & WD$Months == "Annual",],
+#                     by.x = "YEAR", by.y = "Year")
 
 
+names(lambdaCD);names(medianLmbd)
+DBG2bind <- medianLmbd[,c("Center1","YEAR","Year1","TRANSECT","LAMBDA","Water.Deficit.x","Water.Deficit.y")]
+BLM2bind <- lambdaCD[,c("Center1","Year","Year1","Transect","lmbd","Water.Deficit.x","Water.Deficit.y")]
+
+names(DBG2bind) <- c("Center1","Year","Year1","Transect","lmbd","Water.Deficit.x","Water.Deficit.y")
+
+lmbd_all <- rbind(DBG2bind,BLM2bind)
+table(lmbd_all$Center1)
+```
+
+
+```{r}
 
 
 ```
+
 
 
 
