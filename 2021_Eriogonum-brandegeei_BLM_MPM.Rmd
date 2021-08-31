@@ -26,6 +26,7 @@ BLM_erbr_newplts <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservat
 # removed rows before alive but kept first dead, was BLM_erbr.2 in "2021_integratedPopulationModels_BLM-DBG-CNHP_formatdata.R"
 BLM_erbr_lag <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_demolag_20210603.csv")
 
+transLevels <- unique(BLM_erbr_lag$Site[with(BLM_erbr_lag, order(SiteName, Transect))])
 
 # by numbered transects 1:87 and years 1:5
 # newPlts <- read.csv( "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLMnewplts_climate_20210601.csv")
@@ -39,9 +40,17 @@ BLM_erbr_lag <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation 
 CD <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2021_Eriogonum-brandegeei_SSA/2021_WaterDeficitData_Eriogonum-brandegeei_AlexKasdin-USFWS.csv")
 head(CD)
 
-
+# Compare to DBG
+date <- "2021-08-27"
+name <- as.character("P1k")
+DBG_GP <- readRDS(file=paste("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels/erbrLams_noYRE", name, date, sep="_"))
 
 WD <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2021_Eriogonum-brandegeei_SSA/2021_WaterDeficitData_Eriogonum-brandegeei_AlexKasdin-USFWS_reformat.csv")
+
+# Observed values
+WD2 <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2021_Eriogonum-brandegeei_SSA/ObservedWaterDeficit_Eriogonum-brandegeei_1979_2020.csv")
+
+head(WD[WD$Months == "Annual",]);head(WD2[WD2$Year > 2002,])
 
 # reshape(dats_BLM, idvar = names(dats_BLM)[c(1:8,12:15)], timevar = "Group.2", direction = "wide") # 
 
@@ -301,10 +310,19 @@ BLM_reproplts <- lapply(split(BLM_MPM, list(BLM_MPM$Site, BLM_MPM$Year), drop = 
 
 })
 
+# x <- split(BLM_MPM, list(BLM_MPM$Site, BLM_MPM$Year), drop = TRUE )[[1]]
+BLM_count <- do.call(rbind,lapply(split(BLM_MPM, list(BLM_MPM$Site, BLM_MPM$Year), drop = TRUE ), function(x){
+  repro <- sum(x$StageNum, na.rm = TRUE)
+  veg <- nrow(x[x$StageNum != 1,])
+  total <- nrow(x)
+  data.frame(reproNum = repro, vegNum = veg, totalCount = total, Year = x$Year[1], SiteName = x$SiteName[1], Transect = x$Site[1])
+}))
+
 ggplot(WD, aes(Year, Water.Deficit, colour = Center))+
   geom_point()+
   geom_line()+
-  facet_wrap(~Months)
+  facet_wrap(~Months, ncol = 1)+
+  theme_bw()
 
 table(BLM_MPM$Site)
 head(BLM_reproplts)
@@ -318,37 +336,67 @@ lambdaCD <- data.frame(lmbd = unlist(lapply(BLM_reproplts, function(mat) lambda(
                        Year1 = as.numeric(unlist(lapply(names(BLM_reproplts), function(st) strsplit(st, "[.]")[[1]][2])))+1) 
 
 # Want climate resulting in the second year of the transition
-lambdaCD$Center1 <- "Salida"
+lambdaCD$Center1 <- "SalidaNorth" # Big Bend and Droney
 lambdaCD$Center1[grep("GPQ", lambdaCD$Transect)] <- "CanonCity"
-lambdaCD$Center <- "SalidaNorth" # Big Bend and Droney
+lambdaCD$Center1[grep("CG", lambdaCD$Transect)] <- "SalidaSouth" 
+table(lambdaCD$Center1)
 # Castle Garden is in the southern Salida subunit and Marsh Quarry and Oil Well are in the Canon City unit.  
 # lambdaCD$Center[grep("CG|GPQ" ,lambdaCD$Transect)] <- "CanonCity"
 # IF lump by site, not transect
 # lambdaCD$Center[grep("CastleGarden", lambdaCD$Transect)] <- "SalidaSouth"
-lambdaCD$Center[grep("CG", lambdaCD$Transect)] <- "SalidaSouth"
+# lambdaCD$Center[grep("CG", lambdaCD$Transect)] <- "SalidaSouth"
 
 # lambdaCD$Center[grep("CastleGarden|GardenParkQuarry" ,lambdaCD$Transect)] <- "CanonCity"
 # lambdaCD$Center[grep("GardenParkQuarry" ,lambdaCD$Transect)] <- "CanonCity"
+lambdaCD$Center <- "Salida"
 lambdaCD$Center[grep("GPQ" ,lambdaCD$Transect)] <- "CanonCity"
 table(lambdaCD$Center, lambdaCD$Transect)
+table(lambdaCD$Center)
 table(lambdaCD$Center1)
 
-lamsort <- with(lambdaCD, reorder(Transect, lmbd, median, order = TRUE))
-lambdaCD$Transect <- factor(lambdaCD$Transect, levels = levels(lamsort))
+lambdaCD <- merge(lambdaCD, BLM_count, by = c("Year","Transect"))
+
+# lamsort <- with(lambdaCD, reorder(Transect, lmbd, median, order = TRUE))
+# lambdaCD$Transect <- factor(lambdaCD$Transect, levels = levels(lamsort))
+
+# or sort by names
+# lambdaCD$Transect <- factor(lambdaCD$Transect, levels = levels(transLevels))
 
 datetoday <- as.character(Sys.Date())
 ggsave(paste("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2021_Eriogonum-brandegeei_SSA/",datetoday,"_BLM_Eriogonum-brandegeei_lambdas.jpg", sep=""),
-    ggplot(lambdaCD, aes(lmbd, Transect))+
-      geom_vline(xintercept = 1, color = "red", width = 2)+
+    # ggplot(lambdaCD, aes(lmbd, Transect))+
+    ggplot(lambdaCD, aes(Center1,lmbd, colour = Center1))+
+      geom_hline(yintercept = 1, color = "red", width = 2)+
       geom_boxplot()+
-      geom_jitter(height = 0.4, aes(colour = as.factor(Year)), shape = 17)+
-      scale_colour_discrete(name = "Year")+
-      facet_wrap(~Center, scales = "free")+ 
+      geom_jitter(width = 0.2)+  #(height = 0.4) + #, aes(colour = as.factor(Year)), shape = 17)+
+      # scale_colour_discrete(name = "Year")+
+      # facet_wrap(~Center1+Year, scales = "free")+ 
+      facet_wrap(~Year, scales = "free")+ 
       # theme(axis.text.x=element_text(angle = -90, hjust = 0))+
       theme_bw()+
-      xlab(expression(lambda)),
-width=250, height=70,units='mm', dpi=300)
-  
+      xlab(expression(lambda))+
+  scale_x_discrete(labels = NULL, breaks = NULL),
+width=250, height=270,units='mm', dpi=300)
+
+ggsave(paste("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2021_Eriogonum-brandegeei_SSA/",datetoday,"_BLMbyYear_Eriogonum-brandegeei_lambdas.jpg", sep=""),
+ggplot(lambdaCD, aes(Transect,lmbd, colour = Transect))+
+  geom_hline(yintercept = 1, color = "red", width = 2)+
+  # geom_boxplot()+
+  # geom_jitter(width = 0.2)+  #(height = 0.4) + #, aes(colour = as.factor(Year)), shape = 17)+
+  geom_point()+
+  # scale_colour_discrete(name = "Year")+
+  # facet_wrap(~Center1+Year, scales = "free")+ 
+  facet_wrap(~Year + Center1, scales = "free_x", ncol = 3)+ 
+  # theme(axis.text.x=element_text(angle = -90, hjust = 0))+
+  theme_bw()+
+  ylab(expression(lambda))+
+  xlab("Transect")+
+  scale_x_discrete(labels = NULL, breaks = NULL)+
+  scale_colour_discrete(guide = FALSE),
+width=150, height=170,units='mm', dpi=300)
+
+
+
 table(names(BLM_reproplts))
 table(lambdaCD$Transect, lambdaCD$Center)
 
@@ -362,18 +410,21 @@ length(grep("BB", names(BLM_reproplts)))/2
 # Salida South is CG
 length(grep("CG", names(BLM_reproplts)))/4
 # 
-lambdaCD <- merge(lambdaCD, WD, by.x = c("Year","Center1"), by.y = c("Year","Center"))
-lambdaCD <- merge(lambdaCD, WD, by.x = c("Center1","Months","Year1"), by.y = c("Center","Months","Year"))
+# lambdaCD <- merge(lambdaCD, WD, by.x = c("Year","Center1"), by.y = c("Year","Center"))
+# lambdaCD <- merge(lambdaCD, WD, by.x = c("Center1","Months","Year1"), by.y = c("Center","Months","Year"))
+lambdaCD <- merge(lambdaCD, WD[WD$Months == "Annual",], by = c("Year", "Center")) # by.x = c("Year","Center1"), by.y = c("Year","Center"))
+lambdaCD <- merge(lambdaCD, WD[WD$Months == "Annual",], by.x = c("Center","Months","Year1"), by.y = c("Center","Months","Year"))
 head(lambdaCD) # .y is year1, .x is year
+table(lambdaCD$Center1);table(lambdaCD$Center)
 
-WD_t <- ggplot(lambdaCD, aes(Water.Deficit.x, lmbd, colour = Center))+
+WD_t <- ggplot(lambdaCD, aes(Water.Deficit.x, lmbd, colour = Center1))+
   geom_jitter(height = 0, width = 0.1)+
   stat_smooth(method = "lm", alpha = 0.3)+
   facet_wrap(~Months, scales = "free")+
   ylab(expression(lambda[t-t+1]))+
   xlab(expression(paste("Water deficit in ", year[t])))+
   theme_bw()
-WD_t1 <- ggplot(lambdaCD[lambdaCD$Months != "ASON",], aes(Water.Deficit.y, lmbd, colour = Center))+
+WD_t1 <- ggplot(lambdaCD[lambdaCD$Months != "ASON",], aes(Water.Deficit.y, lmbd, colour = Center1))+
   geom_jitter(height = 0, width = 0.1)+
   stat_smooth(method = "lm", alpha = 0.3)+
   facet_wrap(~Months, scales = "free")+
@@ -383,12 +434,16 @@ WD_t1 <- ggplot(lambdaCD[lambdaCD$Months != "ASON",], aes(Water.Deficit.y, lmbd,
 
 ggsave(paste("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2021_Eriogonum-brandegeei_SSA/",datetoday,"_BLM_Eriogonum-brandegeei_lambdasXwaterdeficit.jpg", sep=""),
 WD_t/WD_t1,
-width=250, height=140,units='mm', dpi=300)
+width=150, height=140,units='mm', dpi=300)
   
 
 
 
-summary(lm(lmbd ~ Water.Deficit.x, data = lambdaCD[lambdaCD$Months == "Annual",]))
+summary(lm(log(lmbd) ~ Water.Deficit.x + Center1, data = lambdaCD[lambdaCD$Months == "Annual",]))
+
+plot(lambdaCD$totalCount,scale(lambdaCD$lmbd))
+plot(lambdaCD$totalCount, log(lambdaCD$lmbd))
+plot(lambdaCD$totalCount, lambdaCD$lmbd)
 
 lambda(mean(BLM_reproplts[grep("BB", names(BLM_reproplts))])) # , na.rm = TRUE
 lambda(mean(BLM_reproplts[grep("CG", names(BLM_reproplts))]))
@@ -417,27 +472,6 @@ sd(unlist(lapply(BLM_reproplts[grep("GPQ", names(BLM_reproplts))], function(mat)
   lambda(mat)
   })))
 
-# lambda(mean(BLM_reproplts[grep("BigBend", names(BLM_reproplts))])) # , na.rm = TRUE
-# lambda(mean(BLM_reproplts[grep("CastleG", names(BLM_reproplts))]))
-# lambda(mean(BLM_reproplts[grep("Droney", names(BLM_reproplts))]))
-# lambda(mean(BLM_reproplts[grep("GardenPark", names(BLM_reproplts))]))
-
-# var(unlist(lapply(BLM_reproplts[grep("BigBend", names(BLM_reproplts))], function(mat){ 
-#   lambda(mat)
-#   })))
-# var(unlist(lapply(BLM_reproplts[grep("CastleG", names(BLM_reproplts))], function(mat){ 
-#   lambda(mat)
-#   })))
-# var(unlist(lapply(BLM_reproplts[grep("Droney", names(BLM_reproplts))], function(mat){ 
-#   lambda(mat)
-#   })))
-# var(unlist(lapply(BLM_reproplts[grep("GardenPark", names(BLM_reproplts))], function(mat){ 
-#   lambda(mat)
-#   })))
-
-# BLM_reproplts$AU[BLM_reproplts$S] <- "Salida.North"
-# BLM_reproplts$AU[]
-
 lambda(mean(BLM_reproplts[grep("BigBend", names(BLM_reproplts))])) 
 lambda(mean(BLM_reproplts[grep("Droney", names(BLM_reproplts))])) 
 lambda(mean(BLM_reproplts[grep("Castle", names(BLM_reproplts))])) 
@@ -455,8 +489,28 @@ lambda(mean(BLM_reproplts[grep("CG|GPQ", names(BLM_reproplts))]))
 var(unlist(lapply(BLM_reproplts[grep("BB|DGBLM", names(BLM_reproplts))], function(mat) lambda(mat)))) # , na.rm = TRUE
 var(unlist(lapply(BLM_reproplts[grep("CG|GPQ", names(BLM_reproplts))], function(mat) lambda(mat))))
 
+## Within year mean and variation across sites in a center
+aggregate(lmbd ~ Center1 + Year + Water.Deficit.x, data = lambdaCD, mean)
+SD_BLM <- aggregate(lmbd ~ Center1 + Year + Water.Deficit.x, data = lambdaCD, sd)
+
+summary(glm(lmbd ~ Water.Deficit.x, family = quasipoisson(link = "log"), data = SD_BLM))
+ggplot(SD_BLM, aes(Water.Deficit.x, lmbd))+
+  geom_point()+
+  ylab("SD")+
+  theme_bw()
+
+```
+
+
+BLM and DBG together!
+```{r}
+head(DBG_GP)
+DBG_GP$Center1 <- "CanonCity"
+
+
 
 
 ```
+
 
 
