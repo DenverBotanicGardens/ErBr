@@ -24,47 +24,92 @@ jags_erbrdata <- with(dats, list(Site = Site,Year=Year,RosNew=RosNew,InflNew=Inf
 
 
 
+#####################################################
+library(runjags)
+library(R2jags)
+testjags()
+
+## RUN ASSOCIATED JAGS MODEL ----------------------------------------------------------------------
+jags.mod <- run.jags("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_3JAGSmod_20210812.R", n.chains=3, data=dats, burnin=5000, thin=10, sample=30000, adapt=500, method='parallel')
+
+results.jags("C:/Users/DePrengm/AppData/Local/Temp/RtmpYRFoOI/runjagsfiles2de871e23351", recover.chains=TRUE)
+failed.jags()
+
+#save(jags.mod, file='erbr_JAGSmod_c3t10s20b5_210406.rdata')
+saveRDS(jags.mod, "erbr_JAGSmod_c3t10s30b5_210509.rds")
+## ------------------------------------------------------------------------------------------------
+
+
+## LOOK AT MODEL OUTPUT ---------------------------------------------------------------------------
+summary(jags.mod)
+plot(jags.mod)
+summ.mod <- summary(jags.mod)
+tail(summ.mod, n=20)
+gelman.diag(jags.mod, confidence = 0.95, transform=FALSE)
+
+chains <- jags.mod$mcmc
+chains <- bind_rows(lapply(chains, as.data.frame))
+colMeds <- apply(chains,2,median)
+colSDs <- apply(chains,2,sd)
+
+
+## Look at correlation b/w params 
+chains.1 <- chains %>% dplyr::select(!contains(c("randomeffect", "precision")))
+chains.1 <- chains.1 %>% dplyr::select(!c(deviance, resid.sum.sq))
+
+cor.chains <- cor(chains.1)
+corrplot(cor.chains, method="circle", type="lower")
+
+
+## ** Make bar graph comparing median param ests & 80% CIs b/w diff datasets **
+## ------------------------------------------------------------------------------------------------
+###############################################
+
+
+
+
 lm1_jags <- function(){
   # Likelihood
-  
   ##############################################################################################
   # Growth ________________________________________________________________________________________________________
   # Size for each plant; estimate survival to each year: chance of survival for unobserved years in the past
   for(i in 1:Ncases){
     # lag from size (RosNew)
-    regression_mean[goodrows[i] - lagvals[i]+1] <- exp(grwth_intercept + grwth_RosCoef*RosNew[goodrows[i]-lagvals[i]] +
+    regression_mean[goodrows[i] - lagvals[i]+1] <- exp(grwth_intercept + grwth_RosCoef*RosNew[goodrows[i]-lagvals[i]] +           # 
                                                          grwth_TempFallCoef*TempFall[goodrows[i] - lagvals[i]+1] +
-                                                         grwth_Transect_randomeffect[TransectNew.num[goodrows[i] - lagvals[i]]] +
-                                                         grwth_Year_randomeffect[Year.num[goodrows[i] - lagvals[i]]])             # 7
+                                                         grwth_Transect_randomeffect[TransectNew.num[goodrows[i] - lagvals[i]]] + # 5
+                                                         grwth_Year_randomeffect[Year.num[goodrows[i] - lagvals[i]]])             # 6
     
-    r.growth[goodrows[i] - lagvals[i]+1] <- exp(grwthvar_intercept + grwthvar_RosCoef*log(RosNew[goodrows[i] - lagvals[i]]))      # 9
+    # r.growth[goodrows[i] - lagvals[i]+1] <- exp(grwthvar_intercept + grwthvar_RosCoef*log(RosNew[goodrows[i] - lagvals[i]]))      # 9 or 10
     
     
     # Survival_______________________________________________________________________________________________________
     # or could write as "logit(Surv_mu) ~ "instead of "~ 1/(1+exp(-lm))"
-    Surv_mu[goodrows[i]-lagvals[i]+1] <- 1/(1+exp(-(surv_intercept + surv_RosCoef*log(RosNew[goodrows[i]-lagvals[i]]) +           # 12
-                                                      surv_PptWinterCoef*PptWinter[goodrows[i]-lagvals[i]+1] + 
-                                                      surv_TempWinterCoef*TempWinter[goodrows[i]-lagvals[i]+1]  + 
-                                                      surv_TempFallCoef*TempFall[goodrows[i]-lagvals[i]+1] + 
-                                                      surv_TempSummerCoef*TempSummer[goodrows[i]-lagvals[i]+1]+ 
-                                                      surv_Transect_randomeffect[TransectNew.num[goodrows[i]-lagvals[i]]] + 
-                                                      surv_Year_randomeffect[Year.num[goodrows[i]-lagvals[i]]])))
-    for (j in (goodrows[i]-lagvals[i]+1):(goodrows[i]-1)) {                                                                       # 19
-      regression_mean[j+1] <- exp(grwth_intercept + grwth_RosCoef*log(regression_mean[j]) + 
-                                    grwth_TempFallCoef*TempFall[j+1] + 
-                                    grwth_Transect_randomeffect[TransectNew.num[j]] + 
-                                    grwth_Year_randomeffect[Year.num[j]])
-      
-      r.growth[j+1] <- exp(grwthvar_intercept + grwthvar_RosCoef*log(regression_mean[j]))
-      Surv_mu[j+1] <- Surv_mu[j]*1/(1+exp(-(surv_intercept + surv_RosCoef*log(regression_mean[j]) + 
-                                              surv_PptWinterCoef*PptWinter[j+1] + 
-                                              surv_TempWinterCoef*TempWinter[j+1] + 
-                                              surv_TempFallCoef*TempFall[j+1] + 
-                                              surv_TempSummerCoef*TempSummer[j+1]+ 
-                                              surv_Transect_randomeffect[TransectNew.num[j]] + 
-                                              surv_Year_randomeffect[Year.num[j]])))
+    # Surv_mu[goodrows[i]-lagvals[i]+1] <- 1/(1+exp(-(surv_intercept + surv_RosCoef*log(RosNew[goodrows[i]-lagvals[i]]) +           # 12
+    #                                                   surv_PptWinterCoef*PptWinter[goodrows[i]-lagvals[i]+1] + 
+    #                                                   surv_TempWinterCoef*TempWinter[goodrows[i]-lagvals[i]+1]  + 
+    #                                                   surv_TempFallCoef*TempFall[goodrows[i]-lagvals[i]+1] + 
+    #                                                   surv_TempSummerCoef*TempSummer[goodrows[i]-lagvals[i]+1]+ 
+    #                                                   surv_Transect_randomeffect[TransectNew.num[goodrows[i]-lagvals[i]]] + 
+    #                                                   surv_Year_randomeffect[Year.num[goodrows[i]-lagvals[i]]])))
+    # for (j in (goodrows[i]-lagvals[i]+1):(goodrows[i]-1)) {                                                                       # 19
+    #   regression_mean[j+1] <- exp(grwth_intercept + grwth_RosCoef*log(regression_mean[j]) + 
+    #                                 grwth_TempFallCoef*TempFall[j+1] + 
+    #                                 grwth_Transect_randomeffect[TransectNew.num[j]] + 
+    #                                 grwth_Year_randomeffect[Year.num[j]])
+    #   
+    #   r.growth[j+1] <- exp(grwthvar_intercept + grwthvar_RosCoef*log(regression_mean[j]))
+    #   Surv_mu[j+1] <- Surv_mu[j]*1/(1+exp(-(surv_intercept + surv_RosCoef*log(regression_mean[j]) + 
+    #                                           surv_PptWinterCoef*PptWinter[j+1] + 
+    #                                           surv_TempWinterCoef*TempWinter[j+1] + 
+    #                                           surv_TempFallCoef*TempFall[j+1] + 
+    #                                           surv_TempSummerCoef*TempSummer[j+1]+ 
+    #                                           surv_Transect_randomeffect[TransectNew.num[j]] + 
+    #                                           surv_Year_randomeffect[Year.num[j]])))
+    
     } #End lags loop
-  } #End of going through cases for growth and survival
+  
+  # } #End of going through cases for growth and survival
   ##############################################################################################
   
   # Reproduction_____________________________________________________
@@ -155,12 +200,12 @@ lm1_jags <- function(){
   # 
   # 
   ## Survival
-  surv_intercept ~ dnorm(0, 0.00001)  # dbeta(1,1)
-  surv_RosCoef ~ dnorm(0, 0.00001)
-  surv_PptWinterCoef ~ dnorm(0, 0.00001)
-  surv_TempFallCoef ~ dnorm(0, 0.00001)
-  surv_TempSummerCoef ~ dnorm(0, 0.00001)
-  surv_TempWinterCoef ~ dnorm(0, 0.00001)
+  # surv_intercept ~ dnorm(0, 0.00001)  # dbeta(1,1)
+  # surv_RosCoef ~ dnorm(0, 0.00001)
+  # surv_PptWinterCoef ~ dnorm(0, 0.00001)
+  # surv_TempFallCoef ~ dnorm(0, 0.00001)
+  # surv_TempSummerCoef ~ dnorm(0, 0.00001)
+  # surv_TempWinterCoef ~ dnorm(0, 0.00001)
   # 
   # for(TransectNew.num_iterator in 1:numtrans){
   #   surv_Transect_randomeffect[TransectNew.num_iterator] ~ dnorm(0, surv_Transect_precision)
@@ -240,18 +285,18 @@ init_values <- function(){
        grwth_Transect_randomeffect = rnorm(12),
        grwth_Year_randomeffect = rnorm(17),
        grwthvar_intercept = runif(1), 
-       grwthvar_RosCoef = runif(1),
+       grwthvar_RosCoef = runif(1) #,
        
-       surv_intercept = runif(1), #rbeta(1,0.5),
-       surv_RosCoef = rnorm(1),
-       surv_PptWinterCoef = rnorm(1),
-       surv_TempWinterCoef = rnorm(1),
-       surv_TempFallCoef = rnorm(1),
-       surv_TempSummerCoef = rnorm(1),
-       surv_Transect_precision = runif(12),
-       surv_Year_precision= runif(17),
-       surv_Transect_randomeffect = rnorm(12),
-       surv_Year_randomeffect = rnorm(17) #,
+       # surv_intercept = runif(1), #rbeta(1,0.5),
+       # surv_RosCoef = rnorm(1),
+       # surv_PptWinterCoef = rnorm(1),
+       # surv_TempWinterCoef = rnorm(1),
+       # surv_TempFallCoef = rnorm(1),
+       # surv_TempSummerCoef = rnorm(1),
+       # surv_Transect_precision = runif(12),
+       # surv_Year_precision= runif(17),
+       # surv_Transect_randomeffect = rnorm(12),
+       # surv_Year_randomeffect = rnorm(17) #,
        
        # reproyesno_intercept = runif(1), #rbeta(1,0.5), # conjugate of a binomial or Bernoulli is beta
        # reproyesno_RosCoef = rnorm(1),
@@ -276,13 +321,13 @@ init_values <- function(){
 
 params <- c("grwth_intercept","grwth_RosCoef","grwth_TempFallCoef",
             "grwth_Year_precision","grwth_Transect_precision","grwthvar_intercept","grwthvar_RosCoef",
-            "grwth_Transect_randomeffect","grwth_Year_randomeffect",
+            "grwth_Transect_randomeffect","grwth_Year_randomeffect" #,
             # "reproyesno_Transect_randomeffect","reproyesno_Year_randomeffect","repro_Transect_randomeffect","repro_Year_randomeffect",
             # "repro_Transect_precision","repro_Year_precision","reproyesno_Transect_precision","reproyesno_Year_precision",
-            "surv_Transect_precision",
-            "surv_Year_precision",
-            "surv_intercept","surv_RosCoef","surv_PptWinterCoef",
-            "surv_TempFallCoef","surv_TempSummerCoef","surv_TempWinterCoef","surv_Transect_randomeffect","surv_Year_randomeffect" #,
+            # "surv_Transect_precision",
+            # "surv_Year_precision",
+            # "surv_intercept","surv_RosCoef","surv_PptWinterCoef",
+            # "surv_TempFallCoef","surv_TempSummerCoef","surv_TempWinterCoef","surv_Transect_randomeffect","surv_Year_randomeffect" #,
             # "reproyesno_intercept","reproyesno_RosCoef",
             # "reproyesno_PptFallCoef","reproyesno_TempWinterCoef","repro_intercept","repro_RosCoef","repro_PptSummerCoef",
             # "repro_TempWinterCoef","repro_TempFallCoef","newplt_intercept"

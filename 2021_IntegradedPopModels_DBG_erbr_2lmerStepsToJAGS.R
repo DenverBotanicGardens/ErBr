@@ -31,11 +31,23 @@ setwd("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjec
 # dats <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbr_TagClust_210510.csv", header = TRUE)
 # dats <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels/erbr_TagNotClust_20210728.csv",
 #                  header = TRUE)
-dats <- read.csv("erbr_TagClust_2021-08-11.csv")
+# dats <- read.csv("erbr_TagClust_2021-08-11.csv")
 #dats <- read.csv("erbr_tagClust4to8_210504.csv", header = TRUE)
+dats <- read.csv("erbr_TagClust_2021-08-24.csv", header = TRUE)
 ## ------------------------------------------------------------------------------------------------
+erbrdata2 <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/erbr_TagClust_210510.csv")
+head(erbrdata2)
 
+# compare erbrdata2 with dats "erbr_TagClust_2021-08-11.csv" - why does the new data break everything? Because we missed a bunch of the newest (2020) data? 
+tail(erbrdata2)
+tail(dats)
 
+head(erbrdata2[erbrdata2$Year > 2018,])
+head(dats[dats$Year > 2018,])
+## erbrdata2 that is working must have the clustering happen (where april combined all associated tags X and X.01... since we don't know if it's a different plant or not)
+
+## 2021-08-24 trying with the new data. The old data (<- erbrdata2) works just fine
+# dats <- erbrdata2
 
 ## SET WD (WHERE JAGS SCRIPT IS LOCATED) ----------------------------------------------------------
 # setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/R_scripts")
@@ -44,6 +56,7 @@ setwd("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjec
 
 dats[dats$Site == "Garden Park East" & dats$Year > 2017 & dats$TransectNew == "E.6",]
 ## What happens to missing in the last year measured? There's no data so won't be estimated until another year of observations
+nrow(dats[!complete.cases(dats),]) # 1144
 
 ## SETTING UP NECESSARY VARIABLES -----------------------------------------------------------------
 ## Setting up the jags model with lagged values
@@ -68,6 +81,13 @@ RosNew <- dats$RosNew
 InflNew <-  dats$InflNew 
 InflYesNo <- dats$InflYesNo
 
+### ERRORS in JAGS run 2021-08-24
+# Unable to resolve the following parameters:
+# InflNew[469] (line 46)
+# rows.wo.sz.alive[17] (line 62)
+dats[469,]
+dats[469,c("Infl","InflNew")] <- 0
+
 
 ## Setting up variables for use in repro fitting: 
 dats$InflYesNo <- dats$InflNew
@@ -78,6 +98,8 @@ Ndirectszcases <- length(rows.w.sz)           #Direct measures of sz upon which 
 Nindirectszcases <- length(rows.wo.sz)        #No direct measures of sz; repro to be inferred from estimated sz 
 rows.w.inflors <- which(dats$InflNew>0)       #Non-zero estimates of infs so repro amt can be estimated, if reproductive
 Nrows.w.inflors <- length(rows.w.inflors)
+
+
 
 
 ## Add vector to indicate if alive or dead after missing yr(s)
@@ -170,16 +192,47 @@ newplt.yrtranscombo=100*newplt.trans+newplt.yr
 # check initial values for jags runs
 # Survival  
 # 1. scale predictors
-erbr.surv <- dats %>% mutate(RosNew = scale(RosNew))
+# erbr.surv <- dats %>% mutate(RosNew = scale(RosNew))
 
 
-
+# jags_erbrdata <- with(dats, list(Site = Site,Year=Year,RosNew=RosNew,InflNew=InflNew,TagNew=TagNew,surv=surv,
+#                                  lagsrtsz=lagsrtsz,lagforsurv=lagforsurv,
+#                                  PptFall=PptFall,PptWinter=PptWinter,PptSummer=PptSummer,
+#                                  TempFall=TempFall,TempWinter=TempWinter,TempSummer=TempSummer,
+#                                  TransectNew=TransectNew,InflYesNo=InflYesNo,RowNum=RowNum,TransectNew.num=TransectNew.num,
+#                                  # Year.num=Year.num,
+#                                  Survs = Survs,
+#                                  goodrows = goodrows, goodgrowrows = goodgrowrows,lagvals = lagvals,  
+#                                  # Reproduction 
+#                                  rows.w.sz = rows.w.sz, rows.wo.sz = rows.wo.sz, rows.w.inflors= rows.w.inflors,
+#                                  # Survival
+#                                  rows.wo.sz.alive =rows.wo.sz.alive, 
+#                                  # Recruitment
+#                                  newPltlines = newPltlines, newplts = newplts,
+#                                  # Random effects
+#                                  datayesno= datayesno, yrtranscombo = yrtranscombo, 
+#                                  newplt.yrtranscombo = newplt.yrtranscombo, 
+#                                  # Loop lengths
+#                                  Nallrows = length(dats$Site), Nyears = length(unique(dats$Year)), Ntrans = length(unique(dats$TransectNew)),
+#                                  Ncases = Ncases, Ngrowcases = Ngrowcases, 
+#                                  Ndirectszcases = Ndirectszcases, Nindirectszcases = Nindirectszcases,
+#                                  Nrows.w.inflors = length(rows.w.inflors),
+#                                  # numyears = numyears, 
+#                                  numtrans = numtrans))
+# 
+# save(jags_erbrdata, file = "20210819_jags_erbrdata.R")
 
 ## RUN ASSOCIATED JAGS MODEL ----------------------------------------------------------------------
-jags.mod <- run.jags('erbr_3JAGSmod_20210812.R', n.chains=3, data=dats, burnin=5000, thin=10, sample=30000, adapt=500, method='parallel')
+# jags.mod <- run.jags('erbr_3JAGSmod_20210812.R', n.chains=3, data=dats, burnin=5000, thin=10, sample=30000, adapt=500, method='parallel')
 
+
+setwd("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/")
+
+jags.mod <- run.jags("erbr_3JAGSmodBest_noYRE_210608.R", n.chains=3, data=dats, burnin=5000, thin=10, sample=30000, adapt=500, method='parallel')
+
+date <- as.character(Sys.Date())
 #save(jags.mod, file='erbr_JAGSmod_c3t10s20b5_210406.rdata')
-saveRDS(jags.mod, "erbr_JAGSmod_c3t10s30b5_210509.rds")
+saveRDS(jags.mod, paste("erbr_JAGSmod_c3t10s30b5_",date,".rds", sep = ""))
 ## ------------------------------------------------------------------------------------------------
 
 

@@ -23,7 +23,7 @@ Gather demographic data
 
 BLM_erbr_newplts <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_newplts.csv")
 
-# removed rows before alive but kept first dead, was BLM_erbr.2 in "2021_integratedPopulationModels_BLM-DBG-CNHP_formatdata.R"
+# removed rows before alive but kept first dead, was BLM_erbr.2 in "2021_integratedPopulationModels_BLM-DBG-CNHP_formatdata.R" or dats_BLM need an NA for stage and new for Fate for new
 BLM_erbr_lag <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_demolag_20210603.csv")
 
 transLevels <- unique(BLM_erbr_lag$Site[with(BLM_erbr_lag, order(SiteName, Transect))])
@@ -310,6 +310,128 @@ BLM_reproplts <- lapply(split(BLM_MPM, list(BLM_MPM$Site, BLM_MPM$Year), drop = 
 
 })
 
+
+CI_BLM <- do.call(rbind,lapply(c("CG","DGBLM","GPQ","BB"), function(st){ 
+  stout <- stoch.growth.rate(BLM_reproplts[grep(st, names(BLM_reproplts))])
+  out <- data.frame(Site = st, approx_lmda = exp(stout$approx),
+                    sim_lmda = exp(stout$sim),
+                    lwCI = exp(stout$sim.CI[1]),
+                    upCI = exp(stout$sim.CI[2]))
+  out
+  }))
+
+lapply(BLM_reproplts[grep("BLM", names(BLM_reproplts))], function(x) lambda(x))
+
+lapply(BLM_reproplts[grep("BLM", names(BLM_reproplts))], function(x) net.reproductive.rate(x))
+
+
+x <- split(BLM_MPM, list(BLM_MPM$Site, BLM_MPM$Year), drop = TRUE)[[2]]
+
+BLM_Amat_CI <- do.call(rbind,lapply(split(BLM_MPM, list(BLM_MPM$Site, BLM_MPM$Year), drop = TRUE ), function(x){
+  ## resampling
+  res_l <- unlist(lapply(1:100, function(i){
+    x_s <- sample(nrow(x), replace = TRUE)
+    bt <- x[x_s,]
+    if(is.na(bt$num.newPlts1[1]) ==  TRUE){
+      bt$seedling <- 0
+      } else {
+        bt$seedling <- bt$fruit / sum(bt$fruit, na.rm = TRUE)*bt$num.newPlts1[1] # anonymous contribution
+        }
+    pro_m <- projection.matrix(bt, stage = "Stage", fate = "Fate", fertility = "fruit")[-3,-3]
+    lambda(pro_m)
+    }))
+  ci <- quantile(res_l, c(0.025, 0.975)) # 95%CI
+  data.frame(x[1,c(1:3,9:15,20:29)], lwL = ci[1], upL = ci[2], lambda = res_l)
+
+}))
+
+
+ggsave("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integrated_figures/BootstrapResampling.jpg",
+    ggplot(BLM_Amat_CI, aes(Site, lambda, group = Site))+
+      facet_wrap(~SiteName + Year, scales = "free_x", ncol = 6)+
+      geom_jitter(width = 0.05, alpha = 0.5)+
+      theme_bw()+
+      # geom_violin()+
+      geom_boxplot()+
+      geom_errorbar(aes(ymin = lwL, ymax = upL))+
+      scale_x_discrete(labels =  NULL, breaks = NULL)+  # (guide = guide_axis(angle=90))+
+      geom_hline(yintercept = 1, col = "red")+
+      xlab(""),
+width = 240, height = 120, units = 'mm', dpi=300)
+
+
+```
+
+Bootstrap observed census transitions
+```{r}
+x <- split(BLM_MPM, list(BLM_MPM$Site, BLM_MPM$Year), drop = TRUE)[[20]]
+
+
+
+BLM_stocklmbd <- do.call(rbind,lapply(split(BLM_MPM, list(BLM_MPM$Site, BLM_MPM$Year), drop = TRUE ), function(x){
+  # if(is.na(x$num.newPlts1[1]) ==  TRUE){
+  #   x$seedling <- 0
+  # } else {
+  #   x$seedling <- x$fruit / sum(x$fruit, na.rm = TRUE)*x$num.newPlts1[1] # anonymous contribution
+  # }
+
+  # x_boot <- x[,c("Stage","Fate","fruit","seedling")]
+  # names(x_boot) <- c("stage","fate","fruits","seedling")
+  # boot_t <- boot.transitions(x_boot, 100)
+  # ci <- quantile(boot_t$lambda, c(0.025, 0.975)) # 95%CI
+  # data.frame(x[1,c(1:3,9:15,20:29)], lwL = ci[1], upL = ci[2], lambda = boot_t$lambda)
+  
+  ## without fertility since those aren't for sure
+  boot_t <- boot.transitions(x, 100, stage = "Stage", fate = "Fate")
+  ci <- quantile(boot_t$lambda, c(0.025, 0.975))
+  data.frame(x[1,c(1:3,9:15,20:29)], lwL = ci[1], upL = ci[2], lambda = boot_t$lambda)
+}))
+
+
+table(BLM_stocklmbd$Site)
+ggplot(BLM_stocklmbd, aes(Site, lambda, group = interaction(SiteName, Year)))+
+  geom_jitter(width = 0.02, alpha = 0.5)+
+  geom_boxplot()+
+  theme_bw()+
+  facet_wrap(~SiteName + Year, scales = "free_x")
+
+```
+
+Devenish Nelson et al 2010  
+```{r}
+BLM_stocklmbd <- do.call(rbind,lapply(split(BLM_MPM, list(BLM_MPM$Site, BLM_MPM$Year), drop = TRUE ), function(x){
+  if(is.na(x$num.newPlts1[1]) ==  TRUE){
+    x$seedling <- 0
+  } else {
+    x$seedling <- x$fruit / sum(x$fruit, na.rm = TRUE)*x$num.newPlts1[1] # anonymous contribution
+  }
+  
+  surv <- dbinom(x =  length(x$Fate[x$Fate != "dead"]),  # events or successes, survived what rate to get that 
+                 size = nrow(x), prob = length(x$Fate[x$Fate != "dead"])/nrow(x))
+  veg <- x[x$Stage == "vegetative",]
+  surv_veg <- dbinom(x = length(veg$Fate[veg$Fate == "vegetative"]),
+                     size = nrow(veg),
+                     prob = length(veg$Fate[veg$Fate == "vegetative"])/nrow(veg))
+  rep <- x[x$Stage == "reproductive",]
+  surv_rep <- dbinom(x = length(rep$Fate[rep$Fate == "repetative"]),
+                     size = nrow(rep),
+                     prob = length(rep$Fate[rep$Fate == "repetative"])/nrow(rep))
+  # 
+  
+  
+  #Shifted point estimate for average seedlings removing possibility of zero seed for reproductive individuals 
+  fecund <- 
+  
+  data.frame(x[1,c(1:3,9:15,20:29)], lwL = ci[1], upL = ci[2], lambda = boot_t$lambda)
+  
+}))
+
+
+```
+
+
+
+```{r}
 # x <- split(BLM_MPM, list(BLM_MPM$Site, BLM_MPM$Year), drop = TRUE )[[1]]
 BLM_count <- do.call(rbind,lapply(split(BLM_MPM, list(BLM_MPM$Site, BLM_MPM$Year), drop = TRUE ), function(x){
   repro <- sum(x$StageNum, na.rm = TRUE)
@@ -334,6 +456,13 @@ lambdaCD <- data.frame(lmbd = unlist(lapply(BLM_reproplts, function(mat) lambda(
                        Transect = unlist(lapply(names(BLM_reproplts), function(st) strsplit(st, "[.]")[[1]][1])),
                        Year = as.numeric(unlist(lapply(names(BLM_reproplts), function(st) strsplit(st, "[.]")[[1]][2]))),
                        Year1 = as.numeric(unlist(lapply(names(BLM_reproplts), function(st) strsplit(st, "[.]")[[1]][2])))+1) 
+
+# if each lambda is the the point estimate, events are the number of individuals in time t+1 - the ones that survived, and trials are time t
+BLM_CI <- merge(lambdaCD, BLM_count, by = c("Year","Transect"))
+BLM_CI <- merge(BLM_CI, BLM_count, by.x = c("Year1", "Transect"), by.y = c("Year", "Transect"))
+head(BLM_CI)
+
+lapply(1:nrow(BLM_CI), function(x) dbinom(x = BLM_CI$totalCount.y[x], size = BLM_CI$totalCount.x[x], prob = BLM_CI$lmbd))
 
 # Want climate resulting in the second year of the transition
 lambdaCD$Center1 <- "SalidaNorth" # Big Bend and Droney
@@ -377,6 +506,25 @@ ggsave(paste("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/Al
       xlab(expression(lambda))+
   scale_x_discrete(labels = NULL, breaks = NULL),
 width=250, height=270,units='mm', dpi=300)
+
+
+## CI that the random interval will contain the mean 95% of the time
+sites <- c("GPQ","BB","CG","DG")
+CIs <- do.call(rbind, lapply(sites, function(x){
+    z <- qnorm((1-.95)/2, lower.tail = FALSE)
+    xbar <- mean(lambdaCD$lmbd[grep(x, lambdaCD$Transect)])
+    sdx <- sqrt(var(lambdaCD$lmbd[grep(x, lambdaCD$Transect)])/nrow(lambdaCD[grep(x, lambdaCD$Transect),]))
+    data.frame(Site = x, meanLmbd = xbar, lwCI = xbar - z*sdx, upCI = xbar + z*sdx)
+  }))
+  
+AUs <- names(table(lambdaCD$Center1))
+CIs_AU <- do.call(rbind, lapply(AUs, function(x){
+    z <- qnorm((1-.95)/2, lower.tail = FALSE)
+    xbar <- mean(lambdaCD$lmbd[grep(x, lambdaCD$Center1)])
+    sdx <- sqrt(var(lambdaCD$lmbd[grep(x, lambdaCD$Center1)])/nrow(lambdaCD[grep(x, lambdaCD$Center1),]))
+    data.frame(Site = x, meanLmbd = xbar, lwCI = xbar - z*sdx, upCI = xbar + z*sdx)
+  }))
+  
 
 ggsave(paste("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2021_Eriogonum-brandegeei_SSA/",datetoday,"_BLMbyYear_Eriogonum-brandegeei_lambdas.jpg", sep=""),
 ggplot(lambdaCD, aes(Transect,lmbd, colour = Transect))+
@@ -518,6 +666,15 @@ medianLmbd <- aggregate(LAMBDA ~ TRANSECT + YEAR + Year1 + Water.Deficit.x + Wat
 #                     by.x = "YEAR", by.y = "Year")
 
 
+library(boot)
+Bmean <- function(DBG_GP, indices) {
+  d <- DBG_GP[indices] # allows boot to select sample 
+    return(mean(d))
+} 
+results <- boot(DBG_GP$LAMBDA, Bmean, R = 99, stype = "i")
+plot(results)
+boot.ci(results, type=c("norm"))
+
 names(lambdaCD);names(medianLmbd)
 DBG2bind <- medianLmbd[,c("Center1","YEAR","Year1","TRANSECT","LAMBDA","Water.Deficit.x","Water.Deficit.y")]
 BLM2bind <- lambdaCD[,c("Center1","Year","Year1","Transect","lmbd","Water.Deficit.x","Water.Deficit.y")]
@@ -530,6 +687,23 @@ table(lmbd_all$Center1)
 
 
 ```{r}
+aggregate(lmbd ~ Center1 + Year + Water.Deficit.x + Water.Deficit.y, mean, data = lmbd_all)
+all_sd <- aggregate(lmbd ~ Center1 + Year + Water.Deficit.x + Water.Deficit.y, sd, data = lmbd_all)
+
+ggplot(lmbd_all, aes(Water.Deficit.x, lmbd, colour = Center1))+
+  geom_point()+
+  theme_bw()+
+  stat_smooth(method = "lm")
+
+ggplot(all_sd, aes(Water.Deficit.x, lmbd, colour = Center1))+
+  geom_point()+
+  theme_bw()+
+  stat_smooth(method = "lm")
+
+## Average lambda by center
+## average SD by center (SD within a year over transects)
+aggregate(lmbd ~ Center1, lmbd_all, mean)
+aggregate(lmbd ~ Center1,all_sd, mean)
 
 
 ```
