@@ -22,9 +22,20 @@ Gather demographic data
 # BLM_erbr_popbio <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_demography_20210603.csv")
 
 BLM_erbr_newplts <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_newplts.csv")
+#   Year.num TransectNew.num num.newPlts num.newPlts1 Year         SiteName  Site
+# 1        1              11          NA            2 2016 CastleGarden_BLM  CG_1
+# 2        1              12          NA            0 2016 CastleGarden_BLM CG_10
+
 
 # removed rows before alive but kept first dead, was BLM_erbr.2 in "2021_integratedPopulationModels_BLM-DBG-CNHP_formatdata.R" or dats_BLM need an NA for stage and new for Fate for new
 BLM_erbr_lag <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_demolag_20210603.csv")
+#    X Year         SiteName Transect Meter Tag.. Stage Site Data_id        Tag save surv lagsrtstg lagforsurv TransectNew InflYesNo
+# 1  1 2016 CastleGarden_BLM        1     0  110*     1 CG_1       1  CG_1_110*    1    1         0          0        CG_1         1
+# 2  4 2016 CastleGarden_BLM        3     8  2300     1 CG_3     451  CG_3_2300    1    1         0          0        CG_3         1
+#   TransectNew.num Year.num meanTmean.summer TotPpt.summer meanTmean.fall TotPpt.fall meanTmean.winter TotPpt.winter
+# 1              11        1          13.9795       107.035        11.6825       71.93           -0.676         63.75
+# 2              14        1          13.9795       107.035        11.6825       71.93           -0.676         63.75
+newPlts2 <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_newPlts2.csv")
 
 transLevels <- unique(BLM_erbr_lag$Site[with(BLM_erbr_lag, order(SiteName, Transect))])
 
@@ -77,18 +88,28 @@ head(WD[WD$Months == "Annual",]);head(WD2[WD2$Year > 2002,])
 #                              by.x = c("SiteName","Year"),
 #                              by.y = c("Site","Year"))
 
+
+
 BLM_erbr_lag_scaled <- BLM_erbr_lag
 BLM_erbr_lag_scaled$StageName <- "dead"
 BLM_erbr_lag_scaled$StageName[BLM_erbr_lag_scaled$Stage == 0] <- "vegetative"
 BLM_erbr_lag_scaled$StageName[BLM_erbr_lag_scaled$Stage == 1] <- "reproductive"
+BLM_erbr_lag_scaled$StageName[BLM_erbr_lag_scaled$Data_id %in% newPlts2$Data_id] <- "seedling" ## all vegetative, good!
+
+## Checks
+# BLM_erbr_lag_scaled[BLM_erbr_lag_scaled$Tag == newPlts2$Tag[1],] # new in 2019 in BB, that's good
+# BLM_erbr_lag_scaled[BLM_erbr_lag_scaled$Tag == newPlts2$Tag[2],] # new in 2020 BB
 
 table(BLM_erbr_lag_scaled$SiteName,BLM_erbr_lag_scaled$Year, BLM_erbr_lag_scaled$StageName)
 
-BLM_erbr_newplts$StageName <- "dead"
-BLM_erbr_newplts$StageName[BLM_erbr_newplts$Stage == 0] <- "vegetative"
-BLM_erbr_newplts$StageName[BLM_erbr_newplts$Stage == 1] <- "reproductive"
 
-table(BLM_erbr_newplts$SiteName,BLM_erbr_newplts$Year, BLM_erbr_newplts$StageName)
+## Now there's no Stage for assigning StageName. And this shouldn't be anyway, is summarized over year and transect, right? 
+# BLM_erbr_newplts$StageName <- "dead"
+# BLM_erbr_newplts$StageName[BLM_erbr_newplts$Stage == 0] <- "vegetative"
+# BLM_erbr_newplts$StageName[BLM_erbr_newplts$Stage == 1] <- "reproductive"
+# 
+# 
+# table(BLM_erbr_newplts$SiteName,BLM_erbr_newplts$Year, BLM_erbr_newplts$StageName)
 
 ```
 
@@ -96,13 +117,44 @@ Format for popbio projection.matrix
 Use the lag from BLM_erbr_lag to determine the previous time with data to base the missing stage off of
 ```{r}
 
-BLM_erbr_lag_scaled <- BLM_erbr_lag_scaled[,c("SiteName","Site","Year","Tag","Stage","StageName", "surv", "lagsrtstg",
+BLM_erbr_lag_scaled <- BLM_erbr_lag_scaled[,c("SiteName","Site","Year","Tag","Stage","StageName", "surv", "lagsrtstg", "lagforsurv",
+                                              ## NEED lagsrtstg for imputing!
                                               "meanTmean.summer","meanTmean.fall","meanTmean.winter",
                                               "TotPpt.summer","TotPpt.fall","TotPpt.winter")]
 
+
+head(BLM_erbr_lag_scaled)
+BLM_erbr_lag_scaled[,c("meanTmean.summer", "meanTmean.fall","meanTmean.winter", 
+                       "TotPpt.summer", "TotPpt.fall", "TotPpt.winter")] <- scale(BLM_erbr_lag_scaled[,c("meanTmean.summer", "meanTmean.fall","meanTmean.winter", 
+                       "TotPpt.summer", "TotPpt.fall", "TotPpt.winter")])
+
+
+# previousYrseedling <- BLM_erbr_lag_scaled[BLM_erbr_lag_scaled$StageName == "seedling",c(1:6)]
+# previousYrseedling$StageName <- NA
+# previousYrseedling$Year <- previousYrseedling$Year - 1
+# previousYrseedling$Stage <- NA
+# ## Add in climate from previous year
+# previousYrseedling <- merge(previousYrseedling, BLM_erbr_lag_scaled[,c("SiteName","Site","Year","Tag")], 
+#                             by = c("SiteName","Site","Year","Tag"))
+# # previousYrseedling[,c(7:15)] <- NA
+# head(previousYrseedling)
+# table(previousYrseedling$Year)
+# 
+# BLM_erbr_lag_scaled <- rbind(BLM_erbr_lag_scaled, previousYrseedling)
+tail(BLM_erbr_lag_scaled)
+BLM_erbr_lag_scaled[BLM_erbr_lag_scaled$StageName == "seedling",]
+
+## Merge all.y will maybe keep all the seedlings and add NA to year before? 
 BLM_erbr_scaled <- subset(merge(BLM_erbr_lag_scaled, BLM_erbr_lag_scaled, by = c("SiteName","Site","Tag")), 
                           sort=FALSE, Year.x == Year.y - 1)
 head(BLM_erbr_scaled)
+BLM_erbr_scaled[is.na(BLM_erbr_scaled$SiteName),]
+BLM_erbr_scaled[BLM_erbr_scaled$StageName.y == "seedling",] ## Need to remove. If not seen in 2018 at BB 
+BLM_erbr_scaled <- BLM_erbr_scaled[BLM_erbr_scaled$StageName.y != "seedling",]
+
+BLM_erbr_scaled[BLM_erbr_scaled$StageName.x == "seedling",] # I think just an artifcat, not real NAs
+table(BLM_erbr_scaled$StageName.y,BLM_erbr_scaled$StageName.x)  ### STILL only 1 .y == "seedling"
+
 
 ```
 
@@ -114,6 +166,15 @@ Probability of reproducing:
 ```{r}
 # BLM_erbr_scaled has .x and next year .y
 # BLM_erbr_lag_scaled is just a row per year and tag
+
+ggplot(BLM_erbr_scaled, aes(meanTmean.winter.y, TotPpt.summer.y))+
+  geom_point()+
+  stat_smooth(method = "lm")
+
+ggplot(BLM_erbr_scaled, aes(meanTmean.winter.y, TotPpt.winter.y))+
+  geom_point()+
+  stat_smooth(method = "lm")
+
 
 # modelimpute <- glmer(Stage.y ~ Stage.x + Ppt.winter.y + Tmean.winter.x + Ppt.summer.y +
 modelimpute <- glmer(Stage.y ~ Stage.x + TotPpt.winter.y + meanTmean.winter.y + TotPpt.summer.y +
@@ -175,8 +236,9 @@ head(BLM_erbr_newplts)
 table(BLM_erbr_lag_scaled$lagsrtstg)
 
 tags2impute <- unique(BLM_erbr_lag_scaled$Tag[BLM_erbr_lag_scaled$lagsrtstg > 0])
+length(tags2impute) # 53
 
-BLM_erbr_newplts[BLM_erbr_newplts$Tag == tags2impute[1],]
+# BLM_erbr_newplts[BLM_erbr_newplts$Tag == tags2impute[1],]  ### lost Tag
 
 for(tt in tags2impute){
   
@@ -192,17 +254,17 @@ for(tt in tags2impute){
                                    newdata = BLM_erbr_scaled[BLM_erbr_scaled$Tag == tt & BLM_erbr_scaled$Year.x == yy,],
                                    type="response"))
     BLM_erbr_lag_scaled$Stage[BLM_erbr_lag_scaled$Tag == tt & BLM_erbr_lag_scaled$Year == yy+1] <- Stage
-    BLM_erbr_newplts$Stage[BLM_erbr_newplts$Tag == tt & BLM_erbr_newplts$Year == yy+1] <- Stage
+    # BLM_erbr_newplts$Stage[BLM_erbr_newplts$Tag == tt & BLM_erbr_newplts$Year == yy+1] <- Stage
     BLM_erbr_scaled$Stage.y[BLM_erbr_scaled$Tag == tt & BLM_erbr_scaled$Year.x == yy] <-
       BLM_erbr_scaled$Stage.x[BLM_erbr_scaled$Tag == tt & BLM_erbr_scaled$Year.x == yy+1] <- Stage
     
     if(Stage == 1){
       BLM_erbr_lag_scaled$StageName[BLM_erbr_lag_scaled$Tag == tt & BLM_erbr_lag_scaled$Year == yy+1] <-
-        BLM_erbr_newplts$StageName[BLM_erbr_newplts$Tag == tt & BLM_erbr_newplts$Year == yy+1] <-
+        # BLM_erbr_newplts$StageName[BLM_erbr_newplts$Tag == tt & BLM_erbr_newplts$Year == yy+1] <-
         BLM_erbr_scaled$StageName.y[BLM_erbr_scaled$Tag == tt & BLM_erbr_scaled$Year.x == yy] <-
         BLM_erbr_scaled$StageName.x[BLM_erbr_scaled$Tag == tt & BLM_erbr_scaled$Year.x == yy+1] <- "reproductive"
     } else {
-      BLM_erbr_newplts$StageName[BLM_erbr_newplts$Tag == tt & BLM_erbr_newplts$Year == yy+1] <-
+      # BLM_erbr_newplts$StageName[BLM_erbr_newplts$Tag == tt & BLM_erbr_newplts$Year == yy+1] <-
         BLM_erbr_lag_scaled$StageName[BLM_erbr_lag_scaled$Tag == tt & BLM_erbr_lag_scaled$Year == yy+1] <- 
         BLM_erbr_scaled$StageName.y[BLM_erbr_scaled$Tag == tt & BLM_erbr_scaled$Year.x == yy] <-
         BLM_erbr_scaled$StageName.x[BLM_erbr_scaled$Tag == tt & BLM_erbr_scaled$Year.x == yy+1] <- "vegetative"
@@ -212,18 +274,21 @@ for(tt in tags2impute){
 
 # table(BLM_erbr2$Stage.x, BLM_erbr2$Stage.y) 
 table(BLM_erbr_scaled$Stage.x, BLM_erbr_scaled$Stage.y) 
+table(BLM_erbr_scaled$StageName.y, BLM_erbr_scaled$StageName.x) # one dead to seedling?? No, NA BB first year
+BLM_erbr_scaled[BLM_erbr_scaled$StageName.y == "seedling",] ## for "BB_7_153"
+BLM_erbr_lag[BLM_erbr_lag$Tag == "BB_7_153",]
+
 BLM_erbr_scaled$StageName.x <- factor(BLM_erbr_scaled$StageName.x, 
-                                      levels = c("vegetative","reproductive","dead"), ordered = TRUE)
+                                      levels = c("seedling","vegetative","reproductive","dead"), ordered = TRUE)
 BLM_erbr_scaled$StageName.y <- factor(BLM_erbr_scaled$StageName.y, 
-                                      levels = c("vegetative","reproductive","dead"), ordered = TRUE)
+                                      levels = c("seedling","vegetative","reproductive","dead"), ordered = TRUE)
 
-
+BLM_erbr_scaled[BLM_erbr_scaled$StageName.y == "seedling",]
 # Fate, Stage
 table(BLM_erbr_scaled$StageName.y, BLM_erbr_scaled$StageName.x)
 
-table(BLM_erbr_newplts$StageName)
+# table(BLM_erbr_newplts$StageName)
 
-BLM_erbr2 <- BLM_erbr_scaled
 ```
 
 
@@ -232,16 +297,27 @@ BLM_erbr2 <- BLM_erbr_scaled
 
 Use popbio to construct stage-structured projection matrices from transition tables
 ```{r}
+
+
+BLM_erbr2 <- BLM_erbr_scaled
 head(BLM_erbr2) # now imputed missing data
 head(BLM_erbr_newplts)
-BLM_erbr2 <- merge(BLM_erbr2, BLM_erbr_newplts[!duplicated(BLM_erbr_newplts[,c(1:4,9,23:24)]),c(1:4,9,23:24)], 
+BLM_erbr2 <- merge(BLM_erbr2, BLM_erbr_newplts, # [!duplicated(BLM_erbr_newplts[,c(1:4,9,23:24)]),c(1:4,9,23:24)], 
                    by.x = c("SiteName","Site","Year.x"), 
                    by.y = c("SiteName","Site","Year"))
 
 BLM_MPM <- BLM_erbr2 
 names(BLM_MPM) <- c("SiteName","Site","Year","Tag","StageNum","Stage",
-                    "surv","lag",names(BLM_MPM)[9:14],"Year1","FateNum","Fate","surv1",
-                    "lag1",names(BLM_MPM)[20:29])
+                    "surv","lag","lagsurv", 
+                    "meanTmean.summer.x","meanTmean.fall.x","meanTmean.winter.x",
+                    "TotPpt.summer.x","TotPpt.fall.x","TotPpt.winter.x",
+                    # names(BLM_MPM)[9:14],
+                    "Year1","FateNum","Fate","surv1",
+                    "lag1","lagsurv1", 
+                    "meanTmean.summer.y", "meanTmean.fall.y", "meanTmean.winter.y", 
+                    "TotPpt.summer.y","TotPpt.fall.y","TotPpt.winter.y",
+                    "Year.num","TransectNew.num","num.newPlts", "num.newPlts1")
+                    # names(BLM_MPM)[20:29])
 
 # Add anonymous reproduction based on the proportional reproductive outputs of flowering plants and total number of seedlings at the end of the projection interval 
 # BLM_newplts <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/ErBr_scripts_May2021/erbr_BLM_newplts.csv")
@@ -296,11 +372,11 @@ BLM_reproplts <- lapply(split(BLM_MPM, list(BLM_MPM$Site, BLM_MPM$Year), drop = 
   
   # transition frequency table for T matrix
   tf <- table(x$Fate, x$Stage)
-  T.mat <- prop.table(tf,2)[-3,-3] # remove "dead" fate and stage
+  T.mat <- prop.table(tf,2)[-4,-4]  # [-3,-3] # remove "dead" fate and stage
   T.mat[is.nan(T.mat)] <- 0
   
-  fert <- tapply(x$seedling, x$Stage, mean)[-3]
-  print(fert)
+  fert <- tapply(x$seedling, x$Stage, mean)[-4]
+  # print(fert)
   fert[is.na(fert)] <- 0
   F.mat <- T.mat * 0
   F.mat[1,] <- fert
@@ -310,7 +386,7 @@ BLM_reproplts <- lapply(split(BLM_MPM, list(BLM_MPM$Site, BLM_MPM$Year), drop = 
 
 })
 
-
+st <- "CG"
 CI_BLM <- do.call(rbind,lapply(c("CG","DGBLM","GPQ","BB"), function(st){ 
   stout <- stoch.growth.rate(BLM_reproplts[grep(st, names(BLM_reproplts))])
   out <- data.frame(Site = st, approx_lmda = exp(stout$approx),
@@ -345,10 +421,12 @@ BLM_Amat_CI <- do.call(rbind,lapply(split(BLM_MPM, list(BLM_MPM$Site, BLM_MPM$Ye
 
 }))
 
+BLM_Amat_CI$SiteName <- factor(BLM_Amat_CI$SiteName, 
+                               levels = c("CastleGarden_BLM", "Droney_BLM", "GardenParkQuarry_BLM", "BigBend_BLM"))
 
 ggsave("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integrated_figures/BootstrapResampling.jpg",
     ggplot(BLM_Amat_CI, aes(Site, lambda, group = Site))+
-      facet_wrap(~SiteName + Year, scales = "free_x", ncol = 6)+
+      facet_wrap(~SiteName + Year, scales = "free_x", ncol = 4)+
       geom_jitter(width = 0.05, alpha = 0.5)+
       theme_bw()+
       # geom_violin()+
@@ -494,16 +572,16 @@ lambdaCD <- merge(lambdaCD, BLM_count, by = c("Year","Transect"))
 datetoday <- as.character(Sys.Date())
 ggsave(paste("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2021_Eriogonum-brandegeei_SSA/",datetoday,"_BLM_Eriogonum-brandegeei_lambdas.jpg", sep=""),
     # ggplot(lambdaCD, aes(lmbd, Transect))+
-    ggplot(lambdaCD, aes(Center1,lmbd, colour = Center1))+
+    ggplot(lambdaCD, aes(Center1,lmbd, colour = SiteName, group = SiteName))+
       geom_hline(yintercept = 1, color = "red", width = 2)+
       geom_boxplot()+
       geom_jitter(width = 0.2)+  #(height = 0.4) + #, aes(colour = as.factor(Year)), shape = 17)+
       # scale_colour_discrete(name = "Year")+
       # facet_wrap(~Center1+Year, scales = "free")+ 
-      facet_wrap(~Year, scales = "free")+ 
+      facet_wrap(~Year + Center1, scales = "free_x", ncol = 3)+ 
       # theme(axis.text.x=element_text(angle = -90, hjust = 0))+
       theme_bw()+
-      xlab(expression(lambda))+
+      ylab(expression(lambda))+
   scale_x_discrete(labels = NULL, breaks = NULL),
 width=250, height=270,units='mm', dpi=300)
 
