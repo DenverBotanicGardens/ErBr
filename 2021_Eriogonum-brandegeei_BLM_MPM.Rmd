@@ -413,7 +413,7 @@ BLM_Amat_CI <- do.call(rbind,lapply(split(BLM_MPM, list(BLM_MPM$Site, BLM_MPM$Ye
       } else {
         bt$seedling <- bt$fruit / sum(bt$fruit, na.rm = TRUE)*bt$num.newPlts1[1] # anonymous contribution
         }
-    pro_m <- projection.matrix(bt, stage = "Stage", fate = "Fate", fertility = "fruit")[-3,-3]
+    pro_m <- projection.matrix(bt, stage = "Stage", fate = "Fate", fertility = "fruit")[-4,-4] # [-3,-3] when no seedling stage
     lambda(pro_m)
     }))
   ci <- quantile(res_l, c(0.025, 0.975)) # 95%CI
@@ -423,6 +423,9 @@ BLM_Amat_CI <- do.call(rbind,lapply(split(BLM_MPM, list(BLM_MPM$Site, BLM_MPM$Ye
 
 BLM_Amat_CI$SiteName <- factor(BLM_Amat_CI$SiteName, 
                                levels = c("CastleGarden_BLM", "Droney_BLM", "GardenParkQuarry_BLM", "BigBend_BLM"))
+
+head(BLM_Amat_CI)
+
 
 ggsave("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integrated_figures/BootstrapResampling.jpg",
     ggplot(BLM_Amat_CI, aes(Site, lambda, group = Site))+
@@ -439,6 +442,47 @@ width = 240, height = 120, units = 'mm', dpi=300)
 
 
 ```
+
+
+Confidence interval across years and transects (that will remove the idea of asychrony) but if that's what they can understand better then fine  
+```{r}
+BLM_year_CI <- do.call(rbind,lapply(split(BLM_MPM, list(BLM_MPM$Site), drop = TRUE ), function(x){
+  ## resampling
+  res_l <- unlist(lapply(1:100, function(i){
+    x_s <- sample(nrow(x), replace = TRUE)
+    bt <- x[x_s,]
+    if(is.na(bt$num.newPlts1[1]) ==  TRUE){
+      bt$seedling <- 0
+      } else {
+        bt$seedling <- bt$fruit / sum(bt$fruit, na.rm = TRUE)*bt$num.newPlts1[1] # anonymous contribution
+        }
+    pro_m <- projection.matrix(bt, stage = "Stage", fate = "Fate", fertility = "fruit")[-4,-4] # [-3,-3] when no seedling stage
+    lambda(pro_m)
+    }))
+  ci <- quantile(res_l, c(0.025, 0.975)) # 95%CI
+  data.frame(x[1,c(1:3,9:15,20:29)], lwL = ci[1], upL = ci[2], lambda = res_l)
+
+}))
+
+    ggplot(BLM_year_CI, aes(Site, lambda, group = Site))+
+      facet_wrap(~SiteName, scales = "free_x", ncol = 4)+
+      geom_jitter(width = 0.05, alpha = 0.5)+
+      theme_bw()+
+      # geom_violin()+
+      geom_boxplot()+
+      geom_errorbar(aes(ymin = lwL, ymax = upL))+
+      scale_x_discrete(labels =  NULL, breaks = NULL)+  # (guide = guide_axis(angle=90))+
+      geom_hline(yintercept = 1, col = "red")+
+      xlab("")
+
+    
+head(BLM_year_CI)
+
+
+
+```
+
+
 
 Bootstrap observed census transitions
 ```{r}
@@ -742,7 +786,7 @@ medianLmbd <- aggregate(LAMBDA ~ TRANSECT + YEAR + Year1 + Water.Deficit.x + Wat
                         median, data = DBG_GP)
 # medianLmbd <- merge(medianLmbd, WD[WD$Center == "CanonCity" & WD$Months == "Annual",],
 #                     by.x = "YEAR", by.y = "Year")
-
+medianLmbd$SiteName <- "GardenParkEastWest_DBG"
 
 library(boot)
 Bmean <- function(DBG_GP, indices) {
@@ -754,10 +798,10 @@ plot(results)
 boot.ci(results, type=c("norm"))
 
 names(lambdaCD);names(medianLmbd)
-DBG2bind <- medianLmbd[,c("Center1","YEAR","Year1","TRANSECT","LAMBDA","Water.Deficit.x","Water.Deficit.y")]
-BLM2bind <- lambdaCD[,c("Center1","Year","Year1","Transect","lmbd","Water.Deficit.x","Water.Deficit.y")]
+DBG2bind <- medianLmbd[,c("Center1","YEAR","Year1","TRANSECT","LAMBDA","Water.Deficit.x","Water.Deficit.y","SiteName")]
+BLM2bind <- lambdaCD[,c("Center1","Year","Year1","Transect","lmbd","Water.Deficit.x","Water.Deficit.y","SiteName")]
 
-names(DBG2bind) <- c("Center1","Year","Year1","Transect","lmbd","Water.Deficit.x","Water.Deficit.y")
+names(DBG2bind) <- c("Center1","Year","Year1","Transect","lmbd","Water.Deficit.x","Water.Deficit.y","SiteName")
 
 lmbd_all <- rbind(DBG2bind,BLM2bind)
 table(lmbd_all$Center1)
@@ -783,6 +827,18 @@ ggplot(all_sd, aes(Water.Deficit.x, lmbd, colour = Center1))+
 aggregate(lmbd ~ Center1, lmbd_all, mean)
 aggregate(lmbd ~ Center1,all_sd, mean)
 
+# x <- split(lmbd_all, list(lmbd_all$Center1), drop=TRUE)[[1]]
+# rm(x)
+ci_Center <- do.call(rbind,lapply(split(lmbd_all, list(lmbd_all$Center1), drop=TRUE), function(x){
+  ci <- quantile(x$lmbd, c(0.025, 0.975)) # 95%CI
+  data.frame(x[1,c(1,6:7)], lwL = ci[1], upL = ci[2], lambda = median(x$lmbd))
+}))
+
+
+ci_Site <- do.call(rbind,lapply(split(lmbd_all, list(lmbd_all$SiteName), drop=TRUE), function(x){
+  ci <- quantile(x$lmbd, c(0.025, 0.975)) # 95%CI
+  data.frame(x[1,c(1,6:7)], lwL = ci[1], upL = ci[2], lambda = median(x$lmbd))
+}))
 
 ```
 
