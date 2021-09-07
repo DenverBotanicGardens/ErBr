@@ -459,7 +459,6 @@ growthrates <- unlist(lapply(split(DroneyGulch_CNHP, DroneyGulch_CNHP$Plot..), f
   }))
 
 
-
 median(exp(growthrates[!is.infinite(growthrates) & !is.nan(growthrates)]))
 growthratesgood <- growthrates[!is.infinite(growthrates) & !is.nan(growthrates)]
 sd(growthratesgood)
@@ -472,3 +471,11 @@ exp(c(mu_allgood - qt(0.975, nt - 1) * sqrt(sig2_allgood)/length(growthratesgood
 countCDFxt(mu =mu_allgood,sig2 = sig2_allgood, nt = length(growthratesgood), 
            Nc = floor(mean(DroneyGulch_CNHP$Total.Clumps)), Ne = 1, tmax = 30, plot = TRUE)
 ## Risk of extinction greater than 0.05 by about 4 years into the future 
+DGCNHP <- do.call(rbind,lapply(split(DroneyGulch_CNHP, DroneyGulch_CNHP$Plot..), function(x){
+  logN <- log(x$Total.Clumps[-1]/x$Total.Clumps[-length(x$Total.Clumps)]) ## for the log( N_t+1 / N_t )
+  Year <- x$Year[-nrow(x)]
+  Transect <- x$Plot..[1]
+  data.frame(logN, Year, Transect)
+}))
+
+

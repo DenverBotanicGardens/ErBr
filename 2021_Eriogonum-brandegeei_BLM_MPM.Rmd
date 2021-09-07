@@ -827,6 +827,8 @@ ggplot(all_sd, aes(Water.Deficit.x, lmbd, colour = Center1))+
 aggregate(lmbd ~ Center1, lmbd_all, mean)
 aggregate(lmbd ~ Center1,all_sd, mean)
 
+
+
 # x <- split(lmbd_all, list(lmbd_all$Center1), drop=TRUE)[[1]]
 # rm(x)
 ci_Center <- do.call(rbind,lapply(split(lmbd_all, list(lmbd_all$Center1), drop=TRUE), function(x){
@@ -842,6 +844,28 @@ ci_Site <- do.call(rbind,lapply(split(lmbd_all, list(lmbd_all$SiteName), drop=TR
 
 ```
 
+Add in CNHP annual growth rates
+```{r}
+## Add CNHP
+cnhp <- DGCNHP[!is.infinite(DGCNHP$logN) & !is.nan(DGCNHP$logN),]
+CNHP2add <- data.frame(Center1 = "SalidaNorth", Year = cnhp$Year, Year1 = cnhp$Year+1, Transect = cnhp$Transect,
+                       lmbd = exp(cnhp$logN), "Water.Deficit.x" = NA, "Water.Deficit.y" = NA,
+                       SiteName = "DroneyGulch_CNHP")
+lmbd_all <- rbind(lmbd_all,CNHP2add)
+ci_Center <- do.call(rbind,lapply(split(lmbd_all, list(lmbd_all$Center1), drop=TRUE), function(x){
+  ci <- quantile(x$lmbd, c(0.025, 0.975)) # 95%CI
+  data.frame(x[1,c(1,6:7)], lwL = ci[1], upL = ci[2], lambda = median(x$lmbd))
+}))
+
+
+ci_Site <- do.call(rbind,lapply(split(lmbd_all, list(lmbd_all$SiteName), drop=TRUE), function(x){
+  ci <- quantile(x$lmbd, c(0.025, 0.975)) # 95%CI
+  data.frame(x[1,c(1,6:7)], lwL = ci[1], upL = ci[2], lambda = median(x$lmbd))
+}))
+
+
+
+```
 
 
 
