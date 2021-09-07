@@ -377,24 +377,24 @@ write.csv(dats_BLM.newPlts, file = "C:/Users/DePrengm/Denver Botanic Gardens/Con
 
 
 ## LOOK AT MODEL OUTPUT ---------------------------------------------------------------------------
-summary(jags.mod)
-plot(jags.mod)
-summ.mod <- summary(jags.mod)
-tail(summ.mod, n=20)
-gelman.diag(jags.mod, confidence = 0.95, transform=FALSE)
-
-chains <- jags.mod$mcmc
-chains <- bind_rows(lapply(chains, as.data.frame))
-colMeds <- apply(chains,2,median)
-colSDs <- apply(chains,2,sd)
-
-
-## Look at correlation b/w params 
-chains.1 <- chains %>% dplyr::select(!contains(c("randomeffect", "precision")))
-chains.1 <- chains.1 %>% dplyr::select(!c(deviance, resid.sum.sq))
-
-cor.chains <- cor(chains.1)
-corrplot(cor.chains, method="circle", type="lower")
+# summary(jags.mod)
+# plot(jags.mod)
+# summ.mod <- summary(jags.mod)
+# tail(summ.mod, n=20)
+# gelman.diag(jags.mod, confidence = 0.95, transform=FALSE)
+# 
+# chains <- jags.mod$mcmc
+# chains <- bind_rows(lapply(chains, as.data.frame))
+# colMeds <- apply(chains,2,median)
+# colSDs <- apply(chains,2,sd)
+# 
+# 
+# ## Look at correlation b/w params 
+# chains.1 <- chains %>% dplyr::select(!contains(c("randomeffect", "precision")))
+# chains.1 <- chains.1 %>% dplyr::select(!c(deviance, resid.sum.sq))
+# 
+# cor.chains <- cor(chains.1)
+# corrplot(cor.chains, method="circle", type="lower")
 
 
 ## ** Make bar graph comparing median param ests & 80% CIs b/w diff datasets **
@@ -411,8 +411,64 @@ corrplot(cor.chains, method="circle", type="lower")
 
 ## ------------------------------------------------------------------------------------------------
 ## CNHP does not have individuals tagged. Growth rate and reproductive rates are what we can pull. 
-#   Reproduction by size - not connected but maybe in aggregate by trancect? 
+#   Reproduction by size - not connected but maybe in aggregate by transect? 
+DroneyGulch_CNHP <- read.csv("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2021_Eriogonum-brandegeei_SSA/Eriogonum-brandegeei_CNHP_CNAP_demographicdata/Droney_GulchSWA_reformat_CNHP_2016-2021.csv")
+
+ggplot(DroneyGulch_CNHP, aes(Year, Total.Clumps, colour = as.factor(Meter.Mark)))+
+  geom_point()+
+  stat_smooth(method = "glm", se = FALSE)+
+  theme_bw()+
+  scale_color_discrete(guide = FALSE)+
+  ggtitle("Droney Gulch - Colorado Natural Heritage Program")
+
+total2plot <- aggregate(Total.Clumps ~ Year, sum,data = DroneyGulch_CNHP)
+ggplot(total2plot[total2plot$Year>2017,], aes(Year, Total.Clumps))+
+  geom_point()+
+  stat_smooth(method = "glm", se = TRUE)+
+  theme_bw()+
+  ggtitle("Droney Gulch - Colorado Natural Heritage Program")
+
+## Count-based extinction probabilities and bootstrap confidence intervals
+# popbio::countCDFex
+
+tDGCNHP <- table(DroneyGulch_CNHP$Year,DroneyGulch_CNHP$Plot..) # a subset are 2016-2021, the remaining 2018-2021
+plots6yrs <- table(DroneyGulch_CNHP$Year,DroneyGulch_CNHP$Plot..)[,(colSums(table(DroneyGulch_CNHP$Year,DroneyGulch_CNHP$Plot..))==6)]
+count6yrs <- as.numeric(as.character(dimnames(plots6yrs)[[2]]))
+
+total6yrs <- aggregate(Total.Clumps ~ Year, sum, data =  DroneyGulch_CNHP[DroneyGulch_CNHP$Plot.. %in% count6yrs,])
+logN <- log(total6yrs$Total.Clumps[-c(1,6)]/total6yrs$Total.Clumps[-c(5:6)])
+countCDFxt(mu = mean(logN), sig2 = var(logN), nt = 5, 
+           Nc = 49, Ne = 1, tmax = 100, plot = TRUE)
+
+
+## all plots 2018-2021
+logN <- log(total2plot$Total.Clumps[total2plot$Year>2017][-1]/total2plot$Total.Clumps[total2plot$Year>2017][-4])
+countCDFxt(mu = mean(logN), sig2 = var(logN), nt = 3, 
+           Nc = 49, Ne = 1, tmax = 100, plot = TRUE)
 
 
 
+# Each plot on its own
+## Test
+# x <- split(DroneyGulch_CNHP, DroneyGulch_CNHP$Plot..)[[1]]
+# rm(x)
 
+## Some counts of a transect are zero 
+growthrates <- unlist(lapply(split(DroneyGulch_CNHP, DroneyGulch_CNHP$Plot..), function(x){
+  logN <- log(x$Total.Clumps[-1]/x$Total.Clumps[-length(x$Total.Clumps)]) ## for the log( N_t+1 / N_t )
+  }))
+
+
+
+median(exp(growthrates[!is.infinite(growthrates) & !is.nan(growthrates)]))
+growthratesgood <- growthrates[!is.infinite(growthrates) & !is.nan(growthrates)]
+sd(growthratesgood)
+mu_allgood <- mean(growthratesgood)
+exp(mu_allgood)
+sig2_allgood <- var(growthratesgood)
+exp(c(mu_allgood - qt(0.975, nt - 1) * sqrt(sig2_allgood)/length(growthratesgood),
+  mu + qt(0.975, length(growthratesgood) - 1) * sqrt(sig2_allgood)/length(growthratesgood)))
+
+countCDFxt(mu =mu_allgood,sig2 = sig2_allgood, nt = length(growthratesgood), 
+           Nc = floor(mean(DroneyGulch_CNHP$Total.Clumps)), Ne = 1, tmax = 30, plot = TRUE)
+## Risk of extinction greater than 0.05 by about 4 years into the future 
