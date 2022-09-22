@@ -77,16 +77,14 @@ Download Raw Data and and Summary Table
 <https://research.botanicgardens.org/admin/>
 ```{r}
 currentyr <- as.numeric(format(as.Date(Sys.Date(),format="%Y-%m-%d"), "%Y"))
-rawdatapath <- paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/", 
-                     currentyr,"_ErBr/rawdata_",
-                     currentyr, ".csv", collapse = '', sep = '')
+# Michelle's path
+myUsername <- "deprengm"
 
-erbr.raw <- read.csv(path.expand(rawdatapath), na.strings = "na")
+erbr.raw <- read.csv(paste("C:/Users/",myUsername,"/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Data/rawdata_",
+                           currentyr,".csv", sep=""))
 
-summarypath <- paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/", 
-                     currentyr,"_ErBr/summarytable_",
-                     currentyr, ".csv", collapse = '', sep = '')
-erbr.summary <- read.csv(path.expand(summarypath), na.strings = "na")
+erbr.summary <- read.csv(paste("C:/Users/",myUsername,"/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Data/summarytable_",
+                           currentyr,".csv", sep=""))
 
 erbr.cleora <- erbr.summary[erbr.summary$Site == "Cleora" & erbr.summary$Year == 2004,]
 erbr.summary <- erbr.summary[erbr.summary$Site != "Cleora",]
@@ -142,30 +140,32 @@ get_prism_monthlys(type="tmin", mon = 5:12, keepZip = FALSE, years = 2020)
 
 ```{r}
 erbrlatlong <- data.frame(Lat = 38.5434, Long = -105.2184)
+prism_archive_ls()
 
-# ls_prism_data(absPath=TRUE)[,2][duplicated(str_split(ls_prism_data(absPath=TRUE)[,2]))]
-# don't want provisional, don't want duplicates - can either delete from folder or tell R to ignore duplicates
-maxs <- grep("tmax", ls_prism_data(absPath=TRUE)[,2])
-mins <- grep("tmin", ls_prism_data(absPath = TRUE)[,2])
-ppt <- grep("ppt", ls_prism_data(absPath = TRUE)[,2])
-
+maxs <- prism_archive_subset(type = "tmax", temp_period = "monthly")
+mins <- prism_archive_subset(type = "tmin", temp_period = "monthly")
+ppt <- prism_archive_subset(type = "ppt", temp_period = "monthly")
 length(maxs) # 490
 length(mins) # 490
 length(ppt) # 490
 
+foo <- pd_to_file(maxs[1])
+foorast <- raster(foo)
+raster::extract(foorast, erbrlatlong[,c("Long","Lat")])
+
 avgTemps.max <- lapply(maxs, function(x){
-  rastertemps <- raster(ls_prism_data(absPath=TRUE)[x,2])
-  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = ls_prism_data()[x,])
+  rastertemps <- raster(pd_to_file(x))
+  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = x)
 })
 
 avgTemps.min <- lapply(mins, function(x){
-  rastertemps <- raster(ls_prism_data(absPath=TRUE)[x,2])
-  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = ls_prism_data()[x,])
+  rastertemps <- raster(pd_to_file(x))
+  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = x)
 })
 
 avgPrecip <- lapply(ppt, function(x){
-  rastertemps <- raster(ls_prism_data(absPath=TRUE)[x,2])
-  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = ls_prism_data()[x,])
+  rastertemps <- raster(pd_to_file(x))
+  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = x)
 })
 
 mins.avg <- do.call(rbind, avgTemps.min)
