@@ -1,0 +1,616 @@
+---
+title: "erbr_IPM_stochastic"
+author: "April Goebl"
+date: "2/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+rm(list=ls())
+source('eigenall.r')
+knitr::opts_chunk$set(echo = FALSE)
+library(dplyr)
+library(matrixStats)
+library(viridis) 
+
+```
+
+
+```{r, echo=FALSE }
+
+## LOAD MATRICES FOR EACH YEAR (STUDY AND NON-STUDY PERIOD) & TRANSECT FROM IPMdeterm CODE 
+mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_P1k_220806")  #Output generated from erbr_4IPMdeterm script 
+
+erbr <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbr_TagClust_210510.csv", header=TRUE)
+erbr$Year <- as.factor(erbr$Year)
+
+```
+
+
+
+```{r}
+
+## OBTAIN STABLE STAGE STRUCTURE
+## Modified from Dan's code 
+N.startNum <- 62                        #Set starting pop sz; could increase to better reflect pop sz, not just demog plts in transects
+
+mx.num <- length(mx.list)
+mx.mean <- Reduce('+', mx.list)/mx.num  #Calculate mean of all matrices 
+mnees=eigenall(mx.mean)
+N.vecStart=N.startNum * mnees$stable.stage
+
+```
+
+
+
+## STOCHASTIC LAMBDA (SHORT TERM)
+```{r}
+
+## Calculate stochastic lambda for each transect separately
+
+names.mx <- unique(names(mx.list))
+names.trans <- unique(sub('.*\\_', '', names.mx))     #Keep text following '_'
+names.yr <- unique(sub('\\_.*', '', names.mx))        #Keep text preceding '_'
+names.yr <- unique(sub('.*\\-', '', names.yr))        #Keep text following '-'
+names.param <- unique(sub('\\-.*', '', names.mx))     #Keep text preceding '-'
+
+sim.yrs <- 100  #Number of years to simulate, e.g. 100
+reps <- 100     #Number of replicate runs to make for env variability
+
+## Variables for output 
+stoch.lams.template <- as.data.frame(matrix(NA, nrow=(reps*length(names.param)*length(names.trans)), ncol=4))  
+colnames(stoch.lams.template) <- c("PARAM","TRANS", "REP", "LAMBDA")
+stoch.lams.template$REP <- rep(1:reps)
+stoch.lams.template$TRANS <- rep(names.trans, each=reps)
+stoch.lams.template$PARAM <- rep(names.param, each=(nrow(stoch.lams.template)/length(names.param)))
+
+stoch.lams.all <- NULL
+
+
+
+## Start parameter loop (for a given parameter draw, select X yrs (e.g. 100))
+for (pp in 1:length(names.param)) {
+  mx.param <- mx.list[grep(names.param[pp], names(mx.list))]         #Subset mx.list by each parameter
+  stoch.lams <- subset(stoch.lams.template, PARAM==names.param[pp])  #Subset output template by param in parameter loop 
+
+  
+  ## Start transect loop
+  for (tt in 1:length(names.trans)) {
+  mx.trans <- mx.param[grep(names.trans[tt], names(mx.param))]       #Subset mx list by each transect
+  
+
+  ## Modified from Dan 
+  ## Input parameters
+  mx.num.trans <- length(mx.trans)               #This includes all yr matrices for a given param & transect
+  probs <- rep(1/mx.num.trans, mx.num.trans)     #List of probs of occurance for the lams: should sum to 1
+
+  ## Make a vector of random values to use to pick between all yr matrices:
+  mx.randVals <- matrix(sample(1:mx.num.trans, size=reps*sim.yrs, prob=probs, replace=TRUE), nrow=sim.yrs, ncol=reps)
+  ## End of inputs
+  
+
+  lams <- matrix(0, sim.yrs-1, reps)                              #Set up a matrix for the pop sizes to fill
+  stoch.lams.trans <- subset(stoch.lams, TRANS==names.trans[tt])  #Subset output template by trans in transect loop
+  N.vec <- N.vecStart                                             #Re-set to desired starting values
+
+  
+  ## Loop over reps and years 
+  for (jj in 1:reps) {
+    N.vec <- N.vecStart
+    
+    for (ii in 1:(sim.yrs-1)) {
+  
+      pick <- mx.randVals[ii,jj]                         #Pick a mx corresponding to 1 yr (i.e. set of clim conditions) 
+      mx <- mx.trans[pick]
+
+      oldN.vec <- N.vec
+      ## Multiply matrix by vec w num indivs per sz class (initially this is stbl stage struct)
+      N.vec <- as.matrix(as_tibble(mx)) %*% N.vec        #Grow the population one year
+    
+      lams[ii,jj] <- sum(N.vec)/sum(oldN.vec)
+      N.vec <- N.startNum*N.vec/sum(N.vec)               #Restandardize the tot nums in vector so doesn't get too big or sm 
+    } #End of ii (years) loop
+    
+    stoch.lams.trans[jj,4]= mean(lams[,jj])                              
+  } #End of jj (reps) loop
+## End of Dan's code 
+  
+  stoch.lams.all <- rbind(stoch.lams.all, stoch.lams.trans)
+} #End of tt (transect loop)
+
+} #End of pp (parameter) loop
+
+```
+
+
+```{r}
+
+## SAVE OUTPUT
+date <- as.character(220807) 
+saveRDS(stoch.lams.all, file=paste("erbrLamsStoch_noYRE_y100r100P1k", date, sep="_"))
+
+stoch.lams.all <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLamsStoch_noYRE_y100r100P1k_220807")
+
+
+
+## LOOK AT RESULTS
+hist(stoch.lams.all$LAMBDA, breaks=150, border=FALSE, xlab="Short term stochastic population growth rate",
+     main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0.75,1.05), col="grey90")
+abline(v=1, col="red", lwd=0.75)
+
+
+## Plot transects individually 
+cols <- viridis(12)
+brks <- c(20,30,40,30,40,40,40,30,40,40,30,40)
+par(mfrow=c(3,4))                      
+
+for (tt in 1:length(names.trans)) {
+  lam.trns <- subset(stoch.lams.all, TRANS==names.trans[tt])
+
+hist(lam.trns$LAMBDA, breaks=brks[tt], border=FALSE, xlab="Short term stochastic lambda",
+     main=names.trans[tt], cex.lab=1.4, cex.axis=1.2, xlim=c(0.6,1.2), col=cols[tt])
+abline(v=1, col="red", lwd=0.5)
+}
+
+
+## Calculate mean per transect
+lam.mean.trans <- stoch.lams.all %>% group_by(TRANS) %>% summarise(MEAN=mean(LAMBDA), 
+                  MED=median(LAMBDA), MAX=max(LAMBDA), MIN=min(LAMBDA))
+min(lam.mean.trans$MEAN)
+max(lam.mean.trans$MEAN)
+mean(stoch.lams.all$LAMBDA)  ## Overall mean
+
+```
+
+
+
+
+## PROBABILITY OF QUASI-EXTINCTION 
+```{r}
+
+## Calculate risk of extinction for each transect separately
+
+## ** Coding should be improved- currently takes a LONG time to run, very inefficient **
+
+
+names.mx <- unique(names(mx.list))
+names.trans <- unique(sub('.*\\_', '', names.mx))     #Keep text following '_'
+names.yr <- unique(sub('\\_.*', '', names.mx))        #Keep text preceding '_'
+names.yr <- unique(sub('.*\\-', '', names.yr))        #Keep text following '-'
+names.param <- unique(sub('\\-.*', '', names.mx))     #Keep text preceding '-'
+
+sim.yrs <- 100    #Num of years to simulate, e.g. 100
+reps <- 500       #Num of reps runs to make. How many out of reps does pop fall below thresh? e.g. 500
+
+
+## Variables for output 
+column.names <- c("PARAM","TRANS", "REP", "YEAR", "POP_SZ")
+pop.sz.template <- as.data.frame(matrix(NA, nrow=(length(names.param)*reps*sim.yrs*length(names.trans)),
+                   ncol=length(column.names)))
+colnames(pop.sz.template) <- column.names
+pop.sz.template$YEAR <- rep(1:sim.yrs)
+pop.sz.template$REP <- rep(1:reps, each=sim.yrs)
+pop.sz.template$TRANS <- rep(names.trans, each=sim.yrs*reps)
+pop.sz.template$PARAM <- rep(names.param, each=(nrow(pop.sz.template)/length(names.param)))
+
+pop.sz.all <- NULL        
+
+
+
+## Start parameter loop (for a given parameter draw, select X yrs)
+for (pp in 1:length(names.param)) {
+
+  mx.param <- mx.list[grep(names.param[pp], names(mx.list))]         #Subset mx.list by each parameter
+  pop.sz <- subset(pop.sz.template, PARAM==names.param[pp])          #Subset output template by param in parameter loop 
+
+  ## Start transect loop
+  for (tt in 1:length(names.trans)) {
+      mx.trans <- mx.param[grep(names.trans[tt], names(mx.param))]   #Subset mx list by each transect
+
+    
+      ## Modified from Dan 
+      ## Input parameters
+      mx.num.trans <- length(mx.trans)               
+      probs <- rep(1/mx.num.trans, mx.num.trans)      #List of probs of occurrence for the lams: should sum to one
+      
+      ## Make a matrix of random values to use to pick between all yr matrices:
+      mx.randVals <- matrix(sample(1:mx.num.trans, size=reps*sim.yrs, prob=probs, replace=TRUE), nrow=sim.yrs, ncol=reps)
+      ## End of inputs
+      
+      
+      pop.sz.trans <- subset(pop.sz, TRANS==names.trans[tt]) #Subset output template by trans in transect loop
+      N.vec <- N.vecStart                                    #Re-set to desired starting values
+    
+      
+      ## Loop over reps and years
+    for (jj in 1:reps) {
+      N.vec <- N.vecStart
+      pop.sz.rep <- subset(pop.sz.trans, REP==as.vector(1:reps)[jj])  #Subset output template by rep in rep loop
+
+          for (ii in 1:(sim.yrs)) {
+      
+          pick <- mx.randVals[ii,jj]                    #Pick a mx corresponding to 1 yr (i.e. set of clim conditions) 
+          mx <- mx.trans[pick]
+        
+          ## Multiply matrix by vec w num indivs per sz class (initially this is stbl stage struct)
+          N.vec <- as.matrix(as_tibble(mx)) %*% N.vec   #Grow the population one year
+          pop.sz.rep[ii,5]= sum(N.vec)  
+        } #End of ii (years) loop
+      
+      pop.sz.all <- rbind(pop.sz.all, pop.sz.rep)
+
+    } #End of jj (rep) loop
+      
+  } #End of tt (transect) loop
+      
+} #End of pp (param) loop
+
+
+
+
+## SAVE OUTPUT
+date <- as.character(220808) 
+saveRDS(pop.sz.all, file=paste("erbrPopSz_y100r50P250", date, sep="_"))
+
+```
+
+
+```{r}
+
+## LOOK AT RESULTS
+
+pop.sz.all <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSz_y100r50P250_220808")
+
+
+## Plot cumulative extinction curves
+thresh <- 10  #5 
+
+pop.sz.forPlot <- pop.sz.all %>% tidyr::spread(REP, POP_SZ)
+pop.sz.forPlot$PROB <- NA
+
+for (bb in 1:nrow(pop.sz.forPlot)) {
+  bel.thresh <- pop.sz.forPlot[bb,4:(reps+3)] < thresh #Check num reps w pop sz < thresh in each yr
+  pop.sz.forPlot$PROB[bb] <- (length(bel.thresh[bel.thresh==TRUE])) / reps
+}
+
+
+## Average of all params 
+mean.ext <- pop.sz.forPlot %>% group_by(YEAR) %>% summarise(MEAN=mean(PROB))
+plot(mean.ext$YEAR, mean.ext$MEAN, type='l', xlab="Year", ylab="Probability of quasi-extinction", ylim=c(0,1))
+
+
+
+
+## Subset by transect
+## Plot results including all param uncertainty
+cols <- viridis(12)
+par(mfrow=c(4,3))  
+par(mar=c(4,6,3,2)) 
+for (nn in 1:length(names.trans)) {
+  trans <- subset(pop.sz.forPlot, TRANS==names.trans[nn])
+  plot(trans$YEAR, trans$PROB, type='l', xlab="Year", ylab="Probability of\nquasi-extinction",
+  lwd=1.5, col=cols[nn], cex.lab=1.5, cex.axis=1.2, main=names.trans[nn], ylim=c(0,1))
+}
+
+
+## Average of all params 
+par(mfrow=c(4,3))  
+par(mar=c(4,6,3,2)) 
+for (nn in 1:length(names.trans)) {
+  trans <- subset(pop.sz.forPlot, TRANS==names.trans[nn])
+  mean.trans <- trans %>% group_by(YEAR) %>% summarise(MEAN=mean(PROB))
+  plot(mean.trans$YEAR, mean.trans$MEAN, type='l', xlab="Year", ylab="Probability of\nquasi-extinction",
+  lwd=2.5, col=cols[nn], cex.lab=1.5, cex.axis=1.2, main=names.trans[nn], ylim=c(0,1))
+}
+
+## ** Add CIs on param avg ** 
+
+```
+
+
+
+
+
+## ESTIMATE POPULATION SIZE PER YEAR & COMPARE TO OBSERVED 
+```{r}
+
+## Load matrices
+mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_P1k_210511")
+mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_P1k_4to8_210511")
+mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_P1k_9to13_210511")
+mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_P1k_4to13_210511")
+mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_P1k_4to13even_210511")
+mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_P1k_4to13odd_210511")
+
+names.mx <- unique(names(mx.list))
+names.trans <- unique(sub('.*\\_', '', names.mx))     #Keep text following '_'
+names.yr <- unique(sub('\\_.*', '', names.mx))        #Keep text preceding '_'
+names.yr <- unique(sub('.*\\-', '', names.yr))        #Keep text following '-'
+names.param <- unique(sub('\\-.*', '', names.mx))     #Keep text preceding '-'
+
+
+## -- OPTIONAL ------   Subset to keep only years from study period (2004-2017) 
+match.yr <- as.character(c(2004:2017))
+mx.list <- mx.list[grep(paste(match.yr,collapse="|"), names(mx.list))]
+names.mx <- unique(names(mx.list))
+names.yr <- unique(sub('\\_.*', '', names.mx))        #Keep text preceding '_'
+names.yr <- unique(sub('.*\\-', '', names.yr))        #Keep text following '-'
+## ---------------------------------------------------------------------------
+
+sim.yrs <- length(names.yr)
+
+
+## OBTAIN STABLE STAGE STRUCTURE
+## AG modified from Dan's code 
+N.startNum <- 148                         #Set as observed population size in 2004
+
+mx.num <- length(mx.list)
+mx.mean <- Reduce('+', mx.list)/mx.num    #Calculate mean of all matrices 
+mnees=eigenall(mx.mean)
+N.vecStart=N.startNum * mnees$stable.stage
+
+
+pop.sz.all <- as.data.frame(matrix(NA, nrow=(length(names.param)), ncol=sim.yrs+2))
+colnames(pop.sz.all) <- c("PARAM", as.character(2004:2018))
+pop.sz.all$PARAM <- rep(names.param)
+
+
+## Start parameter loop (for a given parameter draw, loop over data yrs)
+for (pp in 1:length(names.param)) {
+  mx.param <- mx.list[grep(paste(names.param[pp],"-", sep=""), names(mx.list))]      #Subset mx.list by each parameter
+  pop.sz <- matrix(NA, nrow=(sim.yrs), ncol=1)
+
+
+  ## Modified from Dan
+  N.vec <- N.vecStart                                               #Re-set to desired starting values
+
+  ## Loop over years (from 2004-2017 to give estimates for 2005-2018)
+    for (ii in 1:(sim.yrs)) {
+  
+      mx.yr <- mx.param[grep(names.yr[ii], names(mx.param))]        #Subset mx list of each param by yr
+      mx <- Reduce('+', mx.yr)/length(names.trans)                  #Calculate mean mx of all transects 
+
+
+      ## Multiply matrix by vec w num indivs per sz class (initially this is stbl stage struct)
+      N.vec <- as.matrix(as_tibble(mx)) %*% N.vec        #Grow the population one year
+      pop.sz[ii]= sum(N.vec)             
+    } # end of ii (years) loop
+
+ pop.sz.all[pp,3:ncol(pop.sz.all)] <- pop.sz
+} #End pp loop
+
+
+
+
+## Add observed values for 2004
+pop.sz.all$`2004` <- N.startNum
+
+
+## Calculate mean and SE of predicted pop size
+pop.sz.means <- colMeans(pop.sz.all[2:(length(names.yr)+2)])
+pop.sz.sds <- matrixStats::colSds(as.matrix(pop.sz.all[2:(length(names.yr)+2)]))
+
+pop.sz.ciHi <- 0
+pop.sz.ciLo <- 0
+for (cc in 3:ncol(pop.sz.all)) {
+  cis <- t.test(pop.sz.all[,cc], conf.level=0.85)$conf.int
+  pop.sz.ciHi <- c(pop.sz.ciHi, cis[2])
+  pop.sz.ciLo <- c(pop.sz.ciLo, cis[1])
+}
+
+
+
+## SAVE FOR PLOTTING BELOW BY RENAMING BASED ON DATA SET 
+pop.sz.means.full <- pop.sz.means
+pop.sz.sds.full <- pop.sz.sds
+names.yr.full <- names.yr
+pop.sz.ciHi.full <- pop.sz.ciHi
+pop.sz.ciLo.full <- pop.sz.ciLo
+
+pop.sz.means.evry <- pop.sz.means
+pop.sz.sds.evry <- pop.sz.sds
+names.yr.evry <- names.yr
+pop.sz.ciHi.evry <- pop.sz.ciHi
+pop.sz.ciLo.evry <- pop.sz.ciLo
+
+pop.sz.means.prun <- pop.sz.means
+pop.sz.sds.prun <- pop.sz.sds
+names.yr.prun <- names.yr
+pop.sz.ciHi.prun <- pop.sz.ciHi
+pop.sz.ciLo.prun <- pop.sz.ciLo
+
+pop.sz.means.odd <- pop.sz.means
+pop.sz.sds.odd <- pop.sz.sds
+names.yr.odd <- names.yr
+pop.sz.ciHi.odd <- pop.sz.ciHi
+pop.sz.ciLo.odd <- pop.sz.ciLo
+
+
+
+
+## PLOT PREDICTED VS OBSERVED POP SZ
+## Calculate observed: Subset by year and count the number of living plants 
+num.indivs <- erbr %>% group_by(Year) %>% summarise(numIndivs=sum(surv, na.rm=TRUE)) 
+num.indivs$Year <- as.numeric(as.character(num.indivs$Year))
+num.indivs <- num.indivs[which(num.indivs$numIndivs!=0),]
+
+
+## Plot mean and SD (or CIs)
+plot(as.numeric(as.character(num.indivs$Year)), num.indivs$numIndivs, type='l', ylim=c(-10,310), 
+     ylab="Number of individuals",xlab="Year", cex.lab=1.45, cex.axis=1.3)
+points(as.numeric(as.character(num.indivs$Year)), num.indivs$numIndivs, pch=16, cex=0.75)
+
+lines(2004:2018,pop.sz.means.full[1:length(pop.sz.means.full)],
+      col="grey60",lwd=1.4)
+arrows(2004:2018,pop.sz.means.full[1:length(pop.sz.means.full)], 
+       2004:2018,pop.sz.means.full[1:length(pop.sz.means.full)]+pop.sz.ciHi.full[1:length(pop.sz.means.full)], 
+       length=0.05, angle=90, col="grey60", lwd=0.6)
+arrows(2004:2018,pop.sz.means.full[1:length(pop.sz.means.full)], 
+       2004:2018,pop.sz.means.full[1:length(pop.sz.means.full)]-pop.sz.ciLo.full[1:length(pop.sz.means.full)], 
+       length=0.05, angle=90, col="grey60", lwd=0.6)
+
+lines(2004:2018, pop.sz.means.odd[1:length(pop.sz.means.odd)],
+      col="pink",lwd=1.1)
+arrows((2004:2018)+0.15,pop.sz.means.odd[1:length(pop.sz.means.odd)], 
+       (2004:2018)+0.15,pop.sz.means.odd[1:length(pop.sz.means.odd)]+pop.sz.ciHi.odd[1:length(pop.sz.means.odd)], 
+       length=0.05, angle=90, col="pink", lwd=0.6)
+arrows((2004:2018)+0.15,pop.sz.means.odd[1:length(pop.sz.means.odd)], 
+       (2004:2018)+0.15,pop.sz.means.odd[1:length(pop.sz.means.odd)]-pop.sz.ciLo.odd[1:length(pop.sz.means.odd)], 
+       length=0.05, angle=90, col="pink", lwd=0.6)
+
+lines(2004:2018, pop.sz.means.evry[1:length(pop.sz.means.evry)],
+      col="lightskyblue",lwd=1.3)
+arrows((2004:2018)-0.1,pop.sz.means.evry[1:length(pop.sz.means.evry)], 
+       (2004:2018)-0.1,pop.sz.means.evry[1:length(pop.sz.means.evry)]
+       +pop.sz.ciHi.evry[1:length(pop.sz.means.evry)],length=0.05, angle=90, col="lightskyblue", lwd=0.6)
+arrows((2004:2018)-0.1,pop.sz.means.evry[1:length(pop.sz.means.evry)], 
+       (2004:2018)-0.1,pop.sz.means.evry[1:length(pop.sz.means.evry)]
+       -pop.sz.ciLo.evry[1:length(pop.sz.means.evry)],length=0.05, angle=90, col="lightskyblue", lwd=0.6)
+
+lines(2004:2018, pop.sz.means.prun[1:length(pop.sz.means.prun)],
+      col="springgreen3",lwd=1.05)
+arrows((2004:2018)+0.1,pop.sz.means.prun[1:length(pop.sz.means.prun)], 
+       (2004:2018)+0.1,pop.sz.means.prun[1:length(pop.sz.means.prun)]+pop.sz.ciHi.prun[1:length(pop.sz.means.prun)], 
+       length=0.05, angle=90, col="springgreen3", lwd=0.6)
+arrows((2004:2018)+0.1,pop.sz.means.prun[1:length(pop.sz.means.prun)], 
+       (2004:2018)+0.1,pop.sz.means.prun[1:length(pop.sz.means.prun)]-pop.sz.ciLo.prun[1:length(pop.sz.means.prun)], 
+       length=0.05, angle=90, col="springgreen3", lwd=0.6)
+
+legend("top", c("Observed", "Full dataset", "Consecutive years", "Even years", "Odd years"), col=c("black","grey60","lightskyblue","springgreen3","pink"),lwd=1.95,cex=1,
+       horiz=FALSE, bty="y",seg.len=1, xpd=TRUE)
+
+```
+
+
+
+
+## LOOK AT NUMBERS OF NEW PLANTS IN EACH YEAR
+```{r}
+
+## To understand the pop sz increase ~2007, that is not captured by predictions, plot nums of new plts in each yr (by sz group)
+
+## Make df that will hold data containing new plants
+years <- unique(erbr$Year)
+years <- years[order(years)]
+dats.newPlts <- as.data.frame(rep(unique(erbr$TransectNew), each=length(years)))
+colnames(dats.newPlts) <- "TransectNew"
+dats.newPlts$Year <- rep(years)
+
+## Identify new plants
+newPlts <- erbr %>% group_by(TagNew) %>% slice(which.min(Year))  #Identify rows with 1st appearance for each plt
+newPlts <- newPlts[newPlts$Year!=2004,]                          #Remove 2004 (first year of data collection)
+sz.cutoff <- 5                                                   #Sz cutoff, above which likely not recently a seedling 
+newPlts.sm <- newPlts[newPlts$RosNew<sz.cutoff,]                 #Rm if larger than X ros (these likely missed & are not new)
+newPlts.lrg <- newPlts[newPlts$RosNew>sz.cutoff,]                #Remove if smaller than X ros 
+num.newPlts.sm <- newPlts.sm %>% group_by(Year) %>% summarise(NUM=n())   #Count num new plts per year
+num.newPlts.lrg <- newPlts.lrg %>% group_by(Year) %>% summarise(NUM=n()) #Count num new plts per year
+
+barplot(num.newPlts.sm$NUM, names=num.newPlts.sm$Year, main="New small plants (<5ros) per year", ylab="New plants")
+barplot(num.newPlts.lrg$NUM, names=num.newPlts.lrg$Year, main="New large plants (>5ros) per year", ylab="New plants") 
+
+```
+
+
+
+
+## NUMBER OF PREDICTED INDIVS FOR EACH TRANSECT
+```{r}
+
+## Load matrices
+mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_P1k_210511")
+
+names.mx <- unique(names(mx.list))
+names.trans <- unique(sub('.*\\_', '', names.mx))     #Keep text following '_'
+names.yr <- unique(sub('\\_.*', '', names.mx))        #Keep text preceding '_'
+names.yr <- unique(sub('.*\\-', '', names.yr))        #Keep text following '-'
+names.param <- unique(sub('\\-.*', '', names.mx))     #Keep text preceding '-'
+
+sim.yrs <- length(names.yr)
+
+
+## OBTAIN STABLE STAGE STRUCTURE
+## Modified from Dan's code 
+N.startNum <- 148                         #Set as observed population size in 2004
+
+mx.num <- length(mx.list)
+mx.mean <- Reduce('+', mx.list)/mx.num    #Calculate mean of all matrices 
+mnees=eigenall(mx.mean)
+N.vecStart=N.startNum * mnees$stable.stage
+
+
+pop.sz.all <- NULL
+
+
+## Start parameter loop (for a given parameter draw, loop over data yrs)
+for (pp in 1:length(names.param)) {
+  ## Subset by parameter
+  mx.param <- mx.list[grep(paste(names.param[pp],"-",sep=""), names(mx.list))]
+  pop.sz <- as.data.frame(matrix(NA, nrow=length(names.trans), ncol=sim.yrs))
+  
+
+
+  ## Transect loop
+  for (tt in 1:length(names.trans)) {
+  mx.paramTrans <- mx.param[grep(names.trans[tt], names(mx.param))]
+
+
+  ## AG modified from Dan
+  N.vec <- N.vecStart                                    #Re-set to desired starting values
+
+  ## Loop over years (from 2004-2017 to give estimates for 2005-2018)
+    for (ii in 1:(sim.yrs)) {
+  
+      mx <- mx.paramTrans[ii]
+
+    
+      ## Multiply matrix by vec w num indivs per sz class (initially this is stbl stage struct)
+      N.vec <- as.matrix(as_tibble(mx)) %*% N.vec        #This grows the population one year
+      pop.sz[tt,ii]= sum(N.vec) 
+
+    } # end of ii (years) loop
+  } # end of tt (transect) loop
+
+   pop.sz.all <- rbind(pop.sz.all, pop.sz)
+} #End pp loop
+
+
+
+## Add and rename columns
+pop.sz.all$TRANS <- rep(names.trans)
+pop.sz.all$PARAM <- rep(names.param, each=length(names.trans))
+colnames(pop.sz.all) <- c(as.character(2005:2018),"TRANS","PARAM")
+pop.sz.all$`2004` <- N.startNum
+pop.sz.all <- pop.sz.all %>% relocate(`2004`, .before = `2005`)
+
+
+
+## PLOT PREDICTED FOR EACH TRANSECT
+cols <- viridis(12)
+
+par(mar=c(4.5,5,3,2))
+plot(NA,NA, ylim=c(0,180), xlim=c(2004,2018), ylab="Number of individuals", cex.lab=1.6,
+     cex.axis=1.3,xlab="Year")
+for (tt in 1:length(names.trans)) {
+  pop.sz.trns <- subset(pop.sz.all, TRANS==names.trans[tt])
+  pop.sz.means.trns <- colMeans(pop.sz.trns[1:((length(names.yr)+1))])
+  pop.sz.sds.trns <- matrixStats::colSds(as.matrix(pop.sz.trns[1:((length(names.yr)+1))]))
+  
+  lines(2004:2018, pop.sz.means.trns[1:length(pop.sz.means.trns)],
+        col=cols[tt],lwd=1.2)
+  arrows(2004:2018,pop.sz.means.trns[1:length(pop.sz.means.trns)], 
+         2004:2018,pop.sz.means.trns[1:length(pop.sz.means.trns)]+
+         pop.sz.sds.trns[1:length(pop.sz.means.trns)], 
+         length=0.05, angle=90, col=cols[tt])
+  arrows(2004:2018,pop.sz.means.trns[1:length(pop.sz.means.trns)], 
+         2004:2018,pop.sz.means.trns[1:length(pop.sz.means.trns)]-
+         pop.sz.sds.trns[1:length(pop.sz.means.trns)], 
+         length=0.05, angle=90, col=cols[tt])
+}
+
+legend("bottomleft", names.trans, col=cols,lwd=1.95,cex=1,
+       horiz=FALSE, bty="y",seg.len=1)
+
+```
+
+

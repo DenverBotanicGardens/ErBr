@@ -113,7 +113,7 @@ erbr.1 <- erbr.1[!duplicated(erbr.1[,c("TagNew","Year")]),]
 ## START OF CHANGES NEEDED FOR JAGs --------------------------------------------------
 dats <- erbr.1
 
-## Make a col that indicates if a line should be kept: removes lines w NAs before a plt appeared or after died. Keeps lines that are NAs but bracketed by sz data yrs
+## Make a column that indicates if a line should be kept: removes lines w NAs before a plt appeared or after died. Keeps lines that are NAs but bracketed by sz data yrs
 dats$save <- 0   #Start with save = 0, or no
 dats$surv <- NA  #Column to show plt survival/ if plant is alive in current year
 
