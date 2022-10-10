@@ -93,7 +93,10 @@ erbr.1$TagNew[which(erbr.1$Site=="Garden Park East")] <- paste("E",erbr.1$Transe
 erbr.1$TagNew[which(erbr.1$Site=="Garden Park West")] <- paste("W",erbr.1$Transect[which(erbr.1$Site=="Garden Park West")],sep=".",trunc(erbr.1$Tag[which(erbr.1$Site=="Garden Park West")]))
 
 ## Combine size (Rosettes) and repro (Infl) for clusters of plts with same truncated tag number
-erbr.1 <- erbr.1 %>% group_by(TagNew, Year) %>% mutate(RosNew=sumNA(Rosettes,na.rm=TRUE), InflNew=sumNA(Infl,na.rm=TRUE)) %>% ungroup()
+erbr.1 <- erbr.1 %>%
+  group_by(TagNew, Year) %>%
+  mutate(RosNew=sumNA(Rosettes,na.rm=TRUE), InflNew=sumNA(Infl,na.rm=TRUE)) %>%
+  ungroup()
 
 ## Remove rows that are duplicates in terms of TagNew and Year values
 erbr.1 <- erbr.1[!duplicated(erbr.1[,c("TagNew","Year")]),]
@@ -123,9 +126,9 @@ dats$surv <- NA  #Column to show plt survival/ if plant is alive in current year
 
 tags <- unique(dats$TagNew)
 for (tt in tags){
-  szlines <- which(dats$TagNew==tt)
-  szs <- dats$RosNew[szlines]
-  goodszslines <- szlines[is.na(szs)==FALSE]
+  szlines <- which(dats$TagNew==tt) ## index of a tag
+  szs <- dats$RosNew[szlines]       ## sizes as number of rosettes each year
+  goodszslines <- szlines[is.na(szs)==FALSE] ## index of years with number of rosettes counted
 
   badszlines <- szlines[is.na(szs)==TRUE] #For determining row representing 1st year dead
   badyrs <- dats$Year[badszlines]
