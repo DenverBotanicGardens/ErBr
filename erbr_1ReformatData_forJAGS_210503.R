@@ -35,12 +35,13 @@ erbr <- read.csv("rawdata_2022.csv", header=TRUE)
 #erbr <- read.csv("Files_from_Michelle/erbr_dat_incl2020.csv", header=TRUE)
 
 #clim3seas <- read.csv("erbr_climData3seasons_201022.csv", header=TRUE)
-clim3seas <- read.csv("erbr_climData3seas30yr_210209.csv", header=TRUE)
+# clim3seas <- read.csv("erbr_climData3seas30yr_210209.csv", header=TRUE)
+load("C:/Users/deprengm/OneDrive - Denver Botanic Gardens/P drive/hackathon/ErBr/erbr_climData3seas2022-10-11.Rdata")
 ## ------------------------------------------------------------------------------------------------
 
 
 ## MODIFY FORM OF DATA ----------------------------------------------------------------------------
-erbr <- erbr[!duplicated(erbr),]    #Remove duplicate rows
+erbr <- erbr[!duplicated(erbr),]    #Remove 10 duplicate rows
 
 ## Remove Cleora sites since only 1 year of data collected
 erbr.1 <- erbr[erbr$Site!="Cleora",]
@@ -53,7 +54,7 @@ erbr.1$Infl[is.na(erbr.1$Rosettes)] <- NA
 
 
 
-
+## 2022-10-11 get number of clusters in recent years for ability of model to predict counts skip this portion
 ## OPTIONAL *******************************************************************
 ## FOR MAKING CONSECUTIVE-ONLY OR PRUNED YEAR DATASETS
 ## Remove years 2013 onwards
@@ -82,7 +83,7 @@ erbr.1 <- erbr.1[which(erbr.1$Year >=2009),]
 
 
 
-
+## 2022-10-11 to get the number of clusters in 2020 and 2022 for fit of predictions skipped portion above
 ## CLUSTER BY RELATED TAG OR KEEP UNIQUE TAGS SEPARATE -----------------------------------
 
 ## RUN EITHER THIS ...
@@ -98,9 +99,13 @@ erbr.1 <- erbr.1 %>%
   mutate(RosNew=sumNA(Rosettes,na.rm=TRUE), InflNew=sumNA(Infl,na.rm=TRUE)) %>%
   ungroup()
 
+
 ## Remove rows that are duplicates in terms of TagNew and Year values
 erbr.1 <- erbr.1[!duplicated(erbr.1[,c("TagNew","Year")]),]
 
+### Save data for number and size of clusters in predicted years (after 2013)
+save(erbr.1, file = paste("C:/Users/deprengm/OneDrive - Denver Botanic Gardens/P drive/hackathon/ErBr/erbr.1",
+Sys.Date(),".Rdata", sep=""))
 
 
 ## ... OR THIS
