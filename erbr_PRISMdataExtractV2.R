@@ -43,7 +43,7 @@ for (yy in 1:length(year.span)) {
 }
 
 
-## Remove fist 7 months (of 2013) and final 5 months (of 2018)
+## Remove first 7 months (of 2003) and final 5 months (of 2018)
 yyyymm <- yyyymm[8:(length(yyyymm)-5)] 
 ## Morph year & month labels into matrix  
 yyyymm <- as.data.frame(matrix(yyyymm, length(month.span), (length(year.span)-1)), row.names = FALSE)

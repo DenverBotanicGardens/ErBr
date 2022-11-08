@@ -26,7 +26,8 @@ library(car)
 
 ## LOAD DATA 
 erbr <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbr_TagClust_210510.csv", header=TRUE)
-clim30yr <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbr_climData3seas30yr_210209.csv", header=TRUE)
+#clim30yr <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbr_climData3seas30yr_210209.csv", header=TRUE)
+clim30yr <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbr_climData3seas33yr_20221107.csv", header=TRUE)
 
 
 ## MODIFY DATA
@@ -106,7 +107,7 @@ pdfsz2=cbind(pdfsz$x,pdfsz$y)
 
 ## Save 'chains' variable for easy re-loading
 #saveRDS(chains, file="chains.c3t10s30b10_noYRE_210613.rds")
-chains <- readRDS("chains.c3t10s30b10_noYRE_210613.rds")
+chains <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/chains.c3t10s30b10_noYRE_210613.rds")
 
 ```
 
@@ -287,6 +288,7 @@ clim30yr <- clim30yr %>% rename(PptFall=Tot_fall_ppt, PptWinter=Tot_winter_ppt, 
                    TempFall=Mean_fall_temp, TempWinter=Mean_winter_temp, TempSummer=Mean_summer_temp)
 clim30yr <- clim30yr %>% mutate(PptFall1=lead(PptFall), PptWinter1=lead(PptWinter), PptSummer1=lead(PptSummer),
                    TempFall1=lead(TempFall), TempWinter1=lead(TempWinter), TempSummer1=lead(TempSummer))
+clim30yr <- clim30yr[1:31,]
 
 
 params <- 1000  #Number of iterations for param uncertainty eg. 1000
