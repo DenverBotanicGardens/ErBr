@@ -469,9 +469,14 @@ for (rr in 1:nrow(temp)) {
 
 
 ## Update 2022-11-09 Michelle DePrenger-Levin, corrected current and previous year to split at 1:7 as current, 8:12 previous
+clim <- erbr.climate.monthly %>%
+  left_join(erbr.climate.monthly.tmean, by = "Year") %>%
+  filter(Year < 2023 & Year > 2003)
 clim <- cbind(erbr.climate.monthly, erbr.climate.monthly.tmean[,c(2:4)])
 save(clim, file = paste("C:/Users/deprengm/OneDrive - Denver Botanic Gardens/P drive/hackathon/ErBr/erbr_climData3seas",
                       Sys.Date(),".Rdata", sep=""))
+write.csv(clim, paste("C:/Users/deprengm/OneDrive - Denver Botanic Gardens/P drive/hackathon/ErBr/erbr_climData3seas",
+                      Sys.Date(),".csv", sep=""), row.names = FALSE)
 
 ## SAVE CLIMATE DATA --------------------------------------------------------------
 ## Combine different climate variables into one data frame
