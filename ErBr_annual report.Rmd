@@ -36,6 +36,12 @@ script <- getURL("https://raw.githubusercontent.com/DenverBotanicGardens/ErBr/ma
                  ssl.verifypeer = FALSE)
 eval(parse(text = script))
 
+
+## After add new climate data once:
+load("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/2022_Eriogonum-brandegeei/erbrseasons.Rdata")
+
+load("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/2022_Eriogonum-brandegeei/climatelong.Rdata")
+
 ```
 
 ###Data    
@@ -55,21 +61,6 @@ erbr.summary <- read.csv(paste("C:/Users/",myUsername,"/Denver Botanic Gardens/C
 erbr.cleora <- erbr.summary[erbr.summary$Site == "Cleora" & erbr.summary$Year == 2004,]
 erbr.summary <- erbr.summary[erbr.summary$Site != "Cleora",]
 erbr.summary$Site <- factor(erbr.summary$Site)
-
-# Garden Park West remained significantly smaller in years after 2011
-erbr.summary %>%
-  mutate(PrePost2011 = case_when(Year >= 2011 ~ "post",
-                                 Year < 2011 ~ "pre")) %>%
-  group_by(Site, PrePost2011) %>%
-  summarise(Mean = mean(SumOfRosettes), sd= sd(SumOfRosettes))
-
-table(erbr.raw$Site, erbr.raw$Year)
-
-erbr.summary %>%
-  filter(SumOfRosettes > 0) %>%
-ggplot( aes(Year, SumOfRosettes, color = Site, linetype = as.factor(Transect)))+
-  geom_line()+
-  geom_point()
 
 
 #Table 1
@@ -93,6 +84,8 @@ get_prism_monthlys(type="ppt", mon = 1:12, keepZip = FALSE, years = (currentyr-1
 get_prism_monthlys(type="tmax", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
 #Minimum temperature (average)
 get_prism_monthlys(type="tmin", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
+
+get_prism_monthlys(type = "vpdmax", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
 ```
 cleanup
 ```{r}
@@ -113,6 +106,7 @@ erbrlatlong <- data.frame(Lat = 38.5434, Long = -105.2184)
 maxs <- prism_archive_subset(type = "tmax", temp_period = "monthly")
 mins <- prism_archive_subset(type = "tmin", temp_period = "monthly")
 ppt <- prism_archive_subset(type = "ppt", temp_period = "monthly")
+wvdm <- prism_archive_subset(type = "vpdmax", temp_period = "monthly")
 length(maxs) # 490, 510
 length(mins) # 490
 length(ppt) # 490
@@ -132,9 +126,15 @@ avgPrecip <- lapply(ppt, function(x){
   data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = x)
 })
 
+avgwvdm <- lapply(wvdm, function(x){
+  rastertemps <- raster(pd_to_file(x))
+  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = x)
+})
+
 mins.avg <- do.call(rbind, avgTemps.min)
 maxs.avg <- do.call(rbind, avgTemps.max)
 ppt.avg <- do.call(rbind, avgPrecip)
+wvdm.avg <- do.call(rbind, avgwvdm)
 
 erbr.climate.monthly <- ppt.avg %>%
   mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
@@ -189,12 +189,96 @@ erbr.climate.monthly.tmax <- maxs.avg %>%
   pivot_wider(names_from = c(Variable,season), values_from = Value) %>%
   dplyr::rename(Year = Prev12)
 
+erbr.climate.monthly.wvdm <- wvdm.avg %>%
+  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
+         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
+         # Make previous 12 months match year (previous to August survey)
+         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
+  # table(erbr.climate.monthly.wvdm$Year, erbr.climate.monthly.wvdm$Month) 
+  #extract the climate variable name from the prism long name
+  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
+  # mutate(season = "winter") %>%
+  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
+                            Month>=8 & Month<=11 ~ "fall",
+                            Month>=4 & Month<=7 ~ "summer")) %>%
+  group_by(season, Prev12, Variable) %>%
+  dplyr::summarise(Value = mean(data), .groups = "keep") %>%
+  pivot_wider(names_from = c(Variable,season), values_from = Value) %>%
+  dplyr::rename(Year = Prev12)
+
 erbr.seasons <- erbr.climate.monthly %>%
   left_join(erbr.climate.monthly.tmin, by = "Year") %>%
   left_join(erbr.climate.monthly.tmax, by = "Year") %>%
+  left_join(erbr.climate.monthly.wvdm, by = "Year") %>%
   filter(Year < 2023 & Year > 2003)
 
+save(erbr.seasons, file = "C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/2022_Eriogonum-brandegeei/erbrseasons.Rdata")
 
+wbdm.long <- wvdm.avg %>%
+  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
+         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
+         # Make previous 12 months match year (previous to August survey)
+         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
+  # table(erbr.climate.monthly.wvdm$Year, erbr.climate.monthly.wvdm$Month) 
+  #extract the climate variable name from the prism long name
+  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
+  # mutate(season = "winter") %>%
+  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
+                            Month>=8 & Month<=11 ~ "fall",
+                            Month>=4 & Month<=7 ~ "summer")) %>%
+  group_by(season, Prev12, Variable) %>%
+  dplyr::summarise(Value = mean(data), .groups = "keep")
+
+max.long <- maxs.avg %>%
+  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
+         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
+         # Make previous 12 months match year (previous to August survey)
+         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
+  # table(erbr.climate.monthly.tmin$Year, erbr.climate.monthly.tmin$Month) # missing December 2021
+  #extract the climate variable name from the prism long name
+  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
+  # mutate(season = "winter") %>%
+  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
+                            Month>=8 & Month<=11 ~ "fall",
+                            Month>=4 & Month<=7 ~ "summer")) %>%
+  group_by(season, Prev12, Variable) %>%
+  dplyr::summarise(Value = mean(data), .groups = "keep") 
+
+tmin.long <- mins.avg %>%
+  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
+         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
+         # Make previous 12 months match year (previous to August survey)
+         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
+  # table(erbr.climate.monthly.tmin$Year, erbr.climate.monthly.tmin$Month) # missing December 2021
+  #extract the climate variable name from the prism long name
+  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
+  # mutate(season = "winter") %>%
+  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
+                            Month>=8 & Month<=11 ~ "fall",
+                            Month>=4 & Month<=7 ~ "summer")) %>%
+  group_by(season, Prev12, Variable) %>%
+  dplyr::summarise(Value = mean(data), .groups = "keep") 
+
+ppt.long <- ppt.avg %>%
+  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
+         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
+         # Make previous 12 months match year (previous to August survey)
+         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
+  #extract the climate variable name from the prism long name
+  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
+  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
+                            Month>=8 & Month<=11 ~ "fall",
+                            Month>=4 & Month<=7 ~ "summer")) %>%
+  group_by(season, Prev12, Variable) %>%
+  dplyr::summarise(Value = sum(data), .groups = "keep")
+
+climate.long <- wbdm.long %>%
+  bind_rows(max.long) %>%
+  bind_rows(tmin.long) %>%
+  bind_rows(ppt.long) %>%
+  dplyr::rename(Year = Prev12)
+
+save(climate.long, file ="C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/2022_Eriogonum-brandegeei/climatelong.Rdata")
 ```
 
 Demography     
@@ -203,7 +287,8 @@ Demography
 
 Figure 2
 ```{r}
-ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig2.jpg", sep=""),
+ggsave(filename = paste("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/",
+                        currentyr,"_Eriogonum-brandegeei/",currentyr,"_Fig2.jpg", sep=""),
   ggplot(erbr.summary, aes(Year, SumOfRosettes  ,colour = Site, shape = Site))+
     stat_summary(fun = mean, position=position_dodge(width=0.5),
                  fun.min = function(x) mean(x) - std.error(x),
@@ -296,7 +381,9 @@ fig3b <- ggplot(erbr.summary, aes(Year, InflperRos,colour = Site, shape = Site))
   theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank()) 
 
 
-ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig3ab.jpg", sep=""), 
+ggsave(filename = paste("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/",
+                        currentyr,"_Eriogonum-brandegeei/",
+                        currentyr,"_Fig3ab.jpg", sep=""), 
        fig3a + fig3b,
  width=200, height=75,units='mm', dpi=300)
 ```
@@ -304,31 +391,54 @@ ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/E
 # Demography
 Averages before and after 2011
 ```{r}
-erbr.summary$drought <- "before"
-erbr.summary$drought[erbr.summary$Year > 2010] <- "after"
-erbr.summary$drought <- factor(erbr.summary$drought, levels = c("before","after"))
+# Garden Park West remained significantly smaller in years after 2011
+erbr.summary %>%
+  mutate(PrePost2011 = case_when(Year >= 2011 ~ "post",
+                                 Year < 2011 ~ "pre")) %>%
+  group_by(Site, PrePost2011) %>%
+  summarise(Mean = mean(SumOfRosettes), sd= sd(SumOfRosettes))
 
-agg.erbr <- aggregate(SumOfRosettes ~ Site + drought, data=erbr.summary, mean)
-agg.erbr$SE <- aggregate(SumOfRosettes ~ Site + drought, data=erbr.summary, std.error)[,3]
-agg.erbr$SD <- aggregate(SumOfRosettes ~ Site + drought, data=erbr.summary, sd)[,3]
+table(erbr.raw$Site, erbr.raw$Year)
 
-agg.erbr
+erbr.summary %>%
+  filter(SumOfRosettes > 0) %>%
+ggplot( aes(Year, SumOfRosettes, color = Site, linetype = as.factor(Transect)))+
+  geom_line()+
+  geom_point()+
+  theme_bw()
 ```
 
 #Really? Those are defined as drought how?
 ```{r}
-ggplot(agg.erbr, aes(drought,SumOfRosettes, colour = Site))+
-  geom_point()+
-  geom_errorbar(aes(ymax=SumOfRosettes + SE, ymin=SumOfRosettes - SE), width=0.1)+
+
+erbr.summary %>%
+  mutate(drought = case_when(Year >= 2011 ~ "post",
+                                 Year < 2011 ~ "pre")) %>%
+  group_by(Site, drought) %>%
+  mutate(SumOfRosettesmean = mean(SumOfRosettes), SD= sd(SumOfRosettes), SE = std.error(SumOfRosettes)) %>%
+ggplot( aes(drought,SumOfRosettesmean, colour = Site))+
+  geom_point(position = position_dodge(width = 0.1))+
+  geom_errorbar(aes(ymax=SumOfRosettesmean + SE, ymin=SumOfRosettesmean - SE), width=0.1, position = position_dodge(width = 0.1))+
   theme_bw()+
   xlab("Drought conditions (2011-2013)")+
   ylab("Average rosettes")+
-  scale_color_manual(values=c("#000000","#7e7e7e"),
+  scale_color_manual(values=c("black","grey70"),
                      labels = c("Garden Park East","Garden Park West"))+
   scale_shape_manual(values=c(1,2),
                      labels = c("Garden Park East","Garden Park West"))+
   theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank())
 
+
+climate.long %>%
+  group_by(Variable) %>%
+  mutate(scale_value = scale(Value)) %>%
+ggplot(  aes(Year, scale_value, color = Variable))+
+  geom_line()+
+  geom_point()+
+  theme_bw()+
+  facet_grid(season ~ Variable, scales = "free")+
+  stat_smooth(method = "lm")+
+  geom_hline(yintercept = 0, col="grey30", linetype = "dotted")
 ```
 
 Figure 5a
