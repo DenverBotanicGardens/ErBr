@@ -24,43 +24,8 @@ library(lme4)
 require(AICcmodavg)
 library(lattice)
 library(patchwork)
-
-## Use patchwork instead of multiplot
-# multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
-#   library(grid)
-# 
-#   # Make a list from the ... arguments and plotlist
-#   plots <- c(list(...), plotlist)
-# 
-#   numPlots = length(plots)
-# 
-#   # If layout is NULL, then use 'cols' to determine layout
-#   if (is.null(layout)) {
-#     # Make the panel
-#     # ncol: Number of columns of plots
-#     # nrow: Number of rows needed, calculated from # of cols
-#     layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
-#                     ncol = cols, nrow = ceiling(numPlots/cols))
-#   }
-# 
-#  if (numPlots==1) {
-#     print(plots[[1]])
-# 
-#   } else {
-#     # Set up the page
-#     grid.newpage()
-#     pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
-# 
-#     # Make each plot, in the correct location
-#     for (i in 1:numPlots) {
-#       # Get the i,j matrix positions of the regions that contain this subplot
-#       matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
-# 
-#       print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
-#                                       layout.pos.col = matchidx$col))
-#     }
-#   }
-# }
+library(dplyr)
+library(tidyr)
 ```
 
 
@@ -92,17 +57,20 @@ erbr.summary <- erbr.summary[erbr.summary$Site != "Cleora",]
 erbr.summary$Site <- factor(erbr.summary$Site)
 
 # Garden Park West remained significantly smaller in years after 2011
-mean(erbr.summary$SumOfRosettes[erbr.summary$Year<2011 & erbr.summary$Site == "Garden Park East"])
-mean(erbr.summary$SumOfRosettes[erbr.summary$Year>=2011 & erbr.summary$Site == "Garden Park East"], na.rm = TRUE)
-sd(erbr.summary$SumOfRosettes[erbr.summary$Year<2011 & erbr.summary$Site == "Garden Park East"])
-sd(erbr.summary$SumOfRosettes[erbr.summary$Year>=2011 & erbr.summary$Site == "Garden Park East"], na.rm = TRUE)
+erbr.summary %>%
+  mutate(PrePost2011 = case_when(Year >= 2011 ~ "post",
+                                 Year < 2011 ~ "pre")) %>%
+  group_by(Site, PrePost2011) %>%
+  summarise(Mean = mean(SumOfRosettes), sd= sd(SumOfRosettes))
 
+table(erbr.raw$Site, erbr.raw$Year)
 
-mean(erbr.summary$SumOfRosettes[erbr.summary$Year<2011 & erbr.summary$Site == "Garden Park West"])
-mean(erbr.summary$SumOfRosettes[erbr.summary$Year>=2011 & erbr.summary$Site == "Garden Park West"], na.rm = TRUE)
+erbr.summary %>%
+  filter(SumOfRosettes > 0) %>%
+ggplot( aes(Year, SumOfRosettes, color = Site, linetype = as.factor(Transect)))+
+  geom_line()+
+  geom_point()
 
-sd(erbr.summary$SumOfRosettes[erbr.summary$Year<2011 & erbr.summary$Site == "Garden Park West"])
-sd(erbr.summary$SumOfRosettes[erbr.summary$Year>=2011 & erbr.summary$Site == "Garden Park West"], na.rm = TRUE)
 
 #Table 1
 erbr.summary[erbr.summary$Year == currentyr,]
@@ -118,8 +86,7 @@ table(erbr.summary$Year[erbr.summary$Rust>0], erbr.summary$Rust[erbr.summary$Rus
 # Climate Data
 just use the data downloaded for AsMi
 ```{r}
-options(prism.path = "Q:/Research/All_Projects_by_Species/Astragalus SPECIES/Astragalus_microcymbus/PRISM_asmiclimate")
-
+prism_set_dl_dir("Q:/Research/All_Projects_by_Species/Astragalus SPECIES/Astragalus_microcymbus/PRISM_asmiclimate")
 #Precipitation total, rain and snow
 get_prism_monthlys(type="ppt", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
 #Maximum temperature (average)
@@ -130,29 +97,25 @@ get_prism_monthlys(type="tmin", mon = 1:12, keepZip = FALSE, years = (currentyr-
 cleanup
 ```{r}
 
-get_prism_monthlys(type="ppt", mon = 5:12, keepZip = FALSE, years = 2020)
+get_prism_monthlys(type="ppt", mon = 1:7, keepZip = FALSE, years = currentyr)
 #Maximum temperature (average)
-get_prism_monthlys(type="tmax", mon = 5:12, keepZip = FALSE, years = 2020)
+get_prism_monthlys(type="tmax", mon = 1:7, keepZip = FALSE, years = currentyr)
 #Minimum temperature (average)
-get_prism_monthlys(type="tmin", mon = 5:12, keepZip = FALSE, years = 2020)
+get_prism_monthlys(type="tmin", mon = 1:7, keepZip = FALSE, years = currentyr)
+get_prism_monthlys(type="tmin", mon = 12, keepZip = FALSE, years = 2021)
 
 ```
 
 
 ```{r}
 erbrlatlong <- data.frame(Lat = 38.5434, Long = -105.2184)
-prism_archive_ls()
 
 maxs <- prism_archive_subset(type = "tmax", temp_period = "monthly")
 mins <- prism_archive_subset(type = "tmin", temp_period = "monthly")
 ppt <- prism_archive_subset(type = "ppt", temp_period = "monthly")
-length(maxs) # 490
+length(maxs) # 490, 510
 length(mins) # 490
 length(ppt) # 490
-
-foo <- pd_to_file(maxs[1])
-foorast <- raster(foo)
-raster::extract(foorast, erbrlatlong[,c("Long","Lat")])
 
 avgTemps.max <- lapply(maxs, function(x){
   rastertemps <- raster(pd_to_file(x))
@@ -173,62 +136,65 @@ mins.avg <- do.call(rbind, avgTemps.min)
 maxs.avg <- do.call(rbind, avgTemps.max)
 ppt.avg <- do.call(rbind, avgPrecip)
 
-mins.avg$Year <- as.numeric(substr(vapply(strsplit(mins.avg$date, '_'), 
-                                   function(x) x[5], character(1)), 1,4))
-mins.avg$Month <- as.numeric(substr(vapply(strsplit(mins.avg$date, '_'), 
-                                   function(x) x[5], character(1)), 5,6))
+erbr.climate.monthly <- ppt.avg %>%
+  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
+         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
+         # Make previous 12 months match year (previous to August survey)
+         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
+  #extract the climate variable name from the prism long name
+  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
+  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
+                            Month>=8 & Month<=11 ~ "fall",
+                            Month>=4 & Month<=7 ~ "summer")) %>%
+  group_by(season, Prev12, Variable) %>%
+  dplyr::summarise(Value = sum(data), .groups = "keep")  %>%
+  pivot_wider(names_from = c(Variable,season), values_from = Value) %>%
+  dplyr::rename(Year = Prev12)
+
+## Check running up to Prev12
+table(erbr.climate.monthly$Year, erbr.climate.monthly$Month)
 
 
-maxs.avg$Year <- as.numeric(substr(vapply(strsplit(maxs.avg$date, '_'), 
-                                   function(x) x[5], character(1)), 1,4))
-maxs.avg$Month <- as.numeric(substr(vapply(strsplit(maxs.avg$date, '_'), 
-                                   function(x) x[5], character(1)), 5,6))
+erbr.climate.monthly.tmin <- mins.avg %>%
+  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
+         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
+         # Make previous 12 months match year (previous to August survey)
+         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
+  # table(erbr.climate.monthly.tmin$Year, erbr.climate.monthly.tmin$Month) # missing December 2021
+  #extract the climate variable name from the prism long name
+  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
+  # mutate(season = "winter") %>%
+  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
+                            Month>=8 & Month<=11 ~ "fall",
+                            Month>=4 & Month<=7 ~ "summer")) %>%
+  group_by(season, Prev12, Variable) %>%
+  dplyr::summarise(Value = mean(data), .groups = "keep") %>%
+  pivot_wider(names_from = c(Variable,season), values_from = Value) %>%
+  dplyr::rename(Year = Prev12)
+
+erbr.climate.monthly.tmax <- maxs.avg %>%
+  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
+         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
+         # Make previous 12 months match year (previous to August survey)
+         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
+  # table(erbr.climate.monthly.tmin$Year, erbr.climate.monthly.tmin$Month) # missing December 2021
+  #extract the climate variable name from the prism long name
+  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
+  # mutate(season = "winter") %>%
+  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
+                            Month>=8 & Month<=11 ~ "fall",
+                            Month>=4 & Month<=7 ~ "summer")) %>%
+  group_by(season, Prev12, Variable) %>%
+  dplyr::summarise(Value = mean(data), .groups = "keep") %>%
+  pivot_wider(names_from = c(Variable,season), values_from = Value) %>%
+  dplyr::rename(Year = Prev12)
+
+erbr.seasons <- erbr.climate.monthly %>%
+  left_join(erbr.climate.monthly.tmin, by = "Year") %>%
+  left_join(erbr.climate.monthly.tmax, by = "Year") %>%
+  filter(Year < 2023 & Year > 2003)
 
 
-ppt.avg$Year <- as.numeric(substr(vapply(strsplit(ppt.avg$date, '_'), 
-                                   function(x) x[5], character(1)), 1,4))
-ppt.avg$Month <- as.numeric(substr(vapply(strsplit(ppt.avg$date, '_'), 
-                                   function(x) x[5], character(1)), 5,6))
-
-table(ppt.avg$Year, ppt.avg$Month)
-# Missing May - Dec of 2020
-table(maxs.avg$Year, maxs.avg$Month)
-# double in 2018, double a few in 2019, missing most of 2020, Now double in 2019 
-
-erbr.climate <- merge(mins.avg[,-2],maxs.avg[,-2], by = c("Year","Month")) 
-erbr.climate <- merge(erbr.climate, ppt.avg[,-2], by =c("Year","Month") )
-names(erbr.climate) <- c("Year","Month", "tmin","tmax","ppt")
-
-#Pull out month and year
-#date is a factor
-# erbr.climate$date <- as.character(erbr.climate$date)
-
-#split by _ select the YYYYMM numbers
-# erbr.climate$Year <- as.numeric(substr(vapply(strsplit(erbr.climate$date, '_'), 
-#                                    function(x) x[5], character(1)), 1,4))
-# erbr.climate$Month <- as.numeric(substr(vapply(strsplit(erbr.climate$date, '_'), 
-#                                    function(x) x[5], character(1)), 5,6))
-
-# Something is not right, 1 month per year but more for 2018-2020
-table(erbr.climate$Month, erbr.climate$Year )
-# erbr.c <- erbr.climate[,-2]
-erbr.c <- erbr.climate
-erbr.c$Prev12 <- erbr.c$Year
-erbr.c$Prev12[erbr.c$Month > 7] <- erbr.c$Year[erbr.c$Month > 7]+1
-```
-
-```{r}
-head(erbr.c)
-
-plotppt <- aggregate(erbr.climate$ppt, by=list(erbr.climate$Year), "sum" )
-
-ggplot(plotppt, aes(Group.1,x))+
-  geom_line()+
-  theme_bw()+
-  xlab("Year")+
-  ylab("sum of ppt per year")
-
-mean(plotppt$x)
 ```
 
 Demography     
@@ -237,9 +203,6 @@ Demography
 
 Figure 2
 ```{r}
-# jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig2.jpg"),
-#      width=250, height=125,units='mm', res=300)
-
 ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig2.jpg", sep=""),
   ggplot(erbr.summary, aes(Year, SumOfRosettes  ,colour = Site, shape = Site))+
     stat_summary(fun = mean, position=position_dodge(width=0.5),
@@ -261,7 +224,6 @@ ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/E
     theme(legend.justification=c(1,1), legend.position=c(0.85,1), legend.background = element_blank()) ,
 width=250, height=125,units='mm', dpi=300)
   
-# dev.off()
 ```
 
 Count PVA
@@ -280,8 +242,6 @@ sapply(GPW[,1:3], function(x) exp(x))
 
 Figure 3a
 ```{r}
-# jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig3a.jpg"),
-#      width=100, height=75,units='mm', res=300)
 
 fig3a <- 
   ggplot(erbr.summary, aes(Year, SumOfInfl,colour = Site, shape = Site))+
@@ -305,8 +265,6 @@ fig3a <-
                        labels = c("Garden Park East","Garden Park West"))+
     theme(legend.justification=c(1,1), legend.position=c(1,1),legend.background = element_blank())
 
-
-# dev.off()
 ```
 
 Figure 3b
@@ -337,39 +295,10 @@ fig3b <- ggplot(erbr.summary, aes(Year, InflperRos,colour = Site, shape = Site))
                      labels = c("Garden Park East","Garden Park West"))+
   theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank()) 
 
-# jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig3b.jpg"),
-#      width=100, height=75,units='mm', res=300)
-
-# ggplot(erbr.summary, aes(Year, InflperRos,colour = Site, shape = Site))+
-#   stat_summary(fun.y = mean, position=position_dodge(width=0.5),
-#                fun.ymin = function(x) mean(x) - std.error(x),
-#                fun.ymax = function(x) mean(x) + std.error(x),
-#                geom = "errorbar")+
-#    stat_summary(fun.y = mean, position=position_dodge(width=0.5),
-#                fun.ymin = function(x) mean(x) - std.error(x),
-#                fun.ymax = function(x) mean(x) + std.error(x),
-#                geom = "point")+
-#   stat_summary(fun.y = mean, position=position_dodge(width=0.5),
-#                geom = "line")+
-#   theme_bw() +
-#   ggtitle("b)") +
-#   theme(plot.title=element_text(hjust=0))+
-#   ylab("Average inflorescences per rosettes")+
-#   scale_color_manual(values=c("#000000","#7e7e7e"),
-#                      labels = c("Garden Park East","Garden Park West"))+
-#   scale_shape_manual(values=c(1,2),
-#                      labels = c("Garden Park East","Garden Park West"))+
-#   theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank()) 
-
 
 ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig3ab.jpg", sep=""), 
        fig3a + fig3b,
  width=200, height=75,units='mm', dpi=300)
-
-# dev.off()
-
-
-
 ```
 
 # Demography
