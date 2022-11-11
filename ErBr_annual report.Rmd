@@ -26,6 +26,7 @@ library(lattice)
 library(patchwork)
 library(dplyr)
 library(tidyr)
+library(MASS)
 ```
 
 
@@ -428,7 +429,12 @@ ggplot( aes(drought,SumOfRosettesmean, colour = Site))+
                      labels = c("Garden Park East","Garden Park West"))+
   theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank())
 
+cliamte.long <- climate.long %>%
+  group_by(Variable) %>%
+  mutate(scale_value = scale(Value))
 
+ggsave(filename = paste("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/",
+                        currentyr,"_Eriogonum-brandegeei/",currentyr,"_climate.jpg", sep = ""),
 climate.long %>%
   group_by(Variable) %>%
   mutate(scale_value = scale(Value)) %>%
@@ -437,14 +443,36 @@ ggplot(  aes(Year, scale_value, color = Variable))+
   geom_point()+
   theme_bw()+
   facet_grid(season ~ Variable, scales = "free")+
+  ylab("scaled and centered")+
   stat_smooth(method = "lm")+
-  geom_hline(yintercept = 0, col="grey30", linetype = "dotted")
+  scale_color_discrete(guide = "none")+
+  ggtitle("a)")+
+  geom_hline(yintercept = 0, col="grey30", linetype = "dotted"),
+width=250, height=125,units='mm', dpi=300)
+
+summary(lm(Value ~ Year + season, data = climate.long[climate.long$Variable == "vpdmax",]))
+
+ggsave(filename = paste("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/",
+                        currentyr,"_Eriogonum-brandegeei/",currentyr,"_climate_studyperiod.jpg", sep = ""),
+climate.long %>%
+  group_by(Variable) %>%
+  mutate(scale_value = scale(Value)) %>%
+  filter(Year > 2003) %>%
+ggplot(  aes(Year, scale_value, color = Variable))+
+  geom_line()+
+  geom_point()+
+  theme_bw()+
+  facet_grid(season ~ Variable, scales = "free")+
+  ylab("scaled and centered")+
+  stat_smooth(method = "lm")+
+  scale_color_discrete(guide = "none")+
+  ggtitle("b)")+
+  geom_hline(yintercept = 0, col="grey30", linetype = "dotted"),
+width=250, height=125,units='mm', dpi=300)
 ```
 
 Figure 5a
 ```{r}
-# jpeg(paste0("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig5a.jpg"),
-#      width=120, height=100,units='mm', res=300)
 
 fig5a <- ggplot(erbr.summary, aes( Year,SumOfArea,colour = Site, shape = Site))+
   stat_summary(fun = mean, position=position_dodge(width=0.5),
@@ -467,7 +495,6 @@ fig5a <- ggplot(erbr.summary, aes( Year,SumOfArea,colour = Site, shape = Site))+
                      labels = c("Garden Park East","Garden Park West"))+
   theme(legend.justification=c(1,1), legend.position=c(1,1), legend.background = element_blank()) 
 
-# dev.off()
 ```
 
 Figure 5b
@@ -572,11 +599,6 @@ Figure 6b
 
 erbr.summary$InflBrperInfl <- erbr.summary$SumOfBrowsedInfl/erbr.summary$SumOfInfl
 
-# hist(erbr.summary$InflBrperInfl[erbr.summary$Year == 2020])
-# hist(erbr.summary$SumOfInfl[erbr.summary$Year==2020])
-# erbr.summary$SumOfBrowsedInfl[erbr.summary$Year == 2020] # no browsed inflorescence in 2020
-# table(erbr.raw$Br[erbr.raw$Year==2020])
-
 fig6b <- ggplot(erbr.summary, aes(Year,InflBrperInfl,colour = Site, shape = Site))+
   stat_summary(fun = mean, position=position_dodge(width=0.25),
                fun.min = function(x) mean(x) - std.error(x),
@@ -600,89 +622,10 @@ fig6b <- ggplot(erbr.summary, aes(Year,InflBrperInfl,colour = Site, shape = Site
   scale_y_continuous(labels = percent)
 
 
-ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig6ab.jpg", sep=""), 
+ggsave(filename = paste("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/",
+                        currentyr,"_Eriogonum-brandegeei/",currentyr,"_Fig6ab.jpg", sep=""), 
        fig6a + fig6b,
  width=240, height=100,units='mm', dpi=300)
-```
-
-# PCoA but AICc model seleciton would make more sense
-Climate
-Garden Park
-seasons:   
-    Winter: November-January (11-1)      
-    Spring: February-April (2-4)   
-    Summer: May-July (5-7)   
-    Fall: August-October (8-10)   
-```{r}
-erbr.c$season <- "winter"
-erbr.c$season[erbr.c$Month >1 & erbr.c$Month <5] <- "spring"
-erbr.c$season[erbr.c$Month >4 & erbr.c$Month <8] <- "summer"
-erbr.c$season[erbr.c$Month >7 & erbr.c$Month <11] <- "fall"
-
-erbr.c.summary <- aggregate(cbind(tmin,tmax,ppt)~season+Prev12, 
-                            data = erbr.c, mean, na.rm=TRUE)
-
-#cutoff <- 0.65
-#cutoff <- 0.75
-
-cutoff <- 0.5
-
-season <- reshape(erbr.c.summary[erbr.c.summary$Prev12 < currentyr+1 &
-                                   erbr.c.summary$Prev12 > 1994,],
-                  idvar="Prev12",
-                  timevar="season",
-                  direction="wide")
-
-cor.table<-cor(season[,-1])
-data <- as.data.frame(as.table(cor.table))
-data[with(data, order(Freq)),]
-
-combins <- combn(colnames(cor.table),2,FUN=function(x) paste(x,collapse="_"))
-cor.data <- data[data$Var1 != data$Var2, ]
-data <- cor.data[paste(cor.data$Var1, cor.data$Var2, sep="_") %in% combins,]
-exclude <- paste(data$Var2[abs(data$Freq)>cutoff],sep=",")
-
-# Correlated
-pairs(season[,c(grep(paste(exclude, collapse = "|"),
-                     names(season), value = TRUE))])
-
-# Not correlated??
-pairs(season[,c(grep(paste(exclude, collapse = "|"),
-                     names(season), value = TRUE, invert=TRUE))])
-
-
-#Which are correlated? 
-data[abs(data$Freq)>cutoff,]
-
-tomatch <- c("Prev12",exclude)
-
-forpca <- season[,c(grep(paste(tomatch, collapse="|"),
-                         names(season), value=TRUE, invert=TRUE))]
-names(forpca)
-```
-
-```{r}
-erbr.pca <- princomp(forpca,cor=TRUE)
-summary(erbr.pca)
-erbr.load <- loadings(erbr.pca)
-erbr.pc <- predict(erbr.pca)
-
-erbr.pc <- data.frame(erbr.pc,season)
-erbr.pc$Drought <- "pre"
-erbr.pc$Drought[erbr.pc$Prev12 < 2011] <- "post"
-
-```
-
-
-```{r}
-ggplot(erbr.pc, aes(Comp.1,Comp.2, colour = Drought, label = Prev12))+
-  geom_text(alpha = 0.75, angle = 45, size = 3) +
-  stat_ellipse()+
-  xlab("PC1 (26%)")+
-  ylab("PC2 (23%)")+
-  theme_bw()
-  
-
 ```
 
 
@@ -690,6 +633,9 @@ Figure 4
 ```{r}
 precip <- aggregate(ppt~Prev12,
                     data = erbr.c, sum)
+
+erbr.seasons %>%
+  
 
 mean(precip$ppt)
 
@@ -731,14 +677,11 @@ fig4b <- ggplot(mintemp, aes(Prev12, tmin))+
   theme(plot.title=element_text(hjust=0))
 
 ```
+
+## New figure 4 being all climate data and study period data
+
 figure 4c
 ```{r}
-maxtemp <- aggregate(tmax~Prev12,
-                     data = erbr.c, mean)
-
-# is it missing data in most recent year? 
-table(erbr.c$Month[erbr.c$Prev12 == 2020]) # Yeah! Only has 1 may-july each, one november, 8 everything else
-table(erbr.c$Month[erbr.c$Prev12 == 2018]) # Yeah! Only has 1 may-july each, one november, 8 everything else
 
 
 maxtemp <- maxtemp[maxtemp$Prev12>1994&maxtemp$Prev12<=currentyr,]
@@ -770,7 +713,6 @@ ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/E
 ```{r}
 
 # Fill in missing years with climate but no data
-erbr.summary[erbr.summary$Year == 2013,]
 
 missingyears <- setdiff(c(min(unique(erbr.summary$Year)):max(unique(erbr.summary$Year))),
                         unique(erbr.summary$Year))
@@ -782,118 +724,192 @@ for(yr in missingyears){
   erbr.summary <- rbind(erbr.summary, addrows)
 }
 
-erbr.all <- merge(erbr.summary,precip, by.x = "Year", by.y = "Prev12")
-erbr.all <- merge(erbr.all, mintemp, by.x = "Year", by.y = "Prev12")
-erbr.all <- merge(erbr.all, maxtemp, by.x = "Year", by.y = "Prev12")
+erbr.all <- merge(erbr.summary,erbr.seasons, by = "Year")
 ```
 
-Transformations
+
+
+## AIC 
+
+# Dredge for everything or: Think through what might be impacting rosettes. Maybe multiple years of drought and rust or just current or just past climate or interaction of a couple years in a row of climate.   
 ```{r}
-#log transformation
-hist(erbr.all$SumOfRosettes)
-hist(erbr.all$SumOfArea)
-hist(erbr.all$SumOfInfl)
+library(jtools)
+library(lme4)
 
-hist(log(erbr.all$SumOfRosettes+1))
-hist(log(erbr.all$SumOfArea+1))
-hist(log(erbr.all$SumOfInfl+1)) # negative binomial? lots of zeros, zero inflated 
+pairs(erbr.seasons)
+cor.climate <- as.data.frame(as.table(cor(erbr.seasons[,-1])))
+cor.climate[abs(cor.climate$Freq) > 0.7,]
 
-erbr.all$logSumOfRosettes <- log(erbr.all$SumOfRosettes+1)
-erbr.all$logSumOfArea <- log(erbr.all$SumOfArea+1)
-erbr.all$logSumOfInfl <- log(erbr.all$SumOfInfl+1)
+exclude <- c("ppt_fall","tmax_fall","ppt_summer","tmax_summer","tmax_winter")
+keep <- c("vpdmax_fall","vpdmax_summer","tmin_fall","vpdmax_winter")
 
-#arcsine square root transformation
-hist(erbr.all$InflperRos)
-hist(erbr.all$RosperArea) #maybe not this one?
-hist(erbr.all$InflperArea)
-hist(erbr.all$InflBrperInfl)
+erbr.all[,!(names(erbr.all) %in% exclude)]
+erbr.all$SiteTran <- paste(erbr.all$Site,erbr.all$Transect,sep="")
+erbr.lms <- erbr.all[erbr.all$SumOfRosettes >0,!(names(erbr.all) %in% exclude)]
+lm1 <- glmer(SumOfRosettes ~ vpdmax_fall + vpdmax_summer + tmin_fall + vpdmax_winter + (Year|SiteTran), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm2 <- glmer(SumOfRosettes ~ vpdmax_summer + (1+Year|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm3 <- glm(SumOfRosettes ~ vpdmax_summer, 
+              data = erbr.lms, family = poisson(link = "log"))
+lm4 <- glm(SumOfRosettes ~ vpdmax_summer, 
+              data = erbr.lms, family = poisson(link = "log"))
+lm5 <- glm(SumOfRosettes ~ vpdmax_summer, 
+              data = erbr.lms, family = poisson(link = "log"))
+lm6 <- glm(SumOfRosettes ~ 1, 
+              data = erbr.lms, family = poisson(link = "log"))
 
-hist(asin(sqrt(erbr.all$InflperRos)/100))
-hist(asin(sqrt(erbr.all$RosperArea)/100)) #not all that much better
-hist(asin(sqrt(erbr.all$InflperArea)/100))
-hist(asin(sqrt(erbr.all$InflBrperInfl)/100))
 
-erbr.all$sinsqInflperRos <- asin(sqrt(erbr.all$InflperRos)/100)
-erbr.all$sinsqInflperArea <- asin(sqrt(erbr.all$InflperArea)/100)
-erbr.all$sinsqInflBrperInfl <- asin(sqrt(erbr.all$InflBrperInfl)/100)
+
+lm.list <- list(lm1,lm6, lm7,lm8,lm9,lm14,lm15,lm16,lm18)
+lm.names <- as.character(unlist(lapply(lm.list,formula)))
+(lm.results <- aictab(lm.list, modnames=lm.names))
+#evidence ratio 
+for(i in 2:length(lm.list)){
+  print(exp(0.5*lm.results$Delta_AICc[i]))
+}
+
+evidence(lm.results)
+
+## correct standard error? Compare with quasipoisson
+lm1a <- glm(SumOfRosettes ~ vpdmax_fall + vpdmax_summer + tmin_fall + vpdmax_winter, 
+              data = erbr.lms, family = quasipoisson(link = "log"))
+plot_summs(lm1, lm1a, scale = TRUE, plot.distributions = TRUE)
+effect_plot(lm1a, pred = vpdmax_fall, interval = TRUE)
+effect_plot(lm1a, pred = vpdmax_fall, interval = TRUE)
+## predictions generated
+effect_plot(lm1a, pred = vpdmax_winter, interval = TRUE, plot.points = TRUE)
+effect_plot(lm1a, pred = tmin_fall, interval = TRUE, plot.points = TRUE)
+effect_plot(lm1a, pred = vpdmax_winter, interval = TRUE, plot.points = TRUE)
+effect_plot(lm1a, pred = vpdmax_summer, interval = TRUE, plot.points = TRUE)
+
+
 ```
+
+# AICc rosettes
+```{r}
+head(erbr.all)
+
+# current year can't change the number of rosettes but rust might be associated with more growth, a sign of better conditions for the plant
+glm1 <- glm.nb(SumOfRosettes~as.factor(RustYN), erbr.all)
+summary(glm1)
+glm1$theta
+ggplot(erbr.all, aes(as.factor(RustYN), SumOfRosettes))+
+  geom_boxplot()
+
+#climate in the current year
+glm2 <- glm.nb(SumOfRosettes~ppt, erbr.all)
+glm3 <- glm.nb(SumOfRosettes~tmin, erbr.all)
+glm4 <- glm.nb(SumOfRosettes~tmax, erbr.all)
+glm5 <- glm.nb(SumOfRosettes~(ppt*tmin*tmax), erbr.all)
+
+# All climate interacting with rust
+# glm14 <- glm.nb(SumOfRosettes~ppt*as.factor(RustYN), erbr.all)
+# glm15 <- glm.nb(SumOfRosettes~tmin*as.factor(RustYN), erbr.all)
+# glm16 <- glm.nb(SumOfRosettes~tmax*as.factor(RustYN), erbr.all)
+
+# Null model
+glm18 <- glm.nb(SumOfRosettes~1, erbr.all)
+
+lm.list <- list(glm1,glm2, glm3, glm4, glm5,
+                # glm14,glm15,glm16,
+                glm18)
+lm.names <- as.character(unlist(lapply(lm.list,formula)))
+(lm.results <- aictab(lm.list, modnames=lm.names))
+#evidence ratio 
+for(i in 2:length(lm.list)){
+  print(exp(0.5*lm.results$Delta_AICc[i]))
+}
+
+```
+
+zero inflation
+```{r}
+# install.packages("pscl")
+library(pscl)
+
+?zeroinfl
+
+```
+
+# What is reproduction correlated to?  
+```{r}
+# AICc
+# lm1 <- lm(SumOfRosettes.x~Site, erbr.all.t1) # They are so close and similar, wouldn't assume differences between macroplots
+rm(lm1);rm(lm2);rm(lm3);rm(lm4);rm(lm5);rm(lm6);rm(lm14);rm(lm15);rm(lm16);rm(lm18)
+
+# current year can't change the number of rosettes
+lm1 <- glm.nb(SumOfInfl.y ~as.factor(RustYN.x), erbr.all.t1[erbr.all.t1$Year.y < 2014,])
+
+#climate in the current year
+lm2 <- glm.nb(SumOfInfl.y~ppt.y, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
+lm3 <- glm.nb(SumOfInfl.y~tmin.y, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
+lm4 <- glm.nb(SumOfInfl.y~tmax.y, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
+lm5 <- glm.nb(SumOfInfl.y~(ppt.y*tmin.y*tmax.y), erbr.all.t1[erbr.all.t1$Year.y < 2014,])
+
+# All climate interacting with rust
+lm14 <- glm.nb(SumOfInfl.y~ppt.y*as.factor(RustYN.x), erbr.all.t1[erbr.all.t1$Year.y < 2014,])
+lm15 <- glm.nb(SumOfInfl.y~tmin.y*as.factor(RustYN.x), erbr.all.t1[erbr.all.t1$Year.y < 2014,])
+lm16 <- glm.nb(SumOfInfl.y~tmax.y*as.factor(RustYN.x), erbr.all.t1[erbr.all.t1$Year.y < 2014,])
+# lm17 <- lm(SumOfRosettes~(ppt.y+tmin.y+tmax.y+as.factor(RustYN.y))^2, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
+
+# Null model
+lm18 <- glm.nb(SumOfInfl.y~1, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
+
+
+
+lm.list <- list(lm1,lm2, lm3, lm4, lm5,
+                lm14,lm15,lm16,
+                lm18)
+lm.names <- as.character(unlist(lapply(lm.list,formula)))
+(lm.results <- aictab(lm.list, modnames=lm.names))
+#evidence ratio 
+for(i in 2:length(lm.list)){
+  print(exp(0.5*lm.results$Delta_AICc[i]))
+}
+
+ggplot(erbr.all.t1, aes(ppt.y, SumOfInfl.y, colour = as.factor(RustYN.x)))+
+  geom_point()+
+  stat_smooth(method = "lm")
+
+
+ggplot(erbr.all, aes(ppt, SumOfInfl, colour = tmin, size = tmax))+
+  geom_point()+
+  stat_smooth(method="lm")
+
+ggplot(erbr.all, aes(tmin, SumOfInfl, colour = ppt, size = tmax))+
+  geom_point()+
+  stat_smooth(method="lm")
+
+ggplot(erbr.all, aes(tmax, SumOfInfl, colour = tmin, size = ppt))+
+  geom_point()+
+  stat_smooth(method="lm")
+
+evidence(lm.results)
+
+
+```
+
 
 ```{r}
-cor(erbr.all$tmin,erbr.all$tmax)
-cor(erbr.all[,c("tmin","tmax","ppt")])
-pairs(erbr.all[,c("tmin","tmax","ppt")])
-```
-
-## Dunno, I think I'll just report a straight lm
-log transformed sum of rosettes
-```{r}
-summary(lmer(logSumOfRosettes ~ tmin + (1|Site), data = erbr.all))
-
-summary(lmer(logSumOfRosettes ~ tmin|Site, data = erbr.all))
-xyplot(logSumOfRosettes ~ tmin|Site, erbr.all,
-       type = c("g","p","r"),
-       index = function(x,y) coef(lm(y ~ x))[1],
-       xlab = "Minimum annual temperature",
-       ylab = "Rosettes (log transformed)", aspect = "xy")
-
-
-summary(lmer(SumOfRosettes ~ tmin|Site, data = erbr.all))
-xyplot(SumOfRosettes ~ tmin|Site, erbr.all,
-       type = c("g","p","r"),
-       index = function(x,y) coef(lm(y ~ x))[1],
-       xlab = "Minimum annual temperature",
-       ylab = "Rosettes", aspect = "xy")
-
-
-summary(lmer(SumOfRosettes ~ Rust|Site, data = erbr.all))
-xyplot(SumOfRosettes ~ Rust|Site, erbr.all,
-       type = c("g","p","r"),
-       index = function(x,y) coef(lm(y ~ x))[1],
-       xlab = "Rust",
-       ylab = "Rosettes", aspect = "xy")
-
-
-
-summary(lmer(SumOfInfl ~ Rust|Site, data = erbr.all))
-xyplot(SumOfInfl ~ Rust|Site, erbr.all,
-       type = c("g","p","r"),
-       index = function(x,y) coef(lm(y ~ x))[1],
-       xlab = "Rust",
-       ylab = "Inflorescences", aspect = "xy")
-
-
-summary(lmer(logSumOfInfl ~ Rust|Site, data = erbr.all))
-xyplot(logSumOfInfl ~ Rust|Site, erbr.all,
-       type = c("g","p","r"),
-       index = function(x,y) coef(lm(y ~ x))[1],
-       xlab = "Rust",
-       ylab = "Inflorescences", aspect = "xy")
-
-
-summary(lm(logSumOfRosettes ~ tmin, data = erbr.all))
-
-summary(lm(logSumOfRosettes ~ ppt, data = erbr.all))
-
-
-summary(lmer(SumOfRosettes ~ Year|Site, data = erbr.all))
-xyplot(SumOfRosettes ~ Year|Site, erbr.all,
-       type = c("g","p","r"),
-       index = function(x,y) coef(lm(y ~ x))[1],
-       xlab = "Year",
-       ylab = "Rosettes", aspect = "xy")
-
-ggplot(erbr.all, aes(as.factor(Year), SumOfRosettes))+
-  geom_boxplot()+
-  facet_grid(~Site)+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
-
-ggplot(erbr.all, aes(as.factor(Year), SumOfInfl))+
-  geom_boxplot()+
-  facet_grid(~Site)+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggplot(erbr.all, aes(tmin, sinsqInflBrperInfl, colour = Site))+
+  geom_point()+
+  stat_smooth(method="lm")+
+  theme_bw()+
+  xlab(expression("Minimum temperature"~degree*C))+
+  theme_bw() +
+  ggtitle("c)") +
+  theme(plot.title=element_text(hjust=0))+
+  ylab(expression("Proportion of browsed inflorescences"["  arcsine square root"]*" by transect"))+
+  scale_color_manual(values=c("#000000","#7e7e7e"),
+                     labels = c("Garden Park East","Garden Park West"))+
+  scale_shape_manual(values=c(1,2),
+                     labels = c("Garden Park East","Garden Park West"))+
+  theme(legend.justification=c(1,1), legend.position=c(1,1),
+        legend.background = element_rect(fill=alpha(0.4))) 
 
 ```
+
 
 #Figure 7 as one
 ```{r}
@@ -1125,195 +1141,6 @@ qqline(erbr.all$Rust)
 
 ```
 
-
-# Dredge for everything or: Think through what might be impacting rosettes. Maybe multiple years of drought and rust or just current or just past climate or interaction of a couple years in a row of climate.   
-THIS SHOULD ALL BE FROM NOT MERGED YEAR TO YEAR DATA, JUST the preceding months 
-Was .x for rosettes and .y for climate so regressing rosettes on future conditions!!!
-```{r}
-# AICc
-# lm1 <- lm(SumOfRosettes.x~Site, erbr.all.t1) # They are so close and similar, wouldn't assume differences between macroplots
-# Crap, .x is year t0, .y is year t1. the sumofrosettes should all be .y
-
-# current year can't change the number of rosettes
-lm1 <- glm.nb(SumOfRosettes.y~ as.factor(RustYN.x), erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-summary(lm1)
-ggplot(erbr.all.t1, aes(as.factor(RustYN.x), SumOfRosettes.y))+
-  geom_boxplot()
-
-#climate in the previous year
-# lm2 <- lm(SumOfRosettes.y~ppt.x, erbr.all.t1[erbr.all.t1$Year.y < 2014,])•
-# lm3 <- lm(SumOfRosettes.y~tmin.x, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-# lm4 <- lm(SumOfRosettes.y~tmax.x, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-# lm5 <- lm(SumOfRosettes.y~(ppt.x*tmin.x*tmax.x), erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-
-#climate in the current year
-lm6 <- glm.nb(SumOfRosettes.y~ppt.y, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-lm7 <- glm.nb(SumOfRosettes.y~tmin.y, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-lm8 <- glm.nb(SumOfRosettes.y~tmax.y, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-lm9 <- glm.nb(SumOfRosettes.y~(ppt.y*tmin.y*tmax.y), erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-
-# #climate interaction of previous and current years
-# lm10 <- lm(SumOfRosettes.y~ppt.x*ppt.y, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-# lm11 <- lm(SumOfRosettes.y~tmin.x*tmin.y, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-# lm12 <- lm(SumOfRosettes.y~tmax.x*tmax.y, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-# lm13 <- lm(SumOfRosettes.y~(ppt.y*tmin.y*tmax.y*ppt.x*tmin.x*tmax.x), erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-
-# All climate interacting with rust
-lm14 <- glm.nb(SumOfRosettes.y~ppt.y*as.factor(RustYN.x), erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-lm15 <- glm.nb(SumOfRosettes.y~tmin.y*as.factor(RustYN.x), erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-lm16 <- glm.nb(SumOfRosettes.y~tmax.y*as.factor(RustYN.x), erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-# lm17 <- lm(SumOfRosettes.y~(ppt.y+tmin.y+tmax.y+as.factor(RustYN.y))^2, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-
-# Null model
-lm18 <- glm.nb(SumOfRosettes.y~1, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-
-# With rust and higher temperatures, more rosettes
-ggplot(erbr.all[erbr.all$Year < 2014,], aes(tmax, SumOfRosettes, colour = as.factor(RustYN)))+
-  geom_point()+
-  stat_smooth(method="glm", family="binomial", formula=y~log(x),se=TRUE)
-
-lm.list <- list(lm1,lm6, lm7,lm8,lm9,lm14,lm15,lm16,lm18)
-lm.names <- as.character(unlist(lapply(lm.list,formula)))
-(lm.results <- aictab(lm.list, modnames=lm.names))
-#evidence ratio 
-for(i in 2:length(lm.list)){
-  print(exp(0.5*lm.results$Delta_AICc[i]))
-}
-
-evidence(lm.results)
-
-summary(lm16)
-summary(lm8)
-summary(lm13)
-summary(lm9)
-
-summary(lm(SumOfRosettes.y~(ppt.y*tmin.y*tmax.y), erbr.all.t1[erbr.all.t1$Year.y < 2014,]))
-
-```
-
-# AICc rosettes
-```{r}
-head(erbr.all)
-
-# current year can't change the number of rosettes but rust might be associated with more growth, a sign of better conditions for the plant
-glm1 <- glm.nb(SumOfRosettes~as.factor(RustYN), erbr.all)
-summary(glm1)
-glm1$theta
-ggplot(erbr.all, aes(as.factor(RustYN), SumOfRosettes))+
-  geom_boxplot()
-
-#climate in the current year
-glm2 <- glm.nb(SumOfRosettes~ppt, erbr.all)
-glm3 <- glm.nb(SumOfRosettes~tmin, erbr.all)
-glm4 <- glm.nb(SumOfRosettes~tmax, erbr.all)
-glm5 <- glm.nb(SumOfRosettes~(ppt*tmin*tmax), erbr.all)
-
-# All climate interacting with rust
-# glm14 <- glm.nb(SumOfRosettes~ppt*as.factor(RustYN), erbr.all)
-# glm15 <- glm.nb(SumOfRosettes~tmin*as.factor(RustYN), erbr.all)
-# glm16 <- glm.nb(SumOfRosettes~tmax*as.factor(RustYN), erbr.all)
-
-# Null model
-glm18 <- glm.nb(SumOfRosettes~1, erbr.all)
-
-lm.list <- list(glm1,glm2, glm3, glm4, glm5,
-                # glm14,glm15,glm16,
-                glm18)
-lm.names <- as.character(unlist(lapply(lm.list,formula)))
-(lm.results <- aictab(lm.list, modnames=lm.names))
-#evidence ratio 
-for(i in 2:length(lm.list)){
-  print(exp(0.5*lm.results$Delta_AICc[i]))
-}
-
-```
-
-zero inflation
-```{r}
-# install.packages("pscl")
-library(pscl)
-
-?zeroinfl
-
-```
-
-# What is reproduction correlated to?  
-```{r}
-# AICc
-# lm1 <- lm(SumOfRosettes.x~Site, erbr.all.t1) # They are so close and similar, wouldn't assume differences between macroplots
-rm(lm1);rm(lm2);rm(lm3);rm(lm4);rm(lm5);rm(lm6);rm(lm14);rm(lm15);rm(lm16);rm(lm18)
-
-# current year can't change the number of rosettes
-lm1 <- glm.nb(SumOfInfl.y ~as.factor(RustYN.x), erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-
-#climate in the current year
-lm2 <- glm.nb(SumOfInfl.y~ppt.y, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-lm3 <- glm.nb(SumOfInfl.y~tmin.y, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-lm4 <- glm.nb(SumOfInfl.y~tmax.y, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-lm5 <- glm.nb(SumOfInfl.y~(ppt.y*tmin.y*tmax.y), erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-
-# All climate interacting with rust
-lm14 <- glm.nb(SumOfInfl.y~ppt.y*as.factor(RustYN.x), erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-lm15 <- glm.nb(SumOfInfl.y~tmin.y*as.factor(RustYN.x), erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-lm16 <- glm.nb(SumOfInfl.y~tmax.y*as.factor(RustYN.x), erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-# lm17 <- lm(SumOfRosettes~(ppt.y+tmin.y+tmax.y+as.factor(RustYN.y))^2, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-
-# Null model
-lm18 <- glm.nb(SumOfInfl.y~1, erbr.all.t1[erbr.all.t1$Year.y < 2014,])
-
-
-
-lm.list <- list(lm1,lm2, lm3, lm4, lm5,
-                lm14,lm15,lm16,
-                lm18)
-lm.names <- as.character(unlist(lapply(lm.list,formula)))
-(lm.results <- aictab(lm.list, modnames=lm.names))
-#evidence ratio 
-for(i in 2:length(lm.list)){
-  print(exp(0.5*lm.results$Delta_AICc[i]))
-}
-
-ggplot(erbr.all.t1, aes(ppt.y, SumOfInfl.y, colour = as.factor(RustYN.x)))+
-  geom_point()+
-  stat_smooth(method = "lm")
-
-
-ggplot(erbr.all, aes(ppt, SumOfInfl, colour = tmin, size = tmax))+
-  geom_point()+
-  stat_smooth(method="lm")
-
-ggplot(erbr.all, aes(tmin, SumOfInfl, colour = ppt, size = tmax))+
-  geom_point()+
-  stat_smooth(method="lm")
-
-ggplot(erbr.all, aes(tmax, SumOfInfl, colour = tmin, size = ppt))+
-  geom_point()+
-  stat_smooth(method="lm")
-
-evidence(lm.results)
-
-
-```
-
-
-```{r}
-ggplot(erbr.all, aes(tmin, sinsqInflBrperInfl, colour = Site))+
-  geom_point()+
-  stat_smooth(method="lm")+
-  theme_bw()+
-  xlab(expression("Minimum temperature"~degree*C))+
-  theme_bw() +
-  ggtitle("c)") +
-  theme(plot.title=element_text(hjust=0))+
-  ylab(expression("Proportion of browsed inflorescences"["  arcsine square root"]*" by transect"))+
-  scale_color_manual(values=c("#000000","#7e7e7e"),
-                     labels = c("Garden Park East","Garden Park West"))+
-  scale_shape_manual(values=c(1,2),
-                     labels = c("Garden Park East","Garden Park West"))+
-  theme(legend.justification=c(1,1), legend.position=c(1,1),
-        legend.background = element_rect(fill=alpha(0.4))) 
-
-```
 
 
 ppt and tmax more than ppt and tmin so keep tmin. but they are 71% so could keep both 
