@@ -472,7 +472,7 @@ for (rr in 1:nrow(temp)) {
 clim <- erbr.climate.monthly %>%
   left_join(erbr.climate.monthly.tmean, by = "Year") %>%
   filter(Year < 2023 & Year > 2003)
-clim <- cbind(erbr.climate.monthly, erbr.climate.monthly.tmean[,c(2:4)])
+as.data.frame(clim)
 save(clim, file = paste("C:/Users/deprengm/OneDrive - Denver Botanic Gardens/P drive/hackathon/ErBr/erbr_climData3seas",
                       Sys.Date(),".Rdata", sep=""))
 write.csv(clim, paste("C:/Users/deprengm/OneDrive - Denver Botanic Gardens/P drive/hackathon/ErBr/erbr_climData3seas",

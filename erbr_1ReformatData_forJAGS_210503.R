@@ -58,7 +58,7 @@ erbr.1$Infl[is.na(erbr.1$Rosettes)] <- NA
 ## OPTIONAL *******************************************************************
 ## FOR MAKING CONSECUTIVE-ONLY OR PRUNED YEAR DATASETS
 ## Remove years 2013 onwards
-erbr.1 <- erbr.1[which(erbr.1$Year <= 2013),]
+# erbr.1 <- erbr.1[which(erbr.1$Year <= 2013),] ### commented out to get total indiviudals each year
 
 
 ## PRUNE DATA TO HAVE EVERY-OTHER YEARS ONLY
@@ -77,8 +77,9 @@ erbr.1 <- erbr.1[which(erbr.1$Year <= 2013),]
 ## To keep 1st 5 yeras
 #erbr.1 <- erbr.1[which(erbr.1$Year <=2008),]
 
+
 ## To keep 2nd 5 years
-erbr.1 <- erbr.1[which(erbr.1$Year >=2009),]
+# erbr.1 <- erbr.1[which(erbr.1$Year >=2009),] ## Commented out to get total individuals each year
 ### ***************************************************************************
 
 
@@ -93,13 +94,19 @@ erbr.1$TagNew <- NA
 erbr.1$TagNew[which(erbr.1$Site=="Garden Park East")] <- paste("E",erbr.1$Transect[which(erbr.1$Site=="Garden Park East")],sep=".",trunc(erbr.1$Tag[which(erbr.1$Site=="Garden Park East")]))
 erbr.1$TagNew[which(erbr.1$Site=="Garden Park West")] <- paste("W",erbr.1$Transect[which(erbr.1$Site=="Garden Park West")],sep=".",trunc(erbr.1$Tag[which(erbr.1$Site=="Garden Park West")]))
 
+
 ## Combine size (Rosettes) and repro (Infl) for clusters of plts with same truncated tag number
 erbr.1 <- erbr.1 %>%
   group_by(TagNew, Year) %>%
   mutate(RosNew=sumNA(Rosettes,na.rm=TRUE), InflNew=sumNA(Infl,na.rm=TRUE)) %>%
   ungroup()
 
+## How many observed individuals (tag clusters) were there each year
+indivXyear <- erbr.1 %>%
+  group_by(Year) %>%
+  summarise(Indivs = n_distinct(TagNew[Rosettes > 0]))
 
+as.data.frame(indivXyear)
 ## Remove rows that are duplicates in terms of TagNew and Year values
 erbr.1 <- erbr.1[!duplicated(erbr.1[,c("TagNew","Year")]),]
 
