@@ -4,7 +4,7 @@
 ## Re-format Eriogonum brandegeei data for use with JAGS and IPMs
 ## Either CLUSTER individuals by related (same truncated number) tag ID
 ## Or keep individuals SEPARATE by unique tag ID (i.e. truncated and decimal tag IDs)
-## Either keep all data years and rows with missing/ no data 
+## Either keep all data years and rows with missing/ no data
 ## Or make pruned year datasets
 ## Add survival for current year
 ## Add lag columns for modeling with jags
@@ -17,20 +17,28 @@ graphics.off()
 
 ## SET WD -----------------------------------------------------------------------------------------
 # setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
-setwd("C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels")
+setwd("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Projects/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels")
 ## ------------------------------------------------------------------------------------------------
 
 
 ## LOAD PACKAGES AND FUNCTIONS --------------------------------------------------------------------
 library(dplyr)
 library(bazar)
+library(stringr)
+library(tidyr)
+
 ## ------------------------------------------------------------------------------------------------
 
 
 ## LOAD DATA --------------------------------------------------------------------------------------
 # erbr <- read.csv("Files_from_Michelle/rawdata_2018_1.csv", header=TRUE)
-erbr <- read.csv("Eriogonum-brandegeei_rawdata_2004-2020.csv")
-clim3seas <- read.csv("erbr_climData3seasons_201022.csv", header=TRUE)
+currentyr <- as.numeric(format(as.Date(Sys.Date(),format="%Y-%m-%d"), "%Y"))
+# Michelle's path
+myUsername <- "deprengm"
+erbr <- read.csv(paste("C:/Users/",myUsername,"/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Data/rawdata_",
+                           currentyr,".csv", sep=""))
+# erbr <- read.csv("Eriogonum-brandegeei_rawdata_2004-2020.csv")
+clim3seas <- read.csv("C:/Users/deprengm/OneDrive - Denver Botanic Gardens/P drive/hackathon/ErBr/erbr_climData3seas2022-11-09.csv", header=TRUE)
 
 ## ------------------------------------------------------------------------------------------------
 
@@ -44,7 +52,7 @@ erbr <- erbr[!duplicated(erbr),]    #Remove duplicate rows
 
 
 
-## Remove Cleora sites since only 1 year of data collected 
+## Remove Cleora sites since only 1 year of data collected
 erbr.1 <- erbr[erbr$Site!="Cleora",]
 table(erbr.1$Site, erbr.1$Year)
 
@@ -54,18 +62,18 @@ erbr.1$Infl[erbr.1$Rosettes==0] <- NA
 erbr.1$Infl[is.na(erbr.1$Rosettes)] <- NA
 ## ------------------------------------------------------------------------------------------------
 
-# It appears that in 2020, if no new information was added, the row isn't output. 
+# It appears that in 2020, if no new information was added, the row isn't output.
 erbr.1[erbr.1$Year == 2020,]
 
 
 
 ## OPTIONAL *******************************************************************
-## FOR MAKING CONSECUTIVE-ONLY OR PRUNED YEAR DATASETS 
-## Remove years 2013 onwards 
+## FOR MAKING CONSECUTIVE-ONLY OR PRUNED YEAR DATASETS
+## Remove years 2013 onwards  ### MEDL: April did this for the original analyses to use only consecutive years
 #erbr.1 <- erbr.1[which(erbr.1$Year <= 2013),]
 
 
-## PRUNE DATA TO HAVE EVERY-OTHER YEARS ONLY 
+## PRUNE DATA TO HAVE EVERY-OTHER YEARS ONLY
 #yrs <- unique(erbr.1$Year)
 
 ## To keep even years
@@ -73,7 +81,7 @@ erbr.1[erbr.1$Year == 2020,]
 #erbr.1 <- erbr.1[which(erbr.1$Year %in% yrs.even),]
 
 ## To keep odd years
-#yrs.odd <- yrs[lapply(yrs, "%%",2)!=0] 
+#yrs.odd <- yrs[lapply(yrs, "%%",2)!=0]
 #erbr.1 <- erbr.1[which(erbr.1$Year %in% yrs.odd),]
 
 
@@ -90,12 +98,49 @@ erbr.1[erbr.1$Year == 2020,]
 
 ## CLUSTER BY RELATED TAG OR KEEP UNIQUE TAGS SEPARATE -----------------------------------
 
-## RUN EITHER THIS ... 
+## RUN EITHER THIS ...
 ## For tag CLUST
 ## Add a modified Tag column (site, transect, tag) to hold truncated tag values only (for clustered analysis)
-erbr.1$TagNew <- NA
-erbr.1$TagNew[which(erbr.1$Site=="Garden Park East")] <- paste("E",erbr.1$Transect[which(erbr.1$Site=="Garden Park East")],sep=".",trunc(erbr.1$Tag[which(erbr.1$Site=="Garden Park East")]))
-erbr.1$TagNew[which(erbr.1$Site=="Garden Park West")] <- paste("W",erbr.1$Transect[which(erbr.1$Site=="Garden Park West")],sep=".",trunc(erbr.1$Tag[which(erbr.1$Site=="Garden Park West")]))
+### MEDL 2022.12.15 realizing that some tags are used when closer tag is lost, need to limit truncation to a certain distance
+## From the PHPmyadmin database, the tags, transects, and sites tables to join to get the location information
+tagsPHP <- read.csv("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Projects/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels/_erbr_tags_PHP2022.csv")
+sitesPHP <- read.csv("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Projects/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels/_erbr_sites_PHP2022.csv")
+transectsPHP <- read.csv("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Projects/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels/_erbr_transects_PHP2022.csv")
+names(tagsPHP)
+names(sitesPHP)
+names(transectsPHP)
+
+## recorded as either "XXcm Dir of tag" or "Tag XXcm dir" sometimes XX cm sometimes XXcm
+## soil erodes easily, tags are lost and used sparingly. Some plants are added to tags even at great distances.
+## setting an arbitrary cutoff to keep tags separate
+erbr.loc <- tagsPHP %>%
+  left_join(transectsPHP, by = "ErBr_transect_id") %>%
+  left_join(sitesPHP, by = "ErBr_site_id") %>%
+  left_join(erbr.1, by = c("tag_number" = "Tag", "transect_number" = "Transect", "site_name" = "Site")) %>%
+  select(c(site_name ,Year,transect_number,tag_number ,X:Comments, location_comment ))
+table(erbr.loc$location_comment)
+erbr.loc <- erbr.loc %>%
+  mutate(TagDist = if_else(grepl("tag", location_comment), ## if reference to distance of plant from tag
+                           as.numeric(gsub("([0-9]+).*$", "\\1", location_comment)), # then pull numbers
+                           0)) %>% # if not, the numbers do not refer to distance and are zero, NA would be fine too
+  mutate(TagDist = replace_na(TagDist, 0))
+str(erbr.loc)
+table(erbr.loc$TagDist) ## Distribution of distances of tags to plants (clusters)
+table(erbr.loc$location_comment[erbr.loc$TagDist > 30])
+erbr.loc[erbr.loc$TagDist > 30 ,]
+names(erbr.loc) <- c(names(erbr.1),"location_comment","TagDist")
+# erbr.1 <- erbr.loc
+
+### truncate only if distance is within 30cm of tag
+# erbr.1$TagNew <- NA
+## Oops, not quite
+erbr.1 <- erbr.loc %>%
+  mutate(TagNew = case_when(Site == "Garden Park East" & TagDist < 30 ~ paste("E",Transect,sep=".",trunc(Tag)),
+                            Site == "Garden Park East" & TagDist >= 30 ~ paste("E",Transect,sep=".",Tag),
+                            Site == "Garden Park West" & TagDist < 30 ~ paste("W",Transect,sep=".",trunc(Tag)),
+                            Site == "Garden Park West" & TagDist >= 30 ~ paste("W",Transect,sep=".",Tag) ))
+# erbr.1$TagNew[which(erbr.1$Site=="Garden Park East")] <- paste("E",erbr.1$Transect[which(erbr.1$Site=="Garden Park East")],sep=".",trunc(erbr.1$Tag[which(erbr.1$Site=="Garden Park East")]))
+# erbr.1$TagNew[which(erbr.1$Site=="Garden Park West")] <- paste("W",erbr.1$Transect[which(erbr.1$Site=="Garden Park West")],sep=".",trunc(erbr.1$Tag[which(erbr.1$Site=="Garden Park West")]))
 
 ## Combine size (Rosettes) and repro (Infl) for clusters of plts with same truncated tag number
 erbr.1 <- erbr.1 %>% group_by(TagNew, Year) %>% mutate(RosNew=sumNA(Rosettes,na.rm=TRUE), InflNew=sumNA(Infl,na.rm=TRUE)) %>% ungroup()
@@ -104,14 +149,14 @@ erbr.1 <- erbr.1 %>% group_by(TagNew, Year) %>% mutate(RosNew=sumNA(Rosettes,na.
 erbr.1 <- erbr.1[!duplicated(erbr.1[,c("TagNew","Year")]),]
 
 
-## Skip this 2021-08-24 to test if that is the difference and problem with the new data - to make this df match 
+## Skip this 2021-08-24 to test if that is the difference and problem with the new data - to make this df match
 # "C:/Users/DePrengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum brandegeei/+
 # 2020_Eriogonum-brandegeei_AprilGoebl_PVA/erbr_TagClust_210510.csv"
 
 #######################################################
 ## ... OR THIS
 ## For tag SEP
-## Add a new Tag column with unique tag ID (i.e. incorporates transect and tag) 
+## Add a new Tag column with unique tag ID (i.e. incorporates transect and tag)
 erbr.1$TagNewAll <- NA
 erbr.1$TagNewAll[which(erbr.1$Site=="Garden Park East")] <- paste("E",erbr.1$Transect[which(erbr.1$Site=="Garden Park East")],sep=".",erbr.1$Tag[which(erbr.1$Site=="Garden Park East")])
 erbr.1$TagNewAll[which(erbr.1$Site=="Garden Park West")] <- paste("W",erbr.1$Transect[which(erbr.1$Site=="Garden Park West")],sep=".",erbr.1$Tag[which(erbr.1$Site=="Garden Park West")])
@@ -132,26 +177,26 @@ dats$save <- 0   #Start with save = 0, or no
 dats$surv <- NA  #Column to show plt survival/ if plant is alive in current year
 
 # Testing not truncated ones
-# tags <- unique(dats$TagNewAll) 
+# tags <- unique(dats$TagNewAll)
 tags <- unique(dats$TagNew)
 for (tt in tags){
   szlines <- which(dats$TagNew==tt)
-  # szlines <- which(dats$TagNewAll==tt) 
-  
-  szs <- dats$RosNew[szlines]   
-  goodszslines <- szlines[is.na(szs)==FALSE] 
-  
+  # szlines <- which(dats$TagNewAll==tt)
+
+  szs <- dats$RosNew[szlines]
+  goodszslines <- szlines[is.na(szs)==FALSE]
+
 
   badszlines <- szlines[is.na(szs)==TRUE] #For determining row representing 1st year dead
-  badyrs <- dats$Year[badszlines]         
-  goodyrs <- dats$Year[goodszslines]  
-  
+  badyrs <- dats$Year[badszlines]
+  goodyrs <- dats$Year[goodszslines]
+
 
   if (length(goodszslines)>0){
     mingoodlines <- min(goodszslines)
     maxgoodlines <- max(goodszslines)
     dats$save[mingoodlines:maxgoodlines]=1}
-  
+
   ## If statement that keeps row of data representing 1st year dead
   if (length(badyrs)>0 && length(goodyrs)>0 && max(badyrs,na.rm=TRUE) > max(goodyrs,na.rm=TRUE)) {
     dats$save[maxgoodlines+1] <- 1
@@ -169,7 +214,7 @@ dats[is.na(dats$Rosettes),]
 dats$lagsrtsz <- -1    #This is a variable that will indicate if the row sz is a dependent value (0=no) or what the lag in time is back to the last observed sz (1,2,3 etc)
 dats$lagforsurv <- -1  #Another lag variable that givens values out to the final yr of non-survival, for plts that died (i.e. if died, when was most recent sz measure?)
 tags <- unique(dats$TagNew)
-# tags <- unique(dats$TagNewAll) 
+# tags <- unique(dats$TagNewAll)
 dats2 <- NULL         #Placeholder for the new data
 
 # Test
@@ -181,14 +226,14 @@ for (tt in tags){
   if (length(dds$Year)>1){
    for (yy in 2:length(dds$Year)) {
       pastyrs <- dds$Year[1:(yy-1)]
-      goodpastyrs <- pastyrs[is.na(dds$RosNew[1:(yy-1)])==FALSE] 
-      if (is.na(dds$RosNew[yy])==FALSE) {  
+      goodpastyrs <- pastyrs[is.na(dds$RosNew[1:(yy-1)])==FALSE]
+      if (is.na(dds$RosNew[yy])==FALSE) {
         dds$lagsrtsz[yy] <- min(dds$Year[yy] - goodpastyrs)
         dds$lagforsurv[yy] <- min(dds$Year[yy] - goodpastyrs)  #lagforsurv has the same values as lagsrtsz for non-death years
       }
       ## if statement to add years since last measure for death years
       if (!is.na(dds$surv[yy]) && dds$surv[yy]==0) {
-        dds$lagforsurv[yy] <- min(dds$Year[yy] - goodpastyrs) 
+        dds$lagforsurv[yy] <- min(dds$Year[yy] - goodpastyrs)
       }
    } # end yr loop
 
@@ -198,40 +243,40 @@ for (tt in tags){
         missingyrs <- allyrs[which(allyrs%in%yrs ==FALSE)]
         ddsmissing <- do.call('rbind',replicate(length(missingyrs),dds[1,],simplify=FALSE))
         ddsmissing$Year <- missingyrs
-        ddsmissing$X <- ddsmissing$Y <- ddsmissing$DiameterX <- ddsmissing$DiameterY <- 
-          ddsmissing$Rosettes <- ddsmissing$Infl <- ddsmissing$RosNew <- ddsmissing$InflNew <- ddsmissing$Rust <- 
+        ddsmissing$X <- ddsmissing$Y <- ddsmissing$DiameterX <- ddsmissing$DiameterY <-
+          ddsmissing$Rosettes <- ddsmissing$Infl <- ddsmissing$RosNew <- ddsmissing$InflNew <- ddsmissing$Rust <-
           ddsmissing$InflBr <- ddsmissing$Comments <- ddsmissing$surv <- ddsmissing$BrType <- NA
-        
+
         ddsmissing$lagforsurv <- 0
         ddsmissing$lagsrtsz <- 0
-        
+
         dds <- rbind(dds,ddsmissing)
         dds <- dds[order(dds$Year),] #Reordered, full record for this plt
-      
+
       } #End if the plt was observed more than once
     dats2 <- rbind(dats2,dds)
   } #End going through each plt
 
 
 
-# Now has NA with other info in missing years 
+# Now has NA with other info in missing years
 # dats2[dats2$TagNewAll == tags[2],]
 dats2[dats2$TagNew == tags[2],]
-erbr.2 <- dats2 
+erbr.2 <- dats2
 ## -----------------------------------------------------------------------------------
 
 
 
 ## ADD IN CLIMATE VARIABLES ----------------------------------------------------------
 clim3seas.names <- c("PptFall","PptWinter","PptSummer","TempFall","TempWinter","TempSummer")
-                   
+
 erbr.2[, clim3seas.names] <- NA
 
 for (cc in 1:nrow(clim3seas)) {
   erbr.2$PptFall[which(erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Tot_fall_ppt[cc]
   erbr.2$PptWinter[which(erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Tot_winter_ppt[cc]
   erbr.2$PptSummer[which(erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Tot_summer_ppt[cc]
-  
+
   erbr.2$TempFall[which(erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Mean_fall_temp[cc]
   erbr.2$TempWinter[which(erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Mean_winter_temp[cc]
   erbr.2$TempSummer[which(erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Mean_summer_temp[cc]
@@ -247,15 +292,15 @@ erbr.2$TransectNew[which(erbr.2$Site=="Garden Park West")] <- paste("W.",erbr.2$
 
 
 ## ADD PROBABILITY OF REPRO RESPONSE VARIABLE ----------------------------------------
-## Determine whether or not reproduction occurred 
-erbr.2$InflYesNo <- NA 
+## Determine whether or not reproduction occurred
+erbr.2$InflYesNo <- NA
 erbr.2$InflYesNo[erbr.2$InflNew > 0] <- 1
 erbr.2$InflYesNo[erbr.2$InflNew == 0] <- 0
 ## -----------------------------------------------------------------------------------
 
 
 ## KEEP RELEVANT COLUMNS ONLY --------------------------------------------------------
-erbr.3 <- erbr.2 %>% dplyr::select(!c(Transect, Tag, X, Y, DiameterX, DiameterY, Rust, BrType, InflBr, Comments, save)) 
+erbr.3 <- erbr.2 %>% dplyr::select(!c(Transect, Tag, X, Y, DiameterX, DiameterY, Rust, BrType, InflBr, Comments, save))
 ## -----------------------------------------------------------------------------------
 
 
