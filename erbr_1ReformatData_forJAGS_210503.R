@@ -58,7 +58,7 @@ erbr.1$Infl[is.na(erbr.1$Rosettes)] <- NA
 ## OPTIONAL *******************************************************************
 ## FOR MAKING CONSECUTIVE-ONLY OR PRUNED YEAR DATASETS
 ## Remove years 2013 onwards
-# erbr.1 <- erbr.1[which(erbr.1$Year <= 2013),] ### commented out to get total indiviudals each year
+# erbr.1 <- erbr.1[which(erbr.1$Year <= 2013),] ### commented out to get total individuals each year
 
 
 ## PRUNE DATA TO HAVE EVERY-OTHER YEARS ONLY
