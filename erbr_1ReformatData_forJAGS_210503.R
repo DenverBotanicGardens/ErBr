@@ -243,16 +243,17 @@ tags <- unique(dats$TagNew)
 dats2 <- NULL         #Placeholder for the new data
 
 ## Test
-tt <- "W.1.1" ## first seen in 2008
+tt <- "W.1.1" ## first seen in 2008, in year 4 get integer(0) for goodpastyrs and then Inf for lagsrtsz and lagforsurv
 
 for (tt in tags){
   dds <- dats[which(dats$TagNew==tt),] #Temporary data
   if (length(dds$Year)>1){
      for (yy in 2:length(dds$Year)) {
+       print(yy)
         pastyrs <- dds$Year[1:(yy-1)]
         goodpastyrs <- pastyrs[is.na(dds$RosNew[1:(yy-1)])==FALSE]
         if (is.na(dds$RosNew[yy])==FALSE) {
-          dds$lagsrtsz[yy] <- min(dds$Year[yy] - goodpastyrs)
+          dds$lagsrtsz[yy] <- min(dds$Year[yy] - goodpastyrs) ## when there have been no good past years, returns Inf
           dds$lagforsurv[yy] <- min(dds$Year[yy] - goodpastyrs)  #lagforsurv has the same values as lagsrtsz for non-death years
         }
         ## if statement to add years since last measure for death years
@@ -283,7 +284,7 @@ for (tt in tags){
   dats2 <- rbind(dats2,dds)
 } #End going through each plt
 
-table(dats2$lagforsurv)
+table(dats2$lagforsurv) ## 300 times for Inf that might all be the first time a plant was seen
 
 erbr.2 <- dats2
 ## -----------------------------------------------------------------------------------
@@ -291,19 +292,24 @@ erbr.2 <- dats2
 
 
 ## ADD IN CLIMATE VARIABLES ----------------------------------------------------------
-clim3seas.names <- c("PptFall","PptWinter","PptSummer","TempFall","TempWinter","TempSummer")
+# clim3seas.names <- c("PptFall","PptWinter","PptSummer","TempFall","TempWinter","TempSummer")
+#### c("Year","ppt_fall","ppt_summer","ppt_winter","tmean_fall","tmean_summer,tmean_winter") # names of updated climate "clim"
+#
+# erbr.2[, clim3seas.names] <- NA
+#
+# for (cc in 1:nrow(clim3seas)) {
+#   erbr.2$PptFall[which(erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Tot_fall_ppt[cc]
+#   erbr.2$PptWinter[which(erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Tot_winter_ppt[cc]
+#   erbr.2$PptSummer[which(erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Tot_summer_ppt[cc]
+#
+#   erbr.2$TempFall[which(erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Mean_fall_temp[cc]
+#   erbr.2$TempWinter[which(erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Mean_winter_temp[cc]
+#   erbr.2$TempSummer[which(erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Mean_summer_temp[cc]
+# }
 
-erbr.2[, clim3seas.names] <- NA
+erbr.2 <- erbr.2 %>%
+  left_join(clim, by = c("Year" = "Year"))
 
-for (cc in 1:nrow(clim3seas)) {
-  erbr.2$PptFall[which(erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Tot_fall_ppt[cc]
-  erbr.2$PptWinter[which(erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Tot_winter_ppt[cc]
-  erbr.2$PptSummer[which(erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Tot_summer_ppt[cc]
-
-  erbr.2$TempFall[which(erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Mean_fall_temp[cc]
-  erbr.2$TempWinter[which(erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Mean_winter_temp[cc]
-  erbr.2$TempSummer[which(erbr.2$Year==clim3seas$Year[cc])] <- clim3seas$Mean_summer_temp[cc]
-}
 ## -----------------------------------------------------------------------------------
 
 
@@ -323,13 +329,16 @@ erbr.2$InflYesNo[erbr.2$InflNew == 0] <- 0
 
 
 ## KEEP RELEVANT COLUMNS ONLY --------------------------------------------------------
-erbr.3 <- erbr.2 %>% dplyr::select(!c(Transect, Tag, X, Y, DiameterX, DiameterY, Rust, BrType, InflBr, Comments, save))
+### 2023.01.03 changes
+erbr.3 <- erbr.2 %>% dplyr::select(!c(Transect, # Tag, X, Y, DiameterX, DiameterY, Rust, BrType, InflBr, Comments,
+                                   save))
 ## -----------------------------------------------------------------------------------
 
 
 ## SAVE FORMATTED DATA ---------------------------------------------------------------
-date <- as.character(210617)          #Enter date to be added to file name
-name <- as.character("TagClust9to13_") #Enter name of file, e.g. Tagclust, 4to13, 4to13odd, 4to13even, 4to8, 9to13
+date <- Sys.Date()# as.character(210617)          #Enter date to be added to file name
+# name <- as.character("TagClust9to13_") #Enter name of file, e.g. Tagclust, 4to13, 4to13odd, 4to13even, 4to8, 9to13
+name <- as.character("TagClustto2022_")
 
 write.csv(erbr.3, file=paste("erbr_", name, date, ".csv", sep=""), row.names=FALSE)
 ## -----------------------------------------------------------------------------------
