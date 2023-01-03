@@ -57,7 +57,6 @@ erbr.1$Infl[is.na(erbr.1$Rosettes)] <- NA
 ## ------------------------------------------------------------------------------------------------
 
 
-
 ## 2022-10-11 get number of clusters in recent years for ability of model to predict counts skip this portion
 ## OPTIONAL *******************************************************************
 ## FOR MAKING CONSECUTIVE-ONLY OR PRUNED YEAR DATASETS
@@ -119,10 +118,14 @@ erbr.loc <- tagsPHP %>%
   left_join(sitesPHP, by = "ErBr_site_id") %>%
   left_join(erbr.1, by = c("tag_number" = "Tag", "transect_number" = "Transect", "site_name" = "Site")) %>%
   dplyr::select(c(site_name ,Year,transect_number,tag_number ,X:Comments, location_comment )) %>% ## keep all matching erbr.1 plus the location comment which has distance to tag
-  filter(site_name != "Cleora")
+  filter(site_name != "Cleora") %>%
+  filter(!is.na(Year))
+
+## Missing some years, filter out, some are tags that no longer exist or were missing tag numbers
+head(erbr.loc[is.na(erbr.loc$Year),],100)
 
 ## by hand delete all the extra numbers that aren't distances
-table(erbr.loc$location_comment, useNA = "always") ## There are no NAs; there are 3596 NULL
+table(erbr.loc$location_comment, useNA = "always") ## There are no NAs; there are 3619 NULL
 erbr.loc$location_comment[erbr.loc$location_comment == "x=24.9, y=0.46, location of plant (no tag), 140cm E of #698"] <- "140cm E of"
 erbr.loc$location_comment[erbr.loc$location_comment == "22cm NW of tag 706"] <- "22cm NW of tag"
 erbr.loc$location_comment[erbr.loc$location_comment == "downhill of nail, (plant 9cm S of tag) plant 10cm N of tag, tag 10N"] <- "downhill of nail, tag 10N"
@@ -130,7 +133,8 @@ erbr.loc$location_comment[erbr.loc$location_comment == "plant out of transect, p
 
 erbr.loc1 <- erbr.loc %>%
   mutate(TagDist = if_else(grepl("tag", location_comment), ## if reference to distance of plant from tag
-                           gsub("[^0-9.-]", "", location_comment), # then pull numbers, some cases where there's the word "tag" but no distance given
+                           if_else(nchar(gsub("[^0-9.-]", "", location_comment)) > 0,
+                                   gsub("[^0-9.-]", "", location_comment), "0"), # then pull numbers, some cases where there's the word "tag" but no distance given
                            "0")) %>% # if not, the numbers do not refer to distance and are zero, NA would be fine too
   mutate(TagDist = if_else(is.na(TagDist), as.numeric(0), as.numeric(TagDist)))
 
@@ -138,6 +142,7 @@ erbr.loc1 <- erbr.loc %>%
 erbr.loc1[which(nchar(erbr.loc1$TagDist)>4),] ## any that have more than one number or a number greater than 4 digits should catch all the locations with multiple numbers
 table(erbr.loc1$TagDist, useNA = "always") ## Distribution of distances of tags to plants (clusters) ## 290 with NA
 erbr.loc1[which(erbr.loc1$TagDist > 30),]
+erbr.loc1[erbr.loc1$TagDist > 30,] ## Woo hoo!
 table(erbr.loc1$location_comment[which(erbr.loc1$TagDist > 30)])
 names(erbr.loc1) <- c(names(erbr.1),"location_comment","TagDist")
 # erbr.1 <- erbr.loc
@@ -145,37 +150,42 @@ names(erbr.loc1) <- c(names(erbr.1),"location_comment","TagDist")
 ### truncate only if distance is within 30cm of tag
 # erbr.1$TagNew <- NA
 erbr.1 <- erbr.loc1 %>%
-  mutate(TagNew = case_when(Site == "Garden Park East" & TagDist < 30 ~ paste("E",Transect,sep=".",trunc(Tag)),
-                            Site == "Garden Park East" & TagDist >= 30 ~ paste("E",Transect,sep=".",Tag),
-                            Site == "Garden Park West" & TagDist < 30 ~ paste("W",Transect,sep=".",trunc(Tag)),
-                            Site == "Garden Park West" & TagDist >= 30 ~ paste("W",Transect,sep=".",Tag) ))
+  mutate(TagNew = case_when(Site == "Garden Park East" & TagDist < 30 ~ paste("E",Transect,trunc(Tag),sep="."),
+                            Site == "Garden Park East" & TagDist >= 30 ~ paste("E",Transect,Tag,sep="."),
+                            Site == "Garden Park West" & TagDist < 30 ~ paste("W",Transect,trunc(Tag),sep="."),
+                            Site == "Garden Park West" & TagDist >= 30 ~ paste("W",Transect,Tag,sep=".") ))
 # erbr.1$TagNew[which(erbr.1$Site=="Garden Park East")] <- paste("E",erbr.1$Transect[which(erbr.1$Site=="Garden Park East")],sep=".",trunc(erbr.1$Tag[which(erbr.1$Site=="Garden Park East")]))
 # erbr.1$TagNew[which(erbr.1$Site=="Garden Park West")] <- paste("W",erbr.1$Transect[which(erbr.1$Site=="Garden Park West")],sep=".",trunc(erbr.1$Tag[which(erbr.1$Site=="Garden Park West")]))
 head(erbr.1[which(erbr.1$TagDist > 30),],100)
+head(erbr.1[erbr.1$TagDist > 30,], 100)
 head(erbr.1[which(erbr.1$TagDist > 20 & erbr.1$TagDist < 35),],100)
 
 ## Combine size (Rosettes) and repro (Infl) for clusters of plts with same truncated tag number
-erbr.1 <- erbr.1 %>%
-  dplyr::group_by(TagNew, Year) %>% ## TagNew has the Site and Transect infomation in it
-  dplyr::mutate(RosNew=sumNA(Rosettes,na.rm=TRUE), InflNew=sumNA(Infl,na.rm=TRUE)) %>% ## bazar::sumNA returns NA instead of 0 when input contains only missing values
+erbr.1foo <- erbr.1 %>%
+  # dplyr::group_by(TagNew, Year) %>% ## TagNew has the Site and Transect information in it
+  # dplyr::mutate(RosNew=sumNA(Rosettes,na.rm=TRUE), InflNew=sumNA(Infl,na.rm=TRUE)) %>% ## bazar::sumNA returns NA instead of 0 when input contains only missing values
+  dplyr::group_by(Site, Year, Transect, TagNew) %>%
+  ## bazar::sumNA returns NA instead of 0 when input contains only missing values
+  dplyr::summarise(RosNew=sumNA(Rosettes,na.rm=TRUE), InflNew=sumNA(Infl,na.rm=TRUE),
+                   .groups = "keep") %>%
   ungroup()
 
-table(erbr.1$RosNew) ## plyr does not correctly group_by
+nrow(erbr.1)
+nrow(erbr.1foo)
+nrow(erbr.1foo[!duplicated(erbr.1foo[c("TagNew","Year")]),]) ## Did summarise, no duplicates
 
 ## How many observed individuals (tag clusters) were there each year
-indivXyear <- erbr.1 %>%
+indivXyear <- erbr.1foo %>%
   dplyr::group_by(Year) %>%
-  dplyr::summarise(Indivs = n_distinct(TagNew[Rosettes > 0]))
-
-erbr.1[is.na(erbr.1$Year),] ## What the ... One Cleroa and
-head(as.data.frame(erbr.1[is.na(erbr.1$Year),]), 30)
-
+  dplyr::summarise(Indivs = n_distinct(TagNew[RosNew > 0]))
 as.data.frame(indivXyear) ## Only 4 transects were read at GPE instead of 7 in 2020. Totals are wrong. One year of NA?
+
 ## Remove rows that are duplicates in terms of TagNew and Year values
-erbr.1 <- erbr.1[!duplicated(erbr.1[,c("TagNew","Year")]),]
+# This shouldn't be done with a summarize? let's try it.
+# erbr.1 <- erbr.1[!duplicated(erbr.1[,c("TagNew","Year")]),]
 
 ### Save data for number and size of clusters in predicted years (after 2013)
-save(erbr.1, file = paste("C:/Users/deprengm/OneDrive - Denver Botanic Gardens/P drive/hackathon/ErBr/erbr.1",
+save(erbr.1foo, file = paste("C:/Users/deprengm/OneDrive - Denver Botanic Gardens/P drive/hackathon/ErBr/erbr.1",
                           Sys.Date(),".Rdata", sep=""))
 
 
@@ -192,7 +202,7 @@ save(erbr.1, file = paste("C:/Users/deprengm/OneDrive - Denver Botanic Gardens/P
 
 
 
-
+erbr.1 <- erbr.1foo
 ## START OF CHANGES NEEDED FOR JAGs --------------------------------------------------
 dats <- erbr.1
 
@@ -232,6 +242,9 @@ dats$lagforsurv <- 0  #Another lag variable that givens values out to the final 
 tags <- unique(dats$TagNew)
 dats2 <- NULL         #Placeholder for the new data
 
+## Test
+tt <- "W.1.1" ## first seen in 2008
+
 for (tt in tags){
   dds <- dats[which(dats$TagNew==tt),] #Temporary data
   if (length(dds$Year)>1){
@@ -246,9 +259,9 @@ for (tt in tags){
         if (!is.na(dds$surv[yy]) && dds$surv[yy]==0) {
           dds$lagforsurv[yy] <- min(dds$Year[yy] - goodpastyrs)
         }
+        print(tt)
+        print(dds$lagforsurv) ## W.1.1 has Inf lag in year 4
      } # end yr loop
-
-
 
     ## Find and add in the missing year rows:
     allyrs <- min(dds$Year):max(dds$Year)
@@ -256,17 +269,21 @@ for (tt in tags){
     missingyrs <- allyrs[which(allyrs%in%yrs ==FALSE)]
     ddsmissing <- do.call('rbind',replicate(length(missingyrs),dds[1,],simplify=FALSE))
     ddsmissing$Year <- missingyrs
-    ddsmissing$X=ddsmissing$Y=ddsmissing$DiameterX=ddsmissing$DiameterY=ddsmissing$RosNew=ddsmissing$InflNew=ddsmissing$Rust=ddsmissing$BrType=NA
-    ddsmissing$InflBr=ddsmissing$Comments=ddsmissing$surv=NA
+    ## 2023.01.03: Removed all these in the summarise. I believe we do not use any of these later
+    # ddsmissing$X=ddsmissing$Y=ddsmissing$DiameterX=ddsmissing$DiameterY=
+    ddsmissing$RosNew=ddsmissing$InflNew=
+      # ddsmissing$Rust=ddsmissing$BrType=
+      NA
+    # ddsmissing$InflBr=ddsmissing$Comments=ddsmissing$surv=NA
     ddsmissing$lagsrtsz <- 0
     dds <- rbind(dds,ddsmissing)
     dds <- dds[order(dds$Year),] #Reordered, full record for this plt
 
   } #End if the plt was observed more than once
-
   dats2 <- rbind(dats2,dds)
 } #End going through each plt
 
+table(dats2$lagforsurv)
 
 erbr.2 <- dats2
 ## -----------------------------------------------------------------------------------
