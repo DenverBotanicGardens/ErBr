@@ -161,21 +161,32 @@ head(erbr.1[erbr.1$TagDist > 30,], 100)
 head(erbr.1[which(erbr.1$TagDist > 20 & erbr.1$TagDist < 35),],100)
 
 ## Combine size (Rosettes) and repro (Infl) for clusters of plts with same truncated tag number
-erbr.1foo <- erbr.1 %>%
-  # dplyr::group_by(TagNew, Year) %>% ## TagNew has the Site and Transect information in it
-  # dplyr::mutate(RosNew=sumNA(Rosettes,na.rm=TRUE), InflNew=sumNA(Infl,na.rm=TRUE)) %>% ## bazar::sumNA returns NA instead of 0 when input contains only missing values
-  dplyr::group_by(Site, Year, Transect, TagNew) %>%
+erbr.1foomutate <- erbr.1 %>%
+  dplyr::group_by(TagNew, Year) %>% ## TagNew has the Site and Transect information in it
+  dplyr::mutate(RosNew=sumNA(Rosettes,na.rm=TRUE), InflNew=sumNA(Infl,na.rm=TRUE)) %>% ## bazar::sumNA returns NA instead of 0 when input contains only missing values
+  filter(!is.na(RosNew)) %>%
+  arrange(TagNew, Year)
+  # ungroup()
+erbr.1foomutate <- erbr.1foomutate[!duplicated(erbr.1foomutate[,c("TagNew","Year")]),]
+table(erbr.1foomutate$RosNew, useNA = "always")
+nrow(erbr.1foomutate)
+
+erbr.1foosumm <- erbr.1 %>%
+  # dplyr::group_by(Site, Year, Transect, TagNew) %>%
+  dplyr::group_by(TagNew, Year) %>%
   ## bazar::sumNA returns NA instead of 0 when input contains only missing values
   dplyr::summarise(RosNew=sumNA(Rosettes,na.rm=TRUE), InflNew=sumNA(Infl,na.rm=TRUE),
                    .groups = "keep") %>%
-  ungroup()
+  arrange(TagNew, Year) #%>%
+  # ungroup()
+table(erbr.1foosumm$RosNew, useNA = "always")
+nrow(erbr.1foosumm)
 
-nrow(erbr.1)
-nrow(erbr.1foo)
-nrow(erbr.1foo[!duplicated(erbr.1foo[c("TagNew","Year")]),]) ## Did summarise, no duplicates
+## sort and check
+identical(erbr.1foomutate[,c("TagNew","Year","RosNew","InflNew")], erbr.1foosumm)
 
 ## How many observed individuals (tag clusters) were there each year
-indivXyear <- erbr.1foo %>%
+indivXyear <- erbr.1foomutate %>%
   dplyr::group_by(Year) %>%
   dplyr::summarise(Indivs = n_distinct(TagNew[RosNew > 0]))
 as.data.frame(indivXyear) ## Only 4 transects were read at GPE instead of 7 in 2020. Totals are wrong. One year of NA?
@@ -185,7 +196,7 @@ as.data.frame(indivXyear) ## Only 4 transects were read at GPE instead of 7 in 2
 # erbr.1 <- erbr.1[!duplicated(erbr.1[,c("TagNew","Year")]),]
 
 ### Save data for number and size of clusters in predicted years (after 2013)
-save(erbr.1foo, file = paste("C:/Users/deprengm/OneDrive - Denver Botanic Gardens/P drive/hackathon/ErBr/erbr.1",
+save(erbr.1foomutate, file = paste("C:/Users/deprengm/OneDrive - Denver Botanic Gardens/P drive/hackathon/ErBr/erbr.1",
                           Sys.Date(),".Rdata", sep=""))
 
 
@@ -201,8 +212,8 @@ save(erbr.1foo, file = paste("C:/Users/deprengm/OneDrive - Denver Botanic Garden
 ## -----------------------------------------------------------------------------------
 
 
-
-erbr.1 <- erbr.1foo
+## double check that mutate and summarize are identical
+erbr.1 <- erbr.1foomutate
 ## START OF CHANGES NEEDED FOR JAGs --------------------------------------------------
 dats <- erbr.1
 
@@ -244,12 +255,14 @@ dats2 <- NULL         #Placeholder for the new data
 
 ## Test
 tt <- "W.1.1" ## first seen in 2008, in year 4 get integer(0) for goodpastyrs and then Inf for lagsrtsz and lagforsurv
+tt <- "W.4.304.1"
+tt <- "E.1.20"
 
 for (tt in tags){
   dds <- dats[which(dats$TagNew==tt),] #Temporary data
   if (length(dds$Year)>1){
      for (yy in 2:length(dds$Year)) {
-       print(yy)
+       # print(yy)
         pastyrs <- dds$Year[1:(yy-1)]
         goodpastyrs <- pastyrs[is.na(dds$RosNew[1:(yy-1)])==FALSE]
         if (is.na(dds$RosNew[yy])==FALSE) {
@@ -260,8 +273,7 @@ for (tt in tags){
         if (!is.na(dds$surv[yy]) && dds$surv[yy]==0) {
           dds$lagforsurv[yy] <- min(dds$Year[yy] - goodpastyrs)
         }
-        print(tt)
-        print(dds$lagforsurv) ## W.1.1 has Inf lag in year 4
+        # print(dds$lagforsurv) ## W.1.1 has Inf lag in year 4
      } # end yr loop
 
     ## Find and add in the missing year rows:
@@ -271,11 +283,11 @@ for (tt in tags){
     ddsmissing <- do.call('rbind',replicate(length(missingyrs),dds[1,],simplify=FALSE))
     ddsmissing$Year <- missingyrs
     ## 2023.01.03: Removed all these in the summarise. I believe we do not use any of these later
-    # ddsmissing$X=ddsmissing$Y=ddsmissing$DiameterX=ddsmissing$DiameterY=
+    ddsmissing$X=ddsmissing$Y=ddsmissing$DiameterX=ddsmissing$DiameterY=
     ddsmissing$RosNew=ddsmissing$InflNew=
-      # ddsmissing$Rust=ddsmissing$BrType=
+      ddsmissing$Rust=ddsmissing$BrType=
       NA
-    # ddsmissing$InflBr=ddsmissing$Comments=ddsmissing$surv=NA
+    ddsmissing$InflBr=ddsmissing$Comments=ddsmissing$surv=NA
     ddsmissing$lagsrtsz <- 0
     dds <- rbind(dds,ddsmissing)
     dds <- dds[order(dds$Year),] #Reordered, full record for this plt
@@ -285,6 +297,8 @@ for (tt in tags){
 } #End going through each plt
 
 table(dats2$lagforsurv) ## 300 times for Inf that might all be the first time a plant was seen
+foo <- as.data.frame(dats2)
+foo[foo$TagNew == "E.1.20",c(1:3,17:length(foo))]
 
 erbr.2 <- dats2
 ## -----------------------------------------------------------------------------------
