@@ -20,7 +20,7 @@ library(viridis)
 ```{r, echo=FALSE }
 
 ## LOAD MATRICES FOR EACH YEAR (STUDY AND NON-STUDY PERIOD) & TRANSECT FROM IPMdeterm CODE 
-mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_P1k_220806")  #Output generated from erbr_4IPMdeterm script 
+mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_P1k_221129")  #Output generated from erbr_4IPMdeterm script 
 
 erbr <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbr_TagClust_210510.csv", header=TRUE)
 erbr$Year <- as.factor(erbr$Year)
@@ -316,7 +316,8 @@ for (nn in 1:length(names.trans)) {
 ```{r}
 
 ## Load matrices
-mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_P1k_210511")
+mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_P1k_221129")
+
 mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_P1k_4to8_210511")
 mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_P1k_9to13_210511")
 mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_P1k_4to13_210511")
@@ -330,8 +331,8 @@ names.yr <- unique(sub('.*\\-', '', names.yr))        #Keep text following '-'
 names.param <- unique(sub('\\-.*', '', names.mx))     #Keep text preceding '-'
 
 
-## -- OPTIONAL ------   Subset to keep only years from study period (2004-2017) 
-match.yr <- as.character(c(2004:2017))
+## -- OPTIONAL ------   Subset to keep only years from study period (2004-2017 or longer) 
+match.yr <- as.character(c(2004:2021))
 mx.list <- mx.list[grep(paste(match.yr,collapse="|"), names(mx.list))]
 names.mx <- unique(names(mx.list))
 names.yr <- unique(sub('\\_.*', '', names.mx))        #Keep text preceding '_'
@@ -352,7 +353,8 @@ N.vecStart=N.startNum * mnees$stable.stage
 
 
 pop.sz.all <- as.data.frame(matrix(NA, nrow=(length(names.param)), ncol=sim.yrs+2))
-colnames(pop.sz.all) <- c("PARAM", as.character(2004:2018))
+#colnames(pop.sz.all) <- c("PARAM", as.character(2004:2018))
+colnames(pop.sz.all) <- c("PARAM", as.character(2004:2022))
 pop.sz.all$PARAM <- rep(names.param)
 
 
@@ -394,7 +396,7 @@ pop.sz.sds <- matrixStats::colSds(as.matrix(pop.sz.all[2:(length(names.yr)+2)]))
 pop.sz.ciHi <- 0
 pop.sz.ciLo <- 0
 for (cc in 3:ncol(pop.sz.all)) {
-  cis <- t.test(pop.sz.all[,cc], conf.level=0.85)$conf.int
+  cis <- t.test(pop.sz.all[,cc], conf.level=0.95)$conf.int
   pop.sz.ciHi <- c(pop.sz.ciHi, cis[2])
   pop.sz.ciLo <- c(pop.sz.ciLo, cis[1])
 }
@@ -427,7 +429,10 @@ pop.sz.ciHi.odd <- pop.sz.ciHi
 pop.sz.ciLo.odd <- pop.sz.ciLo
 
 
-
+## Save output 
+pop.sz.comb <- as.data.frame(cbind(pop.sz.means,pop.sz.sds,pop.sz.ciHi,pop.sz.ciLo))
+colnames(pop.sz.comb) <- c("Mean","SD","CI_HI", "CI_LO")
+write.csv(pop.sz.comb,file="C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/20221202_PopSzEstimates.csv")
 
 ## PLOT PREDICTED VS OBSERVED POP SZ
 ## Calculate observed: Subset by year and count the number of living plants 

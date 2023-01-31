@@ -27,7 +27,7 @@ library(car)
 ## LOAD DATA 
 erbr <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbr_TagClust_210510.csv", header=TRUE)
 #clim30yr <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbr_climData3seas30yr_210209.csv", header=TRUE)
-clim30yr <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbr_climData3seas33yr_20221107.csv", header=TRUE)
+clim30yr <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbr_climData3seas32yr_221114.csv", header=TRUE)
 
 
 ## MODIFY DATA
@@ -288,7 +288,7 @@ clim30yr <- clim30yr %>% rename(PptFall=Tot_fall_ppt, PptWinter=Tot_winter_ppt, 
                    TempFall=Mean_fall_temp, TempWinter=Mean_winter_temp, TempSummer=Mean_summer_temp)
 clim30yr <- clim30yr %>% mutate(PptFall1=lead(PptFall), PptWinter1=lead(PptWinter), PptSummer1=lead(PptSummer),
                    TempFall1=lead(TempFall), TempWinter1=lead(TempWinter), TempSummer1=lead(TempSummer))
-clim30yr <- clim30yr[1:31,]
+clim30yr <- clim30yr[12:32,]       #Subset to only include study-period years 
 
 
 params <- 1000  #Number of iterations for param uncertainty eg. 1000
@@ -337,8 +337,8 @@ randVals.param <- sample(1:nrow(chains), size=params, prob=NULL, replace=FALSE)
 for (pp in 1:params) {
   template.param <- subset(lam.out.template, PARAM==pp)  #Subset output template by param in parameter loop 
   lam.out.yr <- NULL                                     #Reset output variable each year loop
-  temp.vrs.param <- subset(vrs.template, PARAM==pp)  
-  vrs.yr <- NULL  
+  #temp.vrs.param <- subset(vrs.template, PARAM==pp)  
+  #vrs.yr <- NULL  
   
   ## Randomly select set of param values for all vital rates from chain list 
   selParams <- chains[randVals.param[pp],]
@@ -354,11 +354,11 @@ for (pp in 1:params) {
   ## Loop over years and transects
   for (yy in 1:num.year) {
     template.yr <- subset(template.param, YEAR==list.year[yy])  #Subset output template based on yr in yr loop
-    temp.vrs.yr <- subset(temp.vrs.param, YEAR==list.year[yy])
-    vrs.trans <- NULL
+    #temp.vrs.yr <- subset(temp.vrs.param, YEAR==list.year[yy])
+    #vrs.trans <- NULL
     
     for (tt in 1:num.transect) {
-      temp.vrs.trans <- subset(temp.vrs.yr, TRANSECT==list.transect[tt])  #Subset vital rate output template based on transect
+      #temp.vrs.trans <- subset(temp.vrs.yr, TRANSECT==list.transect[tt])  #Subset vital rate output template based on transect
 
       ## Define different variable combinations for which to estimate lambda
       in.data$Year <- list.year[yy]
@@ -385,7 +385,7 @@ for (pp in 1:params) {
                       + selParams$grwth_TempWinterCoef*in.data$TempWinter1 + selParams$grwth_PptFallCoef*in.data$PptFall1
                       + selParams$grwth_PptSummerCoef*in.data$PptSummer1 + selParams$grwth_PptWinterCoef*in.data$PptWinter1
                       + as.numeric(selParams[randTrans.grwth[tt]])) 
-        #pred.grwth[pred.grwth > maxsize] <- maxsize  #If predictions exceed bounds, change to max value
+        pred.grwth[pred.grwth > maxsize] <- maxsize  #If predictions exceed bounds, change to max value
 
         ## Variance in growth (neg binom)
         pred.grwthVar <- exp(selParams$grwthvar_intercept + selParams$grwthvar_RosCoef*log(in.data$RosNew)) 
@@ -425,13 +425,13 @@ for (pp in 1:params) {
         pred.numSdlg <- exp(selParams$newplt_intercept + log(pred.repro))
 
         ## Store vital rate predictions
-        temp.vrs.trans$GRWTH <- pred.grwth
-        temp.vrs.trans$GRWTH_VAR <- pred.grwthVar
-        temp.vrs.trans$SURV <- pred.surv
-        temp.vrs.trans$REPRO_PROB <- pred.reproYesNo
-        temp.vrs.trans$REPRO_AMT <- pred.repro
-        temp.vrs.trans$NEW_PLTS <- pred.numSdlg
-        vrs.trans <- rbind(vrs.trans, temp.vrs.trans)         #Combine VRs for all transects
+        #temp.vrs.trans$GRWTH <- pred.grwth
+        #temp.vrs.trans$GRWTH_VAR <- pred.grwthVar
+        #temp.vrs.trans$SURV <- pred.surv
+        #temp.vrs.trans$REPRO_PROB <- pred.reproYesNo
+        #temp.vrs.trans$REPRO_AMT <- pred.repro
+        #temp.vrs.trans$NEW_PLTS <- pred.numSdlg
+        #vrs.trans <- rbind(vrs.trans, temp.vrs.trans)         #Combine VRs for all transects
 
    
         ## From Dan's code
@@ -464,12 +464,12 @@ for (pp in 1:params) {
         } # End tt loop
     
         lam.out.yr <- rbind(lam.out.yr, template.yr)     #Combine lambda values for all years 
-        vrs.yr <- rbind(vrs.yr, vrs.trans)               #Combine vital rate values for all years 
+        #vrs.yr <- rbind(vrs.yr, vrs.trans)               #Combine vital rate values for all years 
         
   }    #End yy loop
 
   lam.out.param <- rbind(lam.out.param, lam.out.yr)      #Combine lambda values for all parameter values
-  vrs.param <- rbind(vrs.param, vrs.yr)                  #Combine vital rate values for all parameter values
+  #vrs.param <- rbind(vrs.param, vrs.yr)                  #Combine vital rate values for all parameter values
 
 }    #End pp loop
 
@@ -480,7 +480,7 @@ for (pp in 1:params) {
 
 ## SAVE OUTPUT
 ## Save lambda & vital rate output 
-date <- as.character(220806) 
+date <- as.character(221129) 
 name <- as.character("P1k")
 saveRDS(lam.out.param, file=paste("erbrLams_noYRE", name, date, sep="_"))
 saveRDS(vrs.param, file=paste("erbrVRs_noYRE", name, date, sep="_"))
@@ -493,7 +493,7 @@ names(mx.out.list) <- paste(as.character(paramYrTrans.comb$YEAR), as.character(p
 names(mx.out.list) <- paste(as.character(paramYrTrans.comb$PARAM), names(mx.out.list), sep="-")
 names(mx.out.list) <- paste("p", names(mx.out.list), sep="")
 
-date <- as.character(220806) 
+date <- as.character(221129) 
 name <- as.character("P1k")
 saveRDS(mx.out.list, file=paste("erbrIPMmxList_noYRE", name, date, sep="_"))
 
