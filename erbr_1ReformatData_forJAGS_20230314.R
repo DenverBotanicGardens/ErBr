@@ -39,6 +39,7 @@ erbr <- read.csv("Files_from_Michelle/rawdata_2022.csv", header=TRUE)
 
 clim3seas <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE) #Check that my clim data is same as Michelle's
 #load("C:/Users/deprengm/OneDrive - Denver Botanic Gardens/P drive/hackathon/ErBr/erbr_climData3seas2022-10-11.Rdata")
+#load("ErBr/erbr_climData3seas2022-10-11.Rdata") #This is not the same as my clim3seas. I think Michelle and I worked out that her 2022-10-11 needs updating.
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -53,6 +54,8 @@ erbr.1 <- erbr[erbr$Site!="Cleora",]
 erbr.1$Rosettes[erbr.1$Rosettes==0] <- NA
 erbr.1$Infl[erbr.1$Rosettes==0] <- NA
 erbr.1$Infl[is.na(erbr.1$Rosettes)] <- NA
+## Change Infl to zero from NA if Rosettes has data ***
+
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -255,6 +258,13 @@ nrow(dats[dats$Year==2022,])
 
 
 
+## MANUALLY ADJUST OR REMOVE TAG NUMS FOR SOME PLTS THAT NEED UNIQUE ID OR ARE OUT OF PLOTS
+dats$TagNew[dats$TagNew=="E.7.691" & dats$Year>=2018] <- "E.7.691.1" #This plt was 3 pieces from 2007-2010 ~20 ros, died, then new 1 ros in 2018
+dats$TagNew[dats$TagNew=="E.3.110" & dats$Year>=2020] <- "E.3.110.1" #This plt was 2 pieces from 2004-2006 ~60 ros, died, then new 2 ros in 2020
+dats <- dats[dats$TagNew !="W.4.304.1",]
+## -----------------------------------------------------------------------------------
+
+
 
 ## START OF CHANGES NEEDED FOR JAGS --------------------------------------------------
 
@@ -338,7 +348,7 @@ for (tt in tags){
 ## Check lag values to ensure biologically reasonable
 table(dats2$lagforsurv) 
 table(dats2$lagsrtsz) 
-lagCheck <- dats2[dats2$lagsrtsz>7,]
+lagCheck <- dats2[dats2$lagsrtsz>5,]
 
 erbr.2 <- dats2
 ## -----------------------------------------------------------------------------------
@@ -378,7 +388,8 @@ erbr.3 <- erbr.2 %>% dplyr::select(!c(Transect, Tag, save))
 
 ## SAVE FORMATTED DATA ---------------------------------------------------------------
 date <- Sys.Date() #as.character(210617)        #Enter date to be added to file name
-name <- as.character("TagClustto2022test_")     #Enter name of file, e.g. Tagclust, 4to13, 4to13odd, 4to13even, 4to8, 9to13
+date <- str_replace_all(date, "-", "")
+name <- as.character("TagClust2022_")     #Enter name of file, e.g. Tagclust, 4to13, 4to13odd, 4to13even, 4to8, 9to13
 
 write.csv(erbr.3, file=paste("erbr_", name, date, ".csv", sep=""), row.names=FALSE)
 ## -----------------------------------------------------------------------------------
