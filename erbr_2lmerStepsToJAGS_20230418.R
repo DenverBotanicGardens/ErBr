@@ -23,10 +23,11 @@ library(runjags)
 library(dplyr)
 library(coda)
 library(corrplot)
+library(robustbase)
+library(resample)
 ## ------------------------------------------------------------------------------------------------
 
 
-setwd("~/ErBr")
 
 
 ## LOAD DATA --------------------------------------------------------------------------------------
@@ -39,6 +40,7 @@ dats <- read.csv("erbr_TagClust2022_20230408.csv", header = TRUE)
 
 ## SET WD (WHERE JAGS SCRIPT IS LOCATED) ----------------------------------------------------------
 #setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/R_scripts")
+#setwd("~/ErBr")
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -225,6 +227,89 @@ saveRDS(jags.mod, "erbr_JAGSmodBest_c3t10s30b10_noYRE_20230420.rds")
 #corrplot(cor.chains, method="circle", type="lower")
 
 
+
+
+
+## Make bar graphs comparing median param ests b/w diff datasets
+## Load data from previous JAGS runs
+#setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
+chains <- readRDS("chains.c3t10s30b10_noYRE_20230420.rds")
+
+jags.mod.4to13 <- readRDS("erbr_JAGSmod_c3t10s30b10_noYRE_4to13_210616.rds")
+chains.4to13 <- jags.mod.4to13$mcmc
+chains.4to13 <- bind_rows(lapply(chains.4to13, as.data.frame))
+
+jags.mod.4to13evn <- readRDS("erbr_JAGSmod_c3t10s30b10_noYRE_4to13even_210617.rds")
+chains.4to13evn <- jags.mod.4to13evn$mcmc
+chains.4to13evn <- bind_rows(lapply(chains.4to13evn, as.data.frame))
+
+jags.mod.4to13odd <- readRDS("erbr_JAGSmod_c3t10s30b10_noYRE_4to13odd_210621.rds")
+chains.4to13odd <- jags.mod.4to13odd$mcmc
+chains.4to13odd <- bind_rows(lapply(chains.4to13odd, as.data.frame))
+
+jags.mod.4to8 <- readRDS("erbr_JAGSmod_c3t10s30b10_noYRE_4to8_210701.rds")
+chains.4to8 <- jags.mod.4to8$mcmc
+chains.4to8 <- bind_rows(lapply(chains.4to8, as.data.frame))
+
+jags.mod.9to13 <- readRDS("erbr_JAGSmod_c3t10s30b10_noYRE_9to13_210623.rds")
+chains.9to13 <- jags.mod.9to13$mcmc
+chains.9to13 <- bind_rows(lapply(chains.9to13, as.data.frame))
+
+
+## CALCULATE MEDIAN PARAMETER VALUES 
+medParams <- as.data.frame(colMedians(as.matrix(chains)))
+medParams.4to13 <- as.data.frame(colMedians(as.matrix(chains.4to13)))
+medParams.4to13evn <- as.data.frame(colMedians(as.matrix(chains.4to13evn)))
+medParams.4to13odd <- as.data.frame(colMedians(as.matrix(chains.4to13odd)))
+medParams.4to8 <- as.data.frame(colMedians(as.matrix(chains.4to8)))
+medParams.9to13 <- as.data.frame(colMedians(as.matrix(chains.9to13)))
+
+medComb <- as.data.frame(cbind(medParams, medParams.4to13, medParams.4to13evn, medParams.4to13odd, 
+                               medParams.4to8, medParams.9to13))
+colnames(medComb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13")
+medComb$Names <- colnames(chains)
+
+
+## CALCULATE VARIANCE OF PARAMETER VALUES
+## ** Could change this to SD with colStdevs ** 
+varParams <- as.data.frame(colVars(as.matrix(chains)))
+varParams.4to13 <- as.data.frame(colVars(as.matrix(chains.4to13)))
+varParams.4to13evn <- as.data.frame(colVars(as.matrix(chains.4to13evn)))
+varParams.4to13odd <- as.data.frame(colVars(as.matrix(chains.4to13odd)))
+varParams.4to8 <- as.data.frame(colVars(as.matrix(chains.4to8)))
+varParams.9to13 <- as.data.frame(colVars(as.matrix(chains.9to13)))
+
+varComb <- as.data.frame(cbind(varParams, varParams.4to13, varParams.4to13evn, varParams.4to13odd, 
+                               varParams.4to8, varParams.9to13))
+colnames(varComb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13")
+varComb$Names <- colnames(chains)
+
+
+## Plot
+names.param <- colnames(chains)[55:85]
+colfunc <- colorRampPalette(c("black", "white"))
+#ylim.vals <- c()
+par(mfrow=c(4,8))  
+for (nn in 1:length(names.param)) {
+  plotCI(barplot(as.matrix(medComb[which(medComb$Names == names.param[nn]),1:6]), col=colfunc(6),
+                 main=names.param[nn], cex.axis=1.25, beside=T, border=TRUE, space=c(0,0,0,0,0,0)),
+         as.matrix(medComb[which(medComb$Names == names.param[nn]),1:6]), pch=NA, sfrac=0,
+         uiw=as.matrix(varComb[which(varComb$Names == names.param[nn]),1:6]),
+         liw=as.matrix(varComb[which(varComb$Names == names.param[nn]),1:6]), add=TRUE)
+}
+
+
+## Without error bars until can fix above 
+par(mfrow=c(6,6), mar=c(2,3,2,3))  
+#bottom, left, top, and right
+for (nn in 1:length(names.param)) {
+  barplot(as.matrix(medComb[which(medComb$Names == names.param[nn]),1:6]), col=colfunc(6), xaxt = "n",
+          main=names.param[nn], cex.axis=1.2, beside=T, border=TRUE, space=c(0,0,0,0,0,0),
+          cex.main=0.95)
+}
+legend("bottomright", colnames(varComb)[1:6], col=colfunc(6),pch=15,cex=1.2,
+       horiz=FALSE, bty="y",seg.len=1, xpd="NA", inset=c(-1.75,0))
+## ------------------------------------------------------------------------------------------------
 
 
 
