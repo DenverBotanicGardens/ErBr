@@ -18,6 +18,7 @@ library(lattice)
 library(viridis) 
 library(car)
 library(coda)
+library(lme4)
 
 ```
 
@@ -32,7 +33,7 @@ clim32yr <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbr_
 
 ## MODIFY DATA
 ## Check structure of, and modify variables as needed 
-str(erbr)
+#str(erbr)
 erbr$Year <- as.factor(erbr$Year)
 
 
@@ -104,14 +105,15 @@ pdfsz2=cbind(pdfsz$x,pdfsz$y)
 ```{r}
 
 ## Load chains for all parameters
-jags.mod <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbr_JAGSmodBest_c3t10s30b10_noYRE_20230420.rds")
-chains <- jags.mod$mcmc
-chains <- bind_rows(lapply(chains, as.data.frame)) #Sometimes get error about coercing mcmc object to data.frame. Find alternate way of doing this.**
+#jags.mod <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbr_JAGSmodBest_c3t10s30b10_noYRE_20230420.rds")
+#chains <- jags.mod$mcmc
+#chains <- bind_rows(lapply(chains, as.data.frame)) #Sometimes get error about coercing mcmc object to data.frame. Find alternate way of doing this.**
 
 
 ## Save 'chains' variable for easy re-loading
-saveRDS(chains, file="chains.c3t10s30b10_noYRE_20230420.rds")
+#saveRDS(chains, file="chains.c3t10s30b10_noYRE_20230420.rds")
 #chainsOld <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Archive_Files/chains.c3t10s30b10_noYRE_210613.rds")
+chains <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/chains.c3t10s30b10_noYRE_20230420.rds")
 
 ```
 
@@ -287,12 +289,13 @@ truebinsizes = n.bin
 
 
 ## CREATE VARIABLES FOR OUTPUT
+#climStudyYrs <- clim32yr[clim32yr$Year>2003 & clim32yr$Year<2023,]
 clim32yr$Year <- as.factor(clim32yr$Year)
 clim32yr <- clim32yr %>% rename(PptFall=Tot_fall_ppt, PptWinter=Tot_winter_ppt, PptSummer=Tot_summer_ppt,
                    TempFall=Mean_fall_temp, TempWinter=Mean_winter_temp, TempSummer=Mean_summer_temp)
 clim32yr <- clim32yr %>% mutate(PptFall1=lead(PptFall), PptWinter1=lead(PptWinter), PptSummer1=lead(PptSummer),
                    TempFall1=lead(TempFall), TempWinter1=lead(TempWinter), TempSummer1=lead(TempSummer))
-clim32yr <- clim32yr[12:32,]       #Subset to only include study-period years 
+clim32yr <- clim32yr[14:32,]       #Subset to only include study-period years 
 
 
 params <- 1000  #Number of iterations for param uncertainty eg. 1000
@@ -314,12 +317,12 @@ lam.out.template$YEAR <- rep(sort(clim32yr$Year[1:(nrow(clim32yr)-1)]), each=num
 lam.out.template$PARAM <- rep(1:params, each=(nrow(lam.out.template)/params))
 lam.out.param <- NULL      #Variable to store final lambda outputs
 
-column.names.vrs <- c("PARAM","YEAR","TRANSECT","SZ","GRWTH","GRWTH_VAR","SURV","REPRO_PROB","REPRO_AMT","NEW_PLTS")
+column.names.vrs <- c("PARAM","YEAR","TRANSECT","SZ","GRWTH","SURV","REPRO_PROB","REPRO_AMT","NEW_PLTS")
 vrs.template <- as.data.frame(matrix(NA, nrow=num.year*num.transect*params*bin.num, ncol=length(column.names.vrs)))
 colnames(vrs.template) <- column.names.vrs
 vrs.template$SZ <- rep(binmids)
 vrs.template$TRANSECT <- rep(unique(erbr$TransectNew), each=length(binmids))
-#vrs.template$YEAR <- rep(sort(unique(erbr$Year)), each=(num.transect*length(binmids)))
+vrs.template$YEAR <- rep(sort(unique(erbr$Year)), each=(num.transect*length(binmids)))
 vrs.template$YEAR <- rep(sort(clim32yr$Year[1:(nrow(clim32yr)-1)]), each=(num.transect*length(binmids)))
 vrs.template$PARAM <- rep(1:params, each=(nrow(vrs.template)/params))
 vrs.param <- NULL          #Variable to store final vital rate outputs
@@ -341,8 +344,8 @@ randVals.param <- sample(1:nrow(chains), size=params, prob=NULL, replace=FALSE)
 for (pp in 1:params) {
   template.param <- subset(lam.out.template, PARAM==pp)  #Subset output template by param in parameter loop 
   lam.out.yr <- NULL                                     #Reset output variable each year loop
-  #temp.vrs.param <- subset(vrs.template, PARAM==pp)  
-  #vrs.yr <- NULL  
+  temp.vrs.param <- subset(vrs.template, PARAM==pp)  
+  vrs.yr <- NULL  
   
   ## Randomly select set of param values for all vital rates from chain list 
   selParams <- chains[randVals.param[pp],]
@@ -358,11 +361,11 @@ for (pp in 1:params) {
   ## Loop over years and transects
   for (yy in 1:num.year) {
     template.yr <- subset(template.param, YEAR==list.year[yy])  #Subset output template based on yr in yr loop
-    #temp.vrs.yr <- subset(temp.vrs.param, YEAR==list.year[yy])
-    #vrs.trans <- NULL
+    temp.vrs.yr <- subset(temp.vrs.param, YEAR==list.year[yy])
+    vrs.trans <- NULL
     
     for (tt in 1:num.transect) {
-      #temp.vrs.trans <- subset(temp.vrs.yr, TRANSECT==list.transect[tt])  #Subset vital rate output template based on transect
+      temp.vrs.trans <- subset(temp.vrs.yr, TRANSECT==list.transect[tt])  #Subset vital rate output template based on transect
 
       ## Define different variable combinations for which to estimate lambda
       in.data$Year <- list.year[yy]
@@ -429,13 +432,13 @@ for (pp in 1:params) {
         pred.numSdlg <- exp(selParams$newplt_intercept + log(pred.repro))
 
         ## Store vital rate predictions
-        #temp.vrs.trans$GRWTH <- pred.grwth
-        #temp.vrs.trans$GRWTH_VAR <- pred.grwthVar
-        #temp.vrs.trans$SURV <- pred.surv
-        #temp.vrs.trans$REPRO_PROB <- pred.reproYesNo
-        #temp.vrs.trans$REPRO_AMT <- pred.repro
-        #temp.vrs.trans$NEW_PLTS <- pred.numSdlg
-        #vrs.trans <- rbind(vrs.trans, temp.vrs.trans)         #Combine VRs for all transects
+        temp.vrs.trans$GRWTH <- pred.grwth
+        temp.vrs.trans$GRWTH_VAR <- pred.grwthVar
+        temp.vrs.trans$SURV <- pred.surv
+        temp.vrs.trans$REPRO_PROB <- pred.reproYesNo
+        temp.vrs.trans$REPRO_AMT <- pred.repro
+        temp.vrs.trans$NEW_PLTS <- pred.numSdlg
+        vrs.trans <- rbind(vrs.trans, temp.vrs.trans)         #Combine VRs for all transects
 
    
         ## From Dan's code
@@ -468,16 +471,17 @@ for (pp in 1:params) {
         } # End tt loop
     
         lam.out.yr <- rbind(lam.out.yr, template.yr)     #Combine lambda values for all years 
-        #vrs.yr <- rbind(vrs.yr, vrs.trans)               #Combine vital rate values for all years 
+        vrs.yr <- rbind(vrs.yr, vrs.trans)               #Combine vital rate values for all years 
         
   }    #End yy loop
 
   lam.out.param <- rbind(lam.out.param, lam.out.yr)      #Combine lambda values for all parameter values
-  #vrs.param <- rbind(vrs.param, vrs.yr)                  #Combine vital rate values for all parameter values
+  vrs.param <- rbind(vrs.param, vrs.yr)                  #Combine vital rate values for all parameter values
 
 }    #End pp loop
 
 ```
+
 
 
 ```{r}
@@ -503,21 +507,26 @@ names(mx.out.list) <- paste("p", names(mx.out.list), sep="")
 name <- as.character("P1k")
 saveRDS(mx.out.list, file=paste("erbrIPMmxList_noYRE", name, date, sep="_"))
 #write.csv(mx.out.list[1], file=paste("erbrIPMmxList_noYRE", date, "p1.csv", sep="_"))
-saveRDS(mx.out.list[1:240], file=paste("erbrIPMmxList_noYRE", "P1only", date, sep="_"))
+#saveRDS(mx.out.list[1:240], file=paste("erbrIPMmxList_noYRE", "P1only", date, sep="_"))
+
+
+##READ IN SAVED FILE
+lam.out.param <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/ErBr/erbrLams_noYRE_P1k_20230503")
+#vrs.param <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/ErBr/erbrVRs_noYRE_P1k_20230503")
 
 
 ## LOOK AT RESULTS
 cols <- viridis(12)
-par(mfrow=c(4,4))                      #Plot in 14 panels
+par(mfrow=c(5,4))                      #Plot in 20 panels
 par(mar=c(2,3.9,2,2), mgp = c(2.3, 1, 0))  
 
 for (pp in 1:length(list.year)) {
   lam.yr <- subset(lam.out.param, YEAR==list.year[pp])
-  boxplot(LAMBDA ~ TRANSECT, data=lam.yr, main=paste(as.character(list.year[pp])),ylim=c(0,1.4),
+  boxplot(LAMBDA ~ TRANSECT, data=lam.yr, main=paste(as.character(list.year[pp])),ylim=c(0.3,1.3),
   xaxt='n',xlab=NA, cex=0.5, ylab="Lambda", cex.lab=1.6, cex.axis=1.4, font.main=1, cex.main=1.7,
   medlwd=1,col=cols)
   abline(h=1,col="red", lwd=0.75)
-  text(6.5,-0.04, "Transect", pos=1, xpd=TRUE, cex=1.5)
+  #text(6,0.01, "Transect", pos=1, xpd=TRUE, cex=1.5)
 }
 
 ```
@@ -549,9 +558,10 @@ lams.nums <- lams.nums[lams.nums$YEAR!="2017",]
 
 mod <- lmer(MEAN ~ numIndivs + (1|YEAR) + (1|TRANSECT), data=lams.nums)
 summary(mod)
+car::Anova(mod)
 par(mar=c(5,5,2,2))  
 plot(lams.nums$numIndivs, lams.nums$MEAN, xlab="Number of individuals", ylab="Deterministic lambda",
-     pch=16, cex.lab=1.6, cex.axis=1.3)
+     pch=16, cex.lab=1.6, cex.axis=1.3, cex=0.8)
 
 ```
 
@@ -606,12 +616,12 @@ lines(vrs.param$SZ[1:bin.num], vrs.minPpt.mean$MEAN_GRWTH, col="red",lwd=2)
 lines(vrs.param$SZ[1:bin.num], vrs.maxPpt.mean$MEAN_GRWTH, col="dodgerblue",lwd=2)
 
 plot(vrs.param$SZ[1:bin.num], vrs.mean$MEAN_SURV, xlab="Plant size in t (rosette number)", 
-     ylab="Survival probability", type='l',lwd=2,cex.lab=1.5, cex.axis=1.25,ylim=c(0.8,1))
+     ylab="Survival probability", type='l',lwd=2,cex.lab=1.5, cex.axis=1.25,ylim=c(0.85,1))
 lines(vrs.param$SZ[1:bin.num], vrs.minPpt.mean$MEAN_SURV, col="red",lwd=2)
 lines(vrs.param$SZ[1:bin.num], vrs.maxPpt.mean$MEAN_SURV, col="dodgerblue",lwd=2)
 
 legend("bottom", c("All", "Wet", "Dry"), col=c("black","dodgerblue","red"),lwd=2,cex=1.35,
-       inset=c(-0.4,-0.49), xpd=TRUE, horiz=TRUE, bty="n",seg.len=1)
+       inset=c(-0.2,-0.42), xpd=TRUE, horiz=TRUE, bty="n",seg.len=1)
 
 plot(vrs.param$SZ[1:bin.num], vrs.mean$MEAN_REPROPROB, xlab="Plant size in t (rosette number)", 
      ylab="Reproduction probability", type='l',lwd=2,cex.lab=1.5, cex.axis=1.25,ylim=c(0,1.05))
@@ -1275,6 +1285,8 @@ lam.out.param.comb <- dplyr::left_join(lam.out.param.comb, clim32yr, by="YEAR")
 lam.mean.yr <- lam.out.param.comb %>% group_by(YEAR) %>% dplyr::summarize(MEAN_LAM=mean(LAMBDA), PptSummer=mean(PptSummer),
                                                          TempWinter=mean(TempWinter), PptWinter=mean(PptWinter),
                                                          TempFall=mean(TempFall), PptFall=mean(PptFall), TempSummer=mean(TempSummer))
+
+## ** ARE THESE STILL THE BEST CLIM VARS TO BE CONSIDERING? LOOK AT MODELS USED FOR EACH VR **** 
 
 ## 3-way interaction model with relevant clim variables (e.g. summer and winter precip, and winter temp)
 lamVclim <- lm(MEAN_LAM ~ PptSummer * TempWinter * PptWinter, data=lam.mean.yr)
