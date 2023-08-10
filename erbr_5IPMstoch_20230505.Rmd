@@ -637,3 +637,10 @@ legend("bottomleft", names.trans, col=cols,lwd=2,cex=1,
 ```
 
 
+## PLOT THE DISTRIBUTION OF OBSERVED PLANT SIZES
+```{r}
+
+
+```
+
+
