@@ -640,6 +640,18 @@ legend("bottomleft", names.trans, col=cols,lwd=2,cex=1,
 ## PLOT THE DISTRIBUTION OF OBSERVED PLANT SIZES
 ```{r}
 
+## Make df that will hold data containing new plants
+head(erbr)
+#using RosNew, look at distribution of sizes across all years
+hist(erbr$RosNew, breaks=100, xlim=c(0,150))
+
+#also look at distribution of sizes averages across all years
+## Calculate mean per year
+lam.mean.trans <- stoch.lams.all %>% group_by(TRANS) %>% summarise(MEAN=mean(LAMBDA), 
+                  MED=median(LAMBDA), MAX=max(LAMBDA), MIN=min(LAMBDA))
+
+
+
 
 ```
 

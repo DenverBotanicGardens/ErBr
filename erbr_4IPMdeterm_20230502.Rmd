@@ -27,7 +27,7 @@ library(lme4)
 ```{r, echo=FALSE}
 
 ## LOAD DATA 
-erbr <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbr_TagClust2022_20230408.csv", header=TRUE)
+erbr <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/ErBr/erbr_TagClust2022_20230408.csv", header=TRUE)
 clim32yr <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbr_climData3seas32yr_221114.csv", header=TRUE)
 
 
@@ -511,7 +511,7 @@ saveRDS(mx.out.list, file=paste("erbrIPMmxList_noYRE", name, date, sep="_"))
 
 
 ##READ IN SAVED FILE
-lam.out.param <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/ErBr/erbrLams_noYRE_P1k_20230503")
+lam.out.param <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLams_noYRE_P1k_20230503")
 #vrs.param <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/ErBr/erbrVRs_noYRE_P1k_20230503")
 
 
@@ -1270,39 +1270,53 @@ barplot(lam.mn.numSdlg$ELAS ~ lam.mn.numSdlg$SZ_CLASS, xlab="Size class", ylab="
 ## HOW DOES LAMBDA VARY WITH CLIMATE?
 ```{r}
 
-## LOOK AT RELATIONSHIP B/W LAMBDA & CLIMATE (USING 30 YRS OF DATA)
-clim32yr <- clim32yr %>% rename(YEAR=Year)#, PptSummer=Tot_summer_ppt, PptWinter=Tot_winter_ppt, PptFall=Tot_fall_ppt,
-#                                TempWinter=Mean_winter_temp, TempSummer=Mean_summer_temp, TempFall=Mean_fall_temp) 
-clim32yr$YEAR <- as.factor(clim32yr$YEAR)
+## LOOK AT RELATIONSHIP B/W LAMBDA & CLIMATE (USING STUDY YEARS OR 30+ YRS OF DATA)
+lam.out.param <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLams_noYRE_P1k_20230503")
 
-lam.out.param.comb <- rbind(lam.out.param)#, lam.out.param.nsy)
-lam.out.param.comb <- dplyr::left_join(lam.out.param.comb, clim32yr, by="YEAR")
+clim32yr <- clim32yr %>% rename(YEAR=Year, PptSummer=Tot_summer_ppt, PptWinter=Tot_winter_ppt, PptFall=Tot_fall_ppt,
+                                TempWinter=Mean_winter_temp, TempSummer=Mean_summer_temp, TempFall=Mean_fall_temp) 
+climStudyYrs <- clim32yr[clim32yr$YEAR>2003 & clim32yr$YEAR<2022,]  ##Only look at study years
+climStudyYrs$YEAR <- as.factor(climStudyYrs$YEAR)
+
+#lam.out.param <- lam.out.param[is.numeric(lam.out.param$YEAR)>2003,]
+#lam.out.param.comb <- rbind(lam.out.param)#, lam.out.param.nsy)
+lam.out.param.clim <- dplyr::right_join(lam.out.param, climStudyYrs, by="YEAR")
 
 
 
 
 ## Average across parameter uncertainty
-lam.mean.yr <- lam.out.param.comb %>% group_by(YEAR) %>% dplyr::summarize(MEAN_LAM=mean(LAMBDA), PptSummer=mean(PptSummer),
+lam.mean.yr <- lam.out.param.clim %>% group_by(YEAR) %>% dplyr::summarize(MEAN_LAM=mean(LAMBDA), PptSummer=mean(PptSummer),
                                                          TempWinter=mean(TempWinter), PptWinter=mean(PptWinter),
                                                          TempFall=mean(TempFall), PptFall=mean(PptFall), TempSummer=mean(TempSummer))
 
-## ** ARE THESE STILL THE BEST CLIM VARS TO BE CONSIDERING? LOOK AT MODELS USED FOR EACH VR **** 
-
+## ARE THESE STILL THE BEST CLIM VARS TO BE CONSIDERING? VR MODELS NOW CONTAIN ALL CLIM VARS 
 ## 3-way interaction model with relevant clim variables (e.g. summer and winter precip, and winter temp)
-lamVclim <- lm(MEAN_LAM ~ PptSummer * TempWinter * PptWinter, data=lam.mean.yr)
-summary(lamVclim)
-Anova(lamVclim)
+#lamVclim <- lm(MEAN_LAM ~ PptSummer * TempWinter * PptWinter, data=lam.mean.yr)
+#summary(lamVclim)
+#Anova(lamVclim)
 
 summary(lm(lam.mean.yr$MEAN_LAM ~ lam.mean.yr$PptSummer))
 summary(lm(lam.mean.yr$MEAN_LAM ~ lam.mean.yr$PptWinter))
+summary(lm(lam.mean.yr$MEAN_LAM ~ lam.mean.yr$PptFall))
+summary(lm(lam.mean.yr$MEAN_LAM ~ lam.mean.yr$TempSummer))
 summary(lm(lam.mean.yr$MEAN_LAM ~ lam.mean.yr$TempWinter))
+summary(lm(lam.mean.yr$MEAN_LAM ~ lam.mean.yr$TempFall))
 
-par(mfrow=c(3,1))
-plot(lam.mean.yr$PptSummer, lam.mean.yr$MEAN_LAM, pch=16, ylab="Deterministic lambda", xlab="Total summer precipitation (mm)",
+par(mfrow=c(3,2))
+par(pty="s")
+par(mar=c(4.3,4.5,2,2))
+plot(lam.mean.yr$PptSummer, lam.mean.yr$MEAN_LAM, pch=16, ylab="Deterministic\nlambda", xlab="Total summer precipitation (mm)",
      cex.lab=1.5, cex.axis=1.25)
-plot(lam.mean.yr$PptWinter, lam.mean.yr$MEAN_LAM, pch=16, ylab="Deterministic lambda", xlab="Total winter precipitation (mm)",
+plot(lam.mean.yr$TempSummer, lam.mean.yr$MEAN_LAM, pch=16, ylab="Deterministic\nlambda", xlab="Mean summer temperature (°C)",
      cex.lab=1.5, cex.axis=1.25)
-plot(lam.mean.yr$TempWinter, lam.mean.yr$MEAN_LAM, pch=16, ylab="Deterministic lambda", xlab="Mean winter temperature (C)",
+plot(lam.mean.yr$PptFall, lam.mean.yr$MEAN_LAM, pch=16, ylab="Deterministic\nlambda", xlab="Total fall precipitation (mm)",
+     cex.lab=1.5, cex.axis=1.25)
+plot(lam.mean.yr$TempFall, lam.mean.yr$MEAN_LAM, pch=16, ylab="Deterministic\nlambda", xlab="Mean fall temperature (°C)",
+     cex.lab=1.5, cex.axis=1.25)
+plot(lam.mean.yr$PptWinter, lam.mean.yr$MEAN_LAM, pch=16, ylab="Deterministic\nlambda", xlab="Total winter precipitation (mm)",
+     cex.lab=1.5, cex.axis=1.25)
+plot(lam.mean.yr$TempWinter, lam.mean.yr$MEAN_LAM, pch=16, ylab="Deterministic\nlambda", xlab="Mean winter temperature (°C)",
      cex.lab=1.5, cex.axis=1.25)
 
 ```
