@@ -376,7 +376,9 @@ global.surv <- glmer(Surv1 ~ scale(RosNew) + scale(PptWinter) + scale(TempFall) 
 global.reproYesNo <- glmer(InflYesNo ~ scale(RosNew) + scale(PptFall) + scale(PptSummer) + scale(TempFall) + 
                            scale(TempWinter) + scale(TempSummer) + (1|TransectNew), family=binomial(link=logit), data=dats)
 
-## Reproduction 
+## Reproduction #** Should data be subset to only include reproductive plts (i.e. infs>0) in this model? **
+global.repro <- glmer.nb(InflNew ~ scale(RosNew) + scale(PptFall) + scale(PptSummer) + scale(TempFall) + 
+                           scale(TempWinter) + scale(TempSummer) + (1|TransectNew), data=dats)
 
 
 
