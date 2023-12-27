@@ -355,11 +355,29 @@ medComb$Names <- colnames(chains)
 
 
 ## Make modified graph showing median param ests b/w diff datasets as points and 80-90% limits; include glmm estimates
+
 ## USE A GLMM FOR EACH VR AND COMPARE PARAM ESTIMATES TO JAGS MODELS
+## Add t+1 climate, sz, & tag into erbr data 
+dats <- dats %>% mutate(TagNew1=lead(TagNew), RosNew1=lead(RosNew), Surv1=lead(surv))  
+dats <- dats %>% mutate(PptFall1=lead(PptFall), PptWinter1=lead(PptWinter), PptSummer1=lead(PptSummer),
+                        TempFall1=lead(TempFall), TempWinter1=lead(TempWinter), TempSummer1=lead(TempSummer))
+
+dats <- dats[which(dats$TagNew == dats$TagNew1),]  #Remove lines with mis-matched individuals 
+
 ## Growth
-global.grwth <- glmer.nb(RosClust1.new ~ RosClust.sq + (RosClust * (PptFall1 + PptWinter1 + PptSummer1 + TempFall1 + 
-                         TempWinter1 + TempSummer1 + TmaxFall1 + TmaxWinter1 + TmaxSummer1 + TminFall1 + TminWinter1 + 
-                         TminSummer1)) + (1|Year) + (1|TransectNew), data=erbr.grwth, na.action='na.fail')
+global.grwth <- glmer.nb(RosNew1 ~ scale(RosNew) + scale(PptFall) + scale(PptWinter) + scale(PptSummer) + 
+                         scale(TempFall) + scale(TempWinter) + scale(TempSummer) + (1|TransectNew), data=dats)
+
+## Survival #** Should size be logged in surv and prob repro models? **
+global.surv <- glmer(Surv1 ~ scale(RosNew) + scale(PptWinter) + scale(TempFall) + scale(TempWinter) + 
+                     scale(TempSummer) + (1|TransectNew), family=binomial(link='logit'), data=dats)
+
+## Probability of reproduction
+global.reproYesNo <- glmer(InflYesNo ~ scale(RosNew) + scale(PptFall) + scale(PptSummer) + scale(TempFall) + 
+                           scale(TempWinter) + scale(TempSummer) + (1|TransectNew), family=binomial(link=logit), data=dats)
+
+## Reproduction 
+
 
 
 
