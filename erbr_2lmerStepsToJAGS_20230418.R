@@ -274,34 +274,34 @@ medComb$Names <- colnames(chains)
 
 ## CALCULATE VARIANCE OF PARAMETER VALUES
 ## ** Could change this to SD with colStdevs ** 
-varParams <- as.data.frame(colVars(as.matrix(chains)))
-varParams.4to13 <- as.data.frame(colVars(as.matrix(chains.4to13)))
-varParams.4to13evn <- as.data.frame(colVars(as.matrix(chains.4to13evn)))
-varParams.4to13odd <- as.data.frame(colVars(as.matrix(chains.4to13odd)))
-varParams.4to8 <- as.data.frame(colVars(as.matrix(chains.4to8)))
-varParams.9to13 <- as.data.frame(colVars(as.matrix(chains.9to13)))
+#varParams <- as.data.frame(colVars(as.matrix(chains)))
+#varParams.4to13 <- as.data.frame(colVars(as.matrix(chains.4to13)))
+#varParams.4to13evn <- as.data.frame(colVars(as.matrix(chains.4to13evn)))
+#varParams.4to13odd <- as.data.frame(colVars(as.matrix(chains.4to13odd)))
+#varParams.4to8 <- as.data.frame(colVars(as.matrix(chains.4to8)))
+#varParams.9to13 <- as.data.frame(colVars(as.matrix(chains.9to13)))
 
-varComb <- as.data.frame(cbind(varParams, varParams.4to13, varParams.4to13evn, varParams.4to13odd, 
-                               varParams.4to8, varParams.9to13))
-colnames(varComb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13")
-varComb$Names <- colnames(chains)
+#varComb <- as.data.frame(cbind(varParams, varParams.4to13, varParams.4to13evn, varParams.4to13odd, 
+#                               varParams.4to8, varParams.9to13))
+#colnames(varComb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13")
+#varComb$Names <- colnames(chains)
 
 
 ## Plot
-names.param <- colnames(chains)[55:85]
-names.param <- names.param[c(2:8,12:16,18:23,25:30)] #Remove intercept plots 
-names.paramTitles <- c("Grwth Sz","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
-                       "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Size",
-                       "Surv Winter Precip","Surv Fall Temp","Surv Summer Temp","Surv Winter Temp",
-                       "p(Repro) Size","p(Repro) Fall Precip","p(Repro) Summer Precip",
-                       "p(Repro) Fall Temp","p(Repro) Summer Temp","p(Repro) Winter Temp",
-                       "Repro Size","Repro Fall Precip","Repro Summer Precip",
-                       "Repro Winter Temp","Repro Fall Temp","Repro Summer Temp")
+#names.param <- colnames(chains)[55:85]
+#names.param <- names.param[c(2:8,12:16,18:23,25:30)] #Remove intercept plots 
+#names.paramTitles <- c("Grwth Sz","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
+#                       "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Size",
+#                       "Surv Winter Precip","Surv Fall Temp","Surv Summer Temp","Surv Winter Temp",
+#                       "p(Repro) Size","p(Repro) Fall Precip","p(Repro) Summer Precip",
+#                       "p(Repro) Fall Temp","p(Repro) Summer Temp","p(Repro) Winter Temp",
+#                       "Repro Size","Repro Fall Precip","Repro Summer Precip",
+#                       "Repro Winter Temp","Repro Fall Temp","Repro Summer Temp")
 
-colfunc <- colorRampPalette(c("black", "grey90"))
+#colfunc <- colorRampPalette(c("black", "grey90"))
 #ylim.vals <- c()
-par(mfrow=c(4,8))  
-par(mar=c(2,3,3,3))
+#par(mfrow=c(4,8))  
+#par(mar=c(2,3,3,3))
 
 #for (nn in 1:length(names.param)) {
 #  plotCI(barplot(as.matrix(medComb[which(medComb$Names == names.param[nn]),1:6]), col=colfunc(6),
@@ -330,33 +330,39 @@ par(mar=c(2,3,3,3))
 
 
 ## Without error bars until can fix above 
-par(mfrow=c(6,6), mar=c(2,3,2,3))  
+#par(mfrow=c(6,6), mar=c(2,3,2,3))  
 #bottom, left, top, and right
-for (nn in 1:length(names.param)) {
-  barplot(as.matrix(medComb[which(medComb$Names == names.param[nn]),1:6]), col=colfunc(6), xaxt = "n",
-          main=names.param[nn], cex.axis=1.2, beside=T, border=TRUE, space=c(0,0,0,0,0,0),
-          cex.main=0.95)
-}
-legend("bottomright", colnames(varComb)[1:6], col=colfunc(6),pch=15,cex=1.2,
-       horiz=FALSE, bty="y",seg.len=1, xpd="NA", inset=c(-1.75,0))
+#for (nn in 1:length(names.param)) {
+#  barplot(as.matrix(medComb[which(medComb$Names == names.param[nn]),1:6]), col=colfunc(6), xaxt = "n",
+#          main=names.param[nn], cex.axis=1.2, beside=T, border=TRUE, space=c(0,0,0,0,0,0),
+#          cex.main=0.95)
+#}
+#legend("bottomright", colnames(varComb)[1:6], col=colfunc(6),pch=15,cex=1.2,
+#       horiz=FALSE, bty="y",seg.len=1, xpd="NA", inset=c(-1.75,0))
 
-for (nn in 1:length(names.param)) {
-  barplot(as.matrix(medComb[which(medComb$Names == names.param[nn]),1:6]), col=colfunc(6),
-          main=names.paramTitles[nn], cex.axis=1.25, beside=T, border=TRUE, space=c(0,0,0,0,0,0),
-          cex.main=0.85, xaxt='n')
-}
+#for (nn in 1:length(names.param)) {
+#  barplot(as.matrix(medComb[which(medComb$Names == names.param[nn]),1:6]), col=colfunc(6),
+#          main=names.paramTitles[nn], cex.axis=1.25, beside=T, border=TRUE, space=c(0,0,0,0,0,0),
+#          cex.main=0.85, xaxt='n')
+#}
 
-
-legend("center", c("Full dataset","2004 to 2013","2004 to 2013 even yrs","2004 to 2014 odd yrs","2004 to 2008",
-                   "2009 to 2013"), col=colfunc(6),pch=15,cex=1.2,
-       horiz=FALSE, bty="y",seg.len=1, xpd="NA", inset=c(-1.75,0))
-
+#legend("center", c("Full dataset","2004 to 2013","2004 to 2013 even yrs","2004 to 2014 odd yrs","2004 to 2008",
+#                   "2009 to 2013"), col=colfunc(6),pch=15,cex=1.2,
+#       horiz=FALSE, bty="y",seg.len=1, xpd="NA", inset=c(-1.75,0))
 ## ------------------------------------------------------------------------------------------------
 
 
 
 
-## Make modified graph showing median param ests b/w diff datasets as points and 80-90% limits
+## Make modified graph showing median param ests b/w diff datasets as points and 80-90% limits; include glmm estimates
+## USE A GLMM FOR EACH VR AND COMPARE PARAM ESTIMATES TO JAGS MODELS
+## Growth
+global.grwth <- glmer.nb(RosClust1.new ~ RosClust.sq + (RosClust * (PptFall1 + PptWinter1 + PptSummer1 + TempFall1 + 
+                         TempWinter1 + TempSummer1 + TmaxFall1 + TmaxWinter1 + TmaxSummer1 + TminFall1 + TminWinter1 + 
+                         TminSummer1)) + (1|Year) + (1|TransectNew), data=erbr.grwth, na.action='na.fail')
+
+
+
 ## CALCULATE 90th PERCENTILE 
 quantParams <- chains %>% summarise_all(funs(list(quantile(., probs=0.9)))) #%>% transpose
 quantParams <- as.data.frame(t(quantParams))
