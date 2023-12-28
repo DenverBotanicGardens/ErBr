@@ -665,7 +665,7 @@ names.yr <- unique(sub('.*\\-', '', names.yr))        #Keep text following '-'
 names.param <- unique(sub('\\-.*', '', names.mx))     #Keep text preceding '-'
 
 
-## -- OPTIONAL ------   Subset to keep only years from study period (2004-2017 or 2021 etc.) 
+## -- OPTIONAL ------   Subset to keep only years from study period (e.g. 2004-2021) 
 match.yr <- as.character(c(2004:2021))
 mx.list <- mx.list[grep(paste(match.yr,collapse="|"), names(mx.list))]
 names.mx <- unique(names(mx.list))
@@ -676,69 +676,84 @@ names.yr <- unique(sub('.*\\-', '', names.yr))        #Keep text following '-'
 sim.yrs <- length(names.yr)
 
 
-## Determine the observed number of plts of each size for each transect at the start of the study (2004 or maybe choose 2007)
-## Make df that will hold data containing new plants
-#years <- unique(erbr$Year)
-#years <- years[order(years)]
-#dats.newPlts <- as.data.frame(rep(unique(erbr$TransectNew), each=length(years)))
-#colnames(dats.newPlts) <- "TransectNew"
-#dats.newPlts$Year <- rep(years)
 
-## Identify new plants
-pltSzsStart <- erbr[erbr$Year==2004,]  
+## Determine the observed number of plts of each size for each transect at the start of the study (2004 or maybe choose 2007)
+startYr <- "2007"
+pltsStart <- erbr[erbr$Year==startYr,]  
 hist(pltSzsStart$RosNew)
 unique(pltSzsStart$RosNew)
-pltSzsStart <- pltSzsStart %>% group_by(TransectNew) %>% summarise(NUM=n(RosNew))   #Count num plts of each size per transect
-#sz.cutoff <- 5                                                   #Sz cutoff, above which likely not recently a seedling 
-#newPlts.sm <- newPlts[newPlts$RosNew<sz.cutoff,]                 #Rm if larger than X ros (these likely missed & are not new)
-#newPlts.lrg <- newPlts[newPlts$RosNew>sz.cutoff,]                #Remove if smaller than X ros 
-#num.newPlts.sm <- newPlts.sm %>% group_by(Year) %>% summarise(NUM=n())   #Count num new plts per year
-#num.newPlts.lrg <- newPlts.lrg %>% group_by(Year) %>% summarise(NUM=n()) #Count num new plts per year
 
-#barplot(num.newPlts.sm$NUM, names=num.newPlts.sm$Year, main="New small plants (<5ros) per year", ylab="New plants")
-#barplot(num.newPlts.lrg$NUM, names=num.newPlts.lrg$Year, main="New large plants (>5ros) per year", ylab="New plants") 
 sum(N.vecStart)
-table(pltSzsStart$RosNew)
+table(pltsStart$RosNew)
 
-## OBTAIN STABLE STAGE STRUCTURE
-## AG modified from Dan's code 
-#N.startNum <- 148                         #Set as observed population size in 2004
+minsize <- 1
+maxsize <- max(erbr$RosNew, na.rm=TRUE)
+bin.num <- 50
+vec.bin <- c(minsize, minsize+1:bin.num*(maxsize-minsize)*(1/bin.num)) 
+length(vec.bin)
 
-#mx.num <- length(mx.list)
-#mx.mean <- Reduce('+', mx.list)/mx.num    #Calculate mean of all matrices 
-#mnees=eigenall(mx.mean)
-#N.vecStart=N.startNum * mnees$stable.stage
+## Loop over vec bin and assign bin bounds, then count num plts that fall into each size bin for each transect
+binCounts = as.data.frame(matrix(NA, nrow=length(vec.bin)-1, ncol=length(names.trans)))
+colnames(binCounts) <- names.trans
+
+for (tt in 1:length(names.trans)) {
+  pltsStartTran <- pltsStart[pltsStart$TransectNew==names.trans[tt],]
+  
+  for (bb in 1:length(vec.bin)-1) {
+    bounds <- c(vec.bin[bb], vec.bin[bb+1])
+    subsetSzs <- pltsStartTran[which(pltsStartTran$RosNew >= bounds[1] & pltsStartTran$RosNew < bounds[2]),]
+      binCounts[bb,tt] <- nrow(subsetSzs)
+  }
+}
+colSums(binCounts)
 
 
-pop.sz.all <- as.data.frame(matrix(NA, nrow=(length(names.param)), ncol=sim.yrs+2))
-colnames(pop.sz.all) <- c("PARAM", as.character(2004:2022))
-pop.sz.all$PARAM <- rep(names.param)
+## ** UPDATES FROM HERE ON DOWN FOR NEW FIG *** 
+#pop.sz.all <- as.data.frame(matrix(NA, nrow=(length(names.param)), ncol=sim.yrs+2))
+#colnames(pop.sz.all) <- c("PARAM", as.character(2004:2022))
+#pop.sz.all$PARAM <- rep(names.param)
 
+pop.sz.all <- NULL
 
 ## Start parameter loop (for a given parameter draw, loop over data yrs)
 for (pp in 1:length(names.param)) {
-  mx.param <- mx.list[grep(paste(names.param[pp],"-", sep=""), names(mx.list))]      #Subset mx.list by each parameter
-  pop.sz <- matrix(NA, nrow=(sim.yrs), ncol=1)
+  ## Subset by parameter
+  mx.param <- mx.studyYrs[grep(paste(names.param[pp],"-",sep=""), names(mx.studyYrs))]
+  pop.sz <- as.data.frame(matrix(NA, nrow=length(names.trans), ncol=sim.yrs))
+  
+
+  ## Transect loop
+  for (tt in 1:length(names.trans)) {
+  mx.paramTrans <- mx.param[grep(names.trans[tt], names(mx.param))]
 
 
-  ## Modified from Dan
-  N.vec <- N.vecStart                                               #Re-set to desired starting values
+  ## AG modified from Dan
+  N.vec <- N.vecStart                                    #Re-set to desired starting values
 
-  ## Loop over years (from 2004-2017 to give estimates for 2005-2018)
+  ## Loop over years (from e.g. 2004-2021 to give estimates for 2005-2022)
     for (ii in 1:(sim.yrs)) {
   
-      mx.yr <- mx.param[grep(names.yr[ii], names(mx.param))]        #Subset mx list of each param by yr
-      mx <- Reduce('+', mx.yr)/length(names.trans)                  #Calculate mean mx of all transects 
+      mx <- mx.paramTrans[ii]
 
-
+    
       ## Multiply matrix by vec w num indivs per sz class (initially this is stbl stage struct)
-      N.vec <- as.matrix(as_tibble(mx)) %*% N.vec        #Grow the population one year
-      pop.sz[ii]= sum(N.vec)             
-    } # end of ii (years) loop
+      N.vec <- as.matrix(as_tibble(mx)) %*% N.vec        #This grows the population one year
+      pop.sz[tt,ii]= sum(N.vec) 
 
- pop.sz.all[pp,3:ncol(pop.sz.all)] <- pop.sz
+    } # end of ii (years) loop
+  } # end of tt (transect) loop
+
+   pop.sz.all <- rbind(pop.sz.all, pop.sz)
 } #End pp loop
 
+
+## Add and rename columns
+pop.sz.all$TRANS <- rep(names.trans)
+pop.sz.all$PARAM <- rep(names.param, each=length(names.trans))
+pop.sz.all <- pop.sz.all[]
+colnames(pop.sz.all) <- c(as.character(2005:2022),"TRANS","PARAM")
+pop.sz.all$`2004` <- N.startNum
+pop.sz.all <- pop.sz.all %>% relocate(`2004`, .before = `2005`)
 
 
 
