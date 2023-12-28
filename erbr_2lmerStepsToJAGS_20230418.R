@@ -288,6 +288,7 @@ medComb$Names <- colnames(chains)
 
 
 ## Plot
+
 #names.param <- colnames(chains)[55:85]
 #names.param <- names.param[c(2:8,12:16,18:23,25:30)] #Remove intercept plots 
 #names.paramTitles <- c("Grwth Sz","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
@@ -302,6 +303,22 @@ medComb$Names <- colnames(chains)
 #ylim.vals <- c()
 #par(mfrow=c(4,8))  
 #par(mar=c(2,3,3,3))
+
+names.param <- colnames(chains)[55:85]
+names.param <- names.param[c(2:8,12:16,18:23,25:30)] #Remove intercept plots 
+names.paramTitles <- c("Grwth Sz","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
+                       "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Size",
+                       "Surv Winter Precip","Surv Fall Temp","Surv Summer Temp","Surv Winter Temp",
+                       "p(Repro) Size","p(Repro) Fall Precip","p(Repro) Summer Precip",
+                       "p(Repro) Fall Temp","p(Repro) Summer Temp","p(Repro) Winter Temp",
+                       "Repro Size","Repro Fall Precip","Repro Summer Precip",
+                       "Repro Winter Temp","Repro Fall Temp","Repro Summer Temp")
+
+colfunc <- colorRampPalette(c("black", "grey90"))
+#ylim.vals <- c()
+par(mfrow=c(4,8))  
+par(mar=c(2,3,3,3))
+
 
 #for (nn in 1:length(names.param)) {
 #  plotCI(barplot(as.matrix(medComb[which(medComb$Names == names.param[nn]),1:6]), col=colfunc(6),
@@ -383,6 +400,127 @@ global.repro <- glmer.nb(InflNew ~ scale(RosNew) + scale(PptFall) + scale(PptSum
 
 
 
+## CALCULATE 90th PERCENTILE 
+quantParams <- chains %>% summarise_all(funs(list(quantile(., probs=0.9)))) #%>% transpose
+quantParams <- as.data.frame(t(quantParams))
+quantParams.4to13 <- chains.4to13 %>% summarise_all(funs(list(quantile(., probs=0.9))))
+quantParams.4to13 <- as.data.frame(t(quantParams.4to13))
+quantParams.4to13evn <- chains.4to13evn %>% summarise_all(funs(list(quantile(., probs=0.9))))
+quantParams.4to13evn <- as.data.frame(t(quantParams.4to13evn))
+quantParams.4to13odd <- chains.4to13odd %>% summarise_all(funs(list(quantile(., probs=0.9))))
+quantParams.4to13odd <- as.data.frame(t(quantParams.4to13odd))
+quantParams.4to8 <- chains.4to8 %>% summarise_all(funs(list(quantile(., probs=0.9))))
+quantParams.4to8 <- as.data.frame(t(quantParams.4to8))
+quantParams.9to13 <- chains.9to13 %>% summarise_all(funs(list(quantile(., probs=0.9))))
+quantParams.9to13 <- as.data.frame(t(quantParams.9to13))
+
+quantComb <- as.data.frame(cbind(quantParams, quantParams.4to13, quantParams.4to13evn, quantParams.4to13odd, 
+                               quantParams.4to8, quantParams.9to13))
+colnames(quantComb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13")
+quantComb$Names <- colnames(chains)
+
+
+## CALCULATE 10th PERCENTILE 
+quant10Params <- chains %>% summarise_all(funs(list(quantile(., probs=0.1)))) 
+quant10Params <- as.data.frame(t(quant10Params))
+quant10Params.4to13 <- chains.4to13 %>% summarise_all(funs(list(quantile(., probs=0.1))))
+quant10Params.4to13 <- as.data.frame(t(quant10Params.4to13))
+quant10Params.4to13evn <- chains.4to13evn %>% summarise_all(funs(list(quantile(., probs=0.1))))
+quant10Params.4to13evn <- as.data.frame(t(quant10Params.4to13evn))
+quant10Params.4to13odd <- chains.4to13odd %>% summarise_all(funs(list(quantile(., probs=0.1))))
+quant10Params.4to13odd <- as.data.frame(t(quant10Params.4to13odd))
+quant10Params.4to8 <- chains.4to8 %>% summarise_all(funs(list(quantile(., probs=0.1))))
+quant10Params.4to8 <- as.data.frame(t(quant10Params.4to8))
+quant10Params.9to13 <- chains.9to13 %>% summarise_all(funs(list(quantile(., probs=0.1))))
+quant10Params.9to13 <- as.data.frame(t(quant10Params.9to13))
+
+quant10Comb <- as.data.frame(cbind(quant10Params, quant10Params.4to13, quant10Params.4to13evn, quant10Params.4to13odd, 
+                                 quant10Params.4to8, quant10Params.9to13))
+colnames(quant10Comb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13")
+quant10Comb$Names <- colnames(chains)
+
+
+
+## PLOT
+quant10Comb.trunc <- as.data.frame(quant10Comb[55:85,])
+quant10Comb.trunc <- quant10Comb.trunc[c(2:8,12:16,18:23,25:30),1:6] #Remove intercept plots
+quant10Comb.trunc <- cbind(as.numeric(quant10Comb.trunc[,1]),as.numeric(quant10Comb.trunc[,2]),
+                           as.numeric(quant10Comb.trunc[,3]),as.numeric(quant10Comb.trunc[,4]),
+                           as.numeric(quant10Comb.trunc[,5]),as.numeric(quant10Comb.trunc[,6])) #Change structure
+
+quantComb.trunc <- as.data.frame(quantComb[55:85,])
+quantComb.trunc <- quantComb.trunc[c(2:8,12:16,18:23,25:30),1:6] #Remove intercept plots 
+quantComb.trunc <- cbind(as.numeric(quantComb.trunc[,1]),as.numeric(quantComb.trunc[,2]),
+                           as.numeric(quantComb.trunc[,3]),as.numeric(quantComb.trunc[,4]),
+                           as.numeric(quantComb.trunc[,5]),as.numeric(quantComb.trunc[,6]))
+
+
+quant10.min <- rowMins(as.matrix(quant10Comb.trunc[,c(1:6)]))
+quant.max <- rowMaxs(as.matrix(quantComb.trunc[,c(1:6)]))
+
+
+yMin <- quant10.min - (quant10.min*0.1)
+  #c(0.7,-0.22,-0.5,-2,-0.05,-0.03,-0.03,0.2,-0.1,-2,-4,-3,-0.08,-0.02,-3,-1,-1.5,0.7,-0.02,-0.005,0.1,-0.95,-0.4)
+yMax <- quant.max + (quant.max*0.04)
+  #as.numeric(quantParams.trunc) + (as.numeric(quantParams.trunc)*0.1)
+  #c(0.85,0.3,0.5,1,-0.001,0.01,0.04,1.4,0.08,1,1.5,2.5,1.7,0.08,0.03,2,1,1.5,1.2,0.009,0.009,0.6,-0.2,0.5)
+
+
+colfunc <- colorRampPalette(c("red", "blue"))
+
+#tiff
+pdf('ErBr_fig2_20231022.pdf', width=6, height=9)
+par(mfrow=c(6,4), mar=c(2,3,2,2))  
+#bottom, left, top, and right
+for (nn in 1:length(names.param)) {
+  plot(c(1:6), as.matrix(medComb[which(medComb$Names == names.param[nn]),1:6]), col=colfunc(6), 
+       xaxt = "n", main=names.paramTitles[nn], cex.axis=1.1,cex.main=0.9, pch=19, 
+       ylim=c(yMin[nn],yMax[nn]), cex=1.2)
+  arrows(1:6,as.matrix(medComb[which(medComb$Names == names.param[nn]),1:6]),
+         1:6,as.numeric(as.matrix(quantComb[which(quantComb$Names == names.param[nn]),1:6])), 
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colfunc(6))
+  arrows(1:6,as.matrix(medComb[which(medComb$Names == names.param[nn]),1:6]),
+         1:6,as.numeric(as.matrix(quant10Comb[which(quant10Comb$Names == names.param[nn]),1:6])), 
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colfunc(6))
+}
+
+
+legend("bottomright", colnames(varComb)[1:6], col=colfunc(6),pch=19,cex=1.2,
+       horiz=FALSE, bty="y",seg.len=1, xpd=NA, inset=c(-1.2,0))
+
+dev.off()
+
+
+## -----------------------------------------------------------------
+
+#main=names.paramTitles[nn], cex.axis=1.25, beside=T, border=TRUE, space=c(0,0,0,0,0,0),
+#                 cex.main=0.85, xaxt='n'
+
+
+
+
+
+legend("bottomright", colnames(varComb)[1:6], col=colfunc(6),pch=15,cex=1.2,
+       horiz=FALSE, bty="y",seg.len=1, xpd="NA", inset=c(-1.75,0))
+
+for (nn in 1:length(names.param)) {
+  barplot(as.matrix(medComb[which(medComb$Names == names.param[nn]),1:6]), col=colfunc(6),
+          main=names.paramTitles[nn], cex.axis=1.25, beside=T, border=TRUE, space=c(0,0,0,0,0,0),
+          cex.main=0.85, xaxt='n')
+}
+
+
+legend("center", c("Full dataset","2004 to 2013","2004 to 2013 even yrs","2004 to 2014 odd yrs","2004 to 2008",
+                   "2009 to 2013"), col=colfunc(6),pch=15,cex=1.2,
+       horiz=FALSE, bty="y",seg.len=1, xpd="NA", inset=c(-1.75,0))
+
+## ------------------------------------------------------------------------------------------------
+
+
+
+
+
+## Make modified graph showing median param ests b/w diff datasets as points and 80-90% limits
 ## CALCULATE 90th PERCENTILE 
 quantParams <- chains %>% summarise_all(funs(list(quantile(., probs=0.9)))) #%>% transpose
 quantParams <- as.data.frame(t(quantParams))
