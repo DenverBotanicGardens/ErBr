@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = FALSE)
 library(dplyr)
 library(matrixStats)
 library(viridis) 
+library("stringr")
 
 ```
 
@@ -328,6 +329,9 @@ mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPM
 mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_P1k_4to13_210511")
 mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_P1k_4to13even_210511")
 mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_P1k_4to13odd_210511")
+#mx.list4to8 <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to8_P1k_20231028")
+#mx.list9to13 <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_9to13_P1k_20231028")
+
 
 names.mx <- unique(names(mx.list))
 names.trans <- unique(sub('.*\\_', '', names.mx))     #Keep text following '_'
@@ -654,18 +658,17 @@ mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPM
 mx.list4to13 <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to13_P1k_20231026")
 mx.list4to13evn <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to13even_P1k_20231026")
 mx.list4to13odd <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to13odd_P1k_20231026")
-#mx.list4to8 <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to8_P1k_20231028")
-#mx.list9to13 <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_9to13_P1k_20231028")
 
 names.mx <- unique(names(mx.list))
 names.trans <- unique(sub('.*\\_', '', names.mx))     #Keep text following '_'
-names.yr <- unique(sub('\\_.*', '', names.mx))        #Keep text preceding '_'
-names.yr <- unique(sub('.*\\-', '', names.yr))        #Keep text following '-'
+#names.yr <- unique(sub('\\_.*', '', names.mx))        #Keep text preceding '_'
+#names.yr <- unique(sub('.*\\-', '', names.yr))        #Keep text following '-'
 names.param <- unique(sub('\\-.*', '', names.mx))     #Keep text preceding '-'
 
 
 ## -- OPTIONAL ------   Subset to keep only years from study period (e.g. 2004-2021) 
-match.yr <- as.character(c(2004:2021))
+startYr <- "2007"
+match.yr <- as.character(c(startYr:2021))
 mx.list <- mx.list[grep(paste(match.yr,collapse="|"), names(mx.list))]
 names.mx <- unique(names(mx.list))
 names.yr <- unique(sub('\\_.*', '', names.mx))        #Keep text preceding '_'
@@ -678,7 +681,6 @@ sim.yrs <- length(names.yr)
 
 
 ## Determine the observed number of plts of each size for each transect at the start of the study (2004 or maybe choose 2007)
-startYr <- "2004"
 pltsStart <- erbr[erbr$Year==startYr,]  
 hist(pltsStart$RosNew)
 unique(pltsStart$RosNew)
@@ -744,46 +746,29 @@ for (pp in 1:length(names.param)) {
 pop.sz.all$TRANS <- rep(names.trans)
 pop.sz.all$PARAM <- rep(names.param, each=length(names.trans))
 #pop.sz.all <- pop.sz.all[]
-colnames(pop.sz.all) <- c(as.character(2005:2022),"TRANS","PARAM")
-pop.sz.all$`2004` <- startNum  #Add observed num at start
-pop.sz.all <- pop.sz.all %>% relocate(`2004`, .before = `2005`)
+colnames(pop.sz.all) <- c(as.character((as.numeric(startYr)+1):2022),"TRANS","PARAM")
 
 
-## ** UPDATES FROM HERE ON DOWN FOR NEW FIG *** 
-## Sum across transects
-#pop.sz.trans <- pop.sz.all %>% group_by(TRANS) %>% summarise(numIndivs=colSums(, na.rm=TRUE)) 
-
-#colSums(pop.sz.all[1:18])
-
-## Calculate mean and SE of predicted pop size
-pop.sz.means <- colMeans(pop.sz.all[1:(length(names.yr)+1)])
-pop.sz.sds <- matrixStats::colSds(as.matrix(pop.sz.all[1:(length(names.yr)+1)]))
-
-#pop.sz.ciHi <- 0
-#pop.sz.ciLo <- 0
-#for (cc in 3:ncol(pop.sz.all)) {
-#  cis <- t.test(pop.sz.all[,cc], conf.level=0.95)$conf.int
-#  pop.sz.ciHi <- c(pop.sz.ciHi, cis[2])
-#  pop.sz.ciLo <- c(pop.sz.ciLo, cis[1])
-#}
-
-# Calculate standard error of mean 
-#calcSE <- function(x){sd(x)/sqrt(length(x))}
+## Calculate mean and var of predicted pop size
+## Sum across transects and average across params 
+pop.sz.params <- pop.sz.all %>% group_by(PARAM) %>% summarise(across(c(1:(length(pop.sz.all)-2)), sum, na.rm=TRUE))
+pop.sz.transMn <- colMeans(pop.sz.params[,2:length(pop.sz.params)])
+pop.sz.transSd <- matrixStats::colSds(as.matrix(pop.sz.params[,2:length(pop.sz.params)]))
+pop.sz.transMn <- c(startNum, pop.sz.transMn)  #Add observed num at start
+pop.sz.transSd <- c(0, pop.sz.transSd)
 
 
 
 ## SAVE FOR PLOTTING BELOW BY RENAMING BASED ON DATA SET 
-pop.sz.means.full <- pop.sz.means
-pop.sz.sds.full <- pop.sz.sds
+pop.sz.means.full <- pop.sz.transMn
+pop.sz.sds.full <- pop.sz.transSd
 names.yr.full <- names.yr
-pop.sz.ciHi.full <- pop.sz.ciHi
-pop.sz.ciLo.full <- pop.sz.ciLo
 
-pop.sz.means.evry <- pop.sz.means
-pop.sz.sds.evry <- pop.sz.sds
-names.yr.evry <- names.yr
-pop.sz.ciHi.evry <- pop.sz.ciHi
-pop.sz.ciLo.evry <- pop.sz.ciLo
+pop.sz.means.consec <- pop.sz.means
+pop.sz.sds.consec <- pop.sz.sds
+names.yr.consec <- names.yr
+pop.sz.ciHi.consec <- pop.sz.ciHi
+pop.sz.ciLo.consec <- pop.sz.ciLo
 
 pop.sz.means.prun <- pop.sz.means
 pop.sz.sds.prun <- pop.sz.sds
@@ -799,9 +784,12 @@ pop.sz.ciLo.odd <- pop.sz.ciLo
 
 
 ## Save output 
-pop.sz.comb <- as.data.frame(cbind(pop.sz.means,pop.sz.sds,pop.sz.ciHi,pop.sz.ciLo))
-colnames(pop.sz.comb) <- c("Mean","SD","CI_HI", "CI_LO")
-write.csv(pop.sz.comb,file="C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/20230725_PopSzFullEsts.csv")
+setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
+date <- Sys.Date()        #Get date to be added to file name
+date <- str_replace_all(date, "-", "") 
+saveRDS(pop.sz.means.full, file=paste("erbrPopSzMnFull07", date, sep="_"))
+saveRDS(pop.sz.sds.full, file=paste("erbrPopSzSdFull07", date, sep="_"))
+
 
 ## Calculate observed: Subset by year and count the number of living plants 
 num.indivs <- erbr %>% group_by(Year) %>% summarise(numIndivs=sum(surv, na.rm=TRUE)) 
@@ -810,19 +798,21 @@ num.indivs <- num.indivs[which(num.indivs$numIndivs!=0),]
 
 
 ## PLOT PREDICTED VS OBSERVED POP SZ
-## Plot mean and SD (or CIs)
+## Read in saved files
+pop.sz.means.full <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzMnFull_20231229") 
+pop.sz.sds.full <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzSdFull_20231229")  
+
+
+## Plot mean and SD (or CIs etc)
 plot(as.numeric(as.character(num.indivs$Year)), num.indivs$numIndivs, type='l', ylim=c(0,250), 
      ylab="Number of individuals",xlab="Year", cex.lab=1.45, cex.axis=1.3)
 points(as.numeric(as.character(num.indivs$Year)), num.indivs$numIndivs, pch=16, cex=0.75)
 
-lines(2004:2022,pop.sz.means.full[1:19],
-      col="grey60",lwd=1.9)  #pop.sz.means.full[1:length(pop.sz.means.full)]
+lines(2004:2022,pop.sz.means.full[1:19], #pop.sz.means.full[1:length(pop.sz.means.full)]
+      col="grey60",lwd=1.9)  
 arrows(2004:2022,pop.sz.means.full[1:19], 
        2004:2022,pop.sz.means.full[1:19]+pop.sz.sds.full[1:19], 
        length=0.05, angle=90, col="grey60", lwd=0.6)
-#arrows(2004:2022,pop.sz.means.full[1:19], 
-#       2004:2022,pop.sz.means.full[1:19]+pop.sz.ciHi.full[1:19], 
-#       length=0.05, angle=90, col="grey60", lwd=0.6)
 arrows(2004:2022,pop.sz.means.full[1:19], 
        2004:2022,pop.sz.means.full[1:19]-pop.sz.sds.full[1:19], 
        length=0.05, angle=90, col="grey60", lwd=0.6)
