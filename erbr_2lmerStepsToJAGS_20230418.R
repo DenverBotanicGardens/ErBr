@@ -314,10 +314,10 @@ names.paramTitles <- c("Grwth Sz","Grwth Fall Temp","Grwth Summer Temp","Grwth W
                        "Repro Size","Repro Fall Precip","Repro Summer Precip",
                        "Repro Winter Temp","Repro Fall Temp","Repro Summer Temp")
 
-colfunc <- colorRampPalette(c("black", "grey90"))
+#colfunc <- colorRampPalette(c("black", "grey90"))
 #ylim.vals <- c()
-par(mfrow=c(4,8))  
-par(mar=c(2,3,3,3))
+#par(mfrow=c(4,8))  
+#par(mar=c(2,3,3,3))
 
 
 #for (nn in 1:length(names.param)) {
@@ -398,6 +398,8 @@ global.repro <- glmer.nb(InflNew ~ scale(RosNew) + scale(PptFall) + scale(PptSum
                            scale(TempWinter) + scale(TempSummer) + (1|TransectNew), data=dats)
 
 
+## Extract parameter estimates from GLMMs
+#How to get in comparable units/ sacle to JAGS output? 
 
 
 ## CALCULATE 90th PERCENTILE 
@@ -466,26 +468,27 @@ yMax <- quant.max + (quant.max*0.04)
   #c(0.85,0.3,0.5,1,-0.001,0.01,0.04,1.4,0.08,1,1.5,2.5,1.7,0.08,0.03,2,1,1.5,1.2,0.009,0.009,0.6,-0.2,0.5)
 
 
-colfunc <- colorRampPalette(c("red", "blue"))
+#colfunc <- colorRampPalette(c("red", "blue"))
+colz <- c("#d73027","#fc8d59","#91bfdb","#4575b4","#fdcb44","#fee090")
 
 #tiff
 pdf('ErBr_fig2_20231022.pdf', width=6, height=9)
-par(mfrow=c(6,4), mar=c(2,3,2,2))  
+par(mfrow=c(7,4), mar=c(2,3,2,2))  #Plot so 4 VR models are in cols and upto 7 predictor vars are in rows
 #bottom, left, top, and right
 for (nn in 1:length(names.param)) {
-  plot(c(1:6), as.matrix(medComb[which(medComb$Names == names.param[nn]),1:6]), col=colfunc(6), 
+  plot(c(1:6), as.matrix(medComb[which(medComb$Names == names.param[nn]),1:6]), col=colz, 
        xaxt = "n", main=names.paramTitles[nn], cex.axis=1.1,cex.main=0.9, pch=19, 
        ylim=c(yMin[nn],yMax[nn]), cex=1.2)
   arrows(1:6,as.matrix(medComb[which(medComb$Names == names.param[nn]),1:6]),
          1:6,as.numeric(as.matrix(quantComb[which(quantComb$Names == names.param[nn]),1:6])), 
-         lwd = 1.25, angle = 90, code = 3, length=0, col=colfunc(6))
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
   arrows(1:6,as.matrix(medComb[which(medComb$Names == names.param[nn]),1:6]),
          1:6,as.numeric(as.matrix(quant10Comb[which(quant10Comb$Names == names.param[nn]),1:6])), 
-         lwd = 1.25, angle = 90, code = 3, length=0, col=colfunc(6))
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
 }
 
 
-legend("bottomright", colnames(varComb)[1:6], col=colfunc(6),pch=19,cex=1.2,
+legend("bottomright", colnames(varComb)[1:6], col=colz,pch=19,cex=1.2,
        horiz=FALSE, bty="y",seg.len=1, xpd=NA, inset=c(-1.2,0))
 
 dev.off()
