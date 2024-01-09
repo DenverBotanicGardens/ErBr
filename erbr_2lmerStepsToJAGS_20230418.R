@@ -187,10 +187,10 @@ dats[1217,]$InflYesNo <- 0
 ## RUN ASSOCIATED JAGS MODEL ----------------------------------------------------------------------
 #jags.mod <- run.jags('erbr_JAGSmod_210507.R', n.chains=3, data=dats, burnin=10000, thin=10, sample=30000, adapt=500, method='parallel')
 #jags.mod <- run.jags('erbr_JAGSmodComplx_noYRE_210827.R', n.chains=3, data=dats, burnin=10000, thin=10, sample=30000, adapt=500, method='parallel')
-jags.mod <- run.jags('Scripts/erbr_JAGSmodBest_noYRE_20230418.R', n.chains=3, data=dats, burnin=10000, thin=10, sample=30000, adapt=500, method='parallel')
+#jags.mod <- run.jags('Scripts/erbr_JAGSmodBest_noYRE_20230418.R', n.chains=3, data=dats, burnin=10000, thin=10, sample=30000, adapt=500, method='parallel')
 
 #save(jags.mod, file='erbr_JAGSmod_c3t10s20b5_210406.rdata')
-saveRDS(jags.mod, "erbr_JAGSmodBest_c3t10s30b10_noYRE_20230420.rds")
+#saveRDS(jags.mod, "erbr_JAGSmodBest_c3t10s30b10_noYRE_20230420.rds")
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -329,8 +329,8 @@ names.paramTitles <- c("Grwth Size","Grwth Fall Temp","Grwth Summer Temp","Grwth
 #         7,9)
 index<-c(1,9,5,13,20,17,23,2,24,10,6,14,3,21,18,11,7,15,4,22,19,16,12,8)
 
-names.param <- names.param[order(index)]
-names.paramTitles <- names.paramTitles[order(index)]
+names.paramOrd <- names.param[order(index)]
+names.paramTitlesOrd <- names.paramTitles[order(index)]
 
 
 #colfunc <- colorRampPalette(c("black", "grey90"))
@@ -391,7 +391,7 @@ names.paramTitles <- names.paramTitles[order(index)]
 
 ## Make modified graph showing median param ests b/w diff datasets as points and 80-90% limits; include glmm estimates
 
-## USE A GLMM FOR EACH VR AND COMPARE PARAM ESTIMATES TO JAGS MODELS
+## USE A GLMM FOR EACH VR AND COMPARE PARAM ESTIMATES TO JAGS MODELS ---------------
 ## Add t+1 climate, sz, & tag into erbr data 
 dats <- dats %>% mutate(TagNew1=lead(TagNew), RosNew1=lead(RosNew), Surv1=lead(surv))  
 dats <- dats %>% mutate(PptFall1=lead(PptFall), PptWinter1=lead(PptWinter), PptSummer1=lead(PptSummer),
@@ -416,11 +416,33 @@ global.repro <- glmer.nb(InflNew ~ scale(RosNew) + scale(PptFall) + scale(PptSum
                            scale(TempWinter) + scale(TempSummer) + (1|TransectNew), data=dats)
 
 
-## Extract parameter estimates from GLMMs
+## Extract parameter estimates and SEs from GLMMs
 #How to get in comparable units/ scale to JAGS output? 
+paramsMM.grwth <- as.data.frame(cbind(as.data.frame(summary(global.grwth)$coefficients[2:nrow(summary(global.grwth)$coefficients),1:2]),
+                        c("Grwth Size","Grwth Fall Precip","Grwth Winter Precip","Grwth Summer Precip",
+                          "Grwth Fall Temp","Grwth Winter Temp","Grwth Summer Temp")))
+colnames(paramsMM.grwth) <- c("GLMM","SE","ParamTitle")
+paramsMM.surv <- as.data.frame(cbind(as.data.frame(summary(global.surv)$coefficients[2:nrow(summary(global.surv)$coefficients),1:2]),
+                                      c("Surv Size","Surv Winter Precip",
+                                        "Surv Fall Temp","Surv Winter Temp","Surv Summer Temp")))
+colnames(paramsMM.surv) <- c("GLMM","SE","ParamTitle")
+paramsMM.reproYesNo <- as.data.frame(cbind(as.data.frame(summary(global.reproYesNo)$coefficients[2:nrow(summary(global.reproYesNo)$coefficients),1:2]),
+                                     c("p(Repro) Size","p(Repro) Fall Precip","p(Repro) Summer Precip",
+                                       "p(Repro) Fall Temp","p(Repro) Winter Temp","p(Repro) Summer Temp")))
+colnames(paramsMM.reproYesNo) <- c("GLMM","SE","ParamTitle")
+paramsMM.repro <- as.data.frame(cbind(as.data.frame(summary(global.repro)$coefficients[2:nrow(summary(global.repro)$coefficients),1:2]),
+                                           c("Repro Size","Repro Fall Precip","Repro Summer Precip",
+                                             "Repro Fall Temp","Repro Winter Temp","Repro Summer Temp")))
+colnames(paramsMM.repro) <- c("GLMM","SE","ParamTitle")
+paramsMM <- rbind(paramsMM.grwth, paramsMM.surv, paramsMM.reproYesNo, paramsMM.repro)
+paramsMM$SE_upr <- paramsMM$GLMM + paramsMM$SE
+paramsMM$SE_lwr <- paramsMM$GLMM - paramsMM$SE
+## --------------------------------------------------------------
 
 
-## CALCULATE 90th PERCENTILE 
+
+
+## CALCULATE 90th PERCENTILE ON JAGS ESTIMATES ------------------
 quantParams <- chains %>% summarise_all(funs(list(quantile(., probs=0.9)))) #%>% transpose
 quantParams <- as.data.frame(t(quantParams))
 quantParams.4to13 <- chains.4to13 %>% summarise_all(funs(list(quantile(., probs=0.9))))
@@ -440,7 +462,7 @@ colnames(quantComb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13
 quantComb$Names <- colnames(chains)
 
 
-## CALCULATE 10th PERCENTILE 
+## CALCULATE 10th PERCENTILE ON JAGS ESTIMATES
 quant10Params <- chains %>% summarise_all(funs(list(quantile(., probs=0.1)))) 
 quant10Params <- as.data.frame(t(quant10Params))
 quant10Params.4to13 <- chains.4to13 %>% summarise_all(funs(list(quantile(., probs=0.1))))
@@ -458,83 +480,82 @@ quant10Comb <- as.data.frame(cbind(quant10Params, quant10Params.4to13, quant10Pa
                                  quant10Params.4to8, quant10Params.9to13))
 colnames(quant10Comb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13")
 quant10Comb$Names <- colnames(chains)
+## ----------------------------------------------------------------------------
 
-
-
-## PLOT
-quant10Comb.trunc <- as.data.frame(quant10Comb[55:85,])
-quant10Comb.trunc <- quant10Comb.trunc[c(2:8,12:16,18:23,25:30),1:6] #Remove intercept plots
-quant10Comb.trunc <- cbind(as.numeric(quant10Comb.trunc[,1]),as.numeric(quant10Comb.trunc[,2]),
-                           as.numeric(quant10Comb.trunc[,3]),as.numeric(quant10Comb.trunc[,4]),
-                           as.numeric(quant10Comb.trunc[,5]),as.numeric(quant10Comb.trunc[,6])) #Change structure
-
-quantComb.trunc <- as.data.frame(quantComb[55:85,])
-quantComb.trunc <- quantComb.trunc[c(2:8,12:16,18:23,25:30),1:6] #Remove intercept plots 
-quantComb.trunc <- cbind(as.numeric(quantComb.trunc[,1]),as.numeric(quantComb.trunc[,2]),
-                           as.numeric(quantComb.trunc[,3]),as.numeric(quantComb.trunc[,4]),
-                           as.numeric(quantComb.trunc[,5]),as.numeric(quantComb.trunc[,6]))
-
-
-quant10.min <- rowMins(as.matrix(quant10Comb.trunc[,c(1:6)]))
-quant.max <- rowMaxs(as.matrix(quantComb.trunc[,c(1:6)]))
-quant10.min <- quant10.min[order(index)]
-quant10.max <- quant10.max[order(index)]
-
-#Since some min values are positive (all sz ests) and some are negative (all the rest), do separately
-yMin <- c(quant10.min[1:4] - (quant10.min[1:4]*0.05), quant10.min[5:24] - (quant10.min[5:24]*-0.05))
-#yMin <- yMin[order(index)]
-
-#c(0.7,-0.22,-0.5,-2,-0.05,-0.03,-0.03,0.2,-0.1,-2,-4,-3,-0.08,-0.02,-3,-1,-1.5,0.7,-0.02,-0.005,0.1,-0.95,-0.4)
-yMax <- quant.max + (quant.max*0.05)
-#as.numeric(quantParams.trunc) + (as.numeric(quantParams.trunc)*0.1)
-#c(0.85,0.3,0.5,1,-0.001,0.01,0.04,1.4,0.08,1,1.5,2.5,1.7,0.08,0.03,2,1,1.5,1.2,0.009,0.009,0.6,-0.2,0.5)
-
-
-## Assign colors
-#colfunc <- colorRampPalette(c("red", "blue"))
-colz <- c("#d73027","#fc8d59","#91bfdb","#4575b4","#fdcb44","#fee090")
 
 
 ## Make dataframe of selected relevant values for plotting 
 medComb.sel <- NULL
-for (nn in 1:length(names.param)) {
-  medComb.sel <- rbind(medComb.sel, as.data.frame(medComb[which(medComb$Names == names.param[nn]),1:6]))
+for (nn in 1:length(names.paramOrd)) {
+  medComb.sel <- rbind(medComb.sel, as.data.frame(medComb[which(medComb$Names == names.paramOrd[nn]),1:6]))
 }
 
-## ** ADD IN GLMM ESTIMATES *** **************
-medComb.sel$GLMM <- NA
-#medComb.sel$GLMM[1:7] <- summary(global.grwth)$coefficients[2:8,1]
-medComb.sel$Param <- names.paramTitles
-#medComb.sel$Index <- 1:24
-#medComb.sel <- rbind(medComb.sel[1:17,],NA,medComb.sel[18:24,]) 
+## Combine JAGS and GLMM estimates
+medComb.sel$ParamTitle <- names.paramTitlesOrd
+medComb.sel <- dplyr::left_join(medComb.sel, paramsMM, by="ParamTitle")
+medComb.sel <- medComb.sel %>% relocate(ParamTitle, .after=last_col())
+#medComb.sel <- rbind(medComb.sel[1:17,],NA,medComb.sel[18:24,])
+
 
 quantComb.sel <- NULL
-for (uu in 1:length(names.param)) {
-  quantComb.sel <- rbind(quantComb.sel, as.data.frame(quantComb[which(quantComb$Names == names.param[uu]),1:6]))
+for (uu in 1:length(names.paramOrd)) {
+  quantComb.sel <- rbind(quantComb.sel, as.data.frame(quantComb[which(quantComb$Names == names.paramOrd[uu]),1:6]))
 }
-#quantComb.sel <- rbind(quantComb.sel[1:17,],NA,quantComb.sel[18:24,]) 
+quantComb.sel$GLMM_SEupr <- medComb.sel$SE_upr
 
 quant10Comb.sel <- NULL
-for (uu in 1:length(names.param)) {
-  quant10Comb.sel <- rbind(quant10Comb.sel, as.data.frame(quant10Comb[which(quant10Comb$Names == names.param[uu]),1:6]))
+for (uu in 1:length(names.paramOrd)) {
+  quant10Comb.sel <- rbind(quant10Comb.sel, as.data.frame(quant10Comb[which(quant10Comb$Names == names.paramOrd[uu]),1:6]))
 }
-#quant10Comb.sel <- rbind(quant10Comb.sel[1:17,],NA,quant10Comb.sel[18:24,]) 
+quant10Comb.sel$GLMM_SElwr <- medComb.sel$SE_lwr
+
+#quant10Comb.trunc <- as.data.frame(quant10Comb[55:85,])
+#quant10Comb.trunc <- quant10Comb.trunc[c(2:8,12:16,18:23,25:30),1:6] #Remove intercept plots
+#quantComb.trunc <- as.data.frame(quantComb[55:85,])
+#quantComb.trunc <- quantComb.trunc[c(2:8,12:16,18:23,25:30),1:6] #Remove intercept plots 
 
 
-#names.paramTitles.sel <- c(names.paramTitles[1:17],NA,names.paramTitles[18:24]) 
-#yMin.sel <- c(yMin[1:17],NA,yMin[18:24])
-#yMax.sel <- c(yMax[1:17],NA,yMax[18:24])
 
 
+## Calculate the min and max values of error bars & set appropriate y-axis values for plotting 
+# Change structure to allow for row min and max calcs 
+quantComb.selMod <- cbind(as.numeric(quantComb.sel[,1]),as.numeric(quantComb.sel[,2]),
+                           as.numeric(quantComb.sel[,3]),as.numeric(quantComb.sel[,4]),
+                           as.numeric(quantComb.sel[,5]),as.numeric(quantComb.sel[,6]),
+                           as.numeric(quantComb.sel[,7]))
+quant.max <- rowMaxs(as.matrix(quantComb.selMod[,c(1:7)]))
+yMax <- quant.max + (quant.max*0.05)
+
+quant10Comb.selMod <- cbind(as.numeric(quant10Comb.sel[,1]),as.numeric(quant10Comb.sel[,2]),
+                            as.numeric(quant10Comb.sel[,3]),as.numeric(quant10Comb.sel[,4]),
+                            as.numeric(quant10Comb.sel[,5]),as.numeric(quant10Comb.sel[,6]),
+                            as.numeric(quant10Comb.sel[,7]))
+quant10.min <- rowMins(as.matrix(quant10Comb.selMod[,c(1:7)]))
+#Since some min values are positive (all sz ests) and some are negative (all the rest), do separately
+yMin <- c(quant10.min[1:4] - (quant10.min[1:4]*0.05), quant10.min[5:24] - (quant10.min[5:24]*-0.05))
+
+
+
+
+
+## Assign colors
+#colfunc <- colorRampPalette(c("red", "blue"))
+colz <- c("#d73027","#fc8d59","#91bfdb","#4575b4","#fdcb44","#fee090","grey60")
+
+
+ 
+
+
+## PLOT
 #tiff
 pdf('ErBr_fig2_20231022.pdf', width=6, height=9)
 par(mfrow=c(7,4), mar=c(2,2,2,2))  #Plot so 4 VR models are in cols and upto 7 predictor vars are in rows
 #bottom, left, top, and right
 for (nn in 1:17) {
-  plot(c(1:6), medComb.sel[nn,1:6], col=colz, ylab=NA,
-       xaxt = "n", main=names.paramTitles[nn], cex.axis=1.1,cex.main=0.9, pch=19, 
+  plot(c(1:7), medComb.sel[nn,1:7], col=colz, ylab=NA,
+       xaxt = "n", main=names.paramTitlesOrd[nn], cex.axis=1.1,cex.main=0.9, pch=19, 
        ylim=c(yMin[nn],yMax[nn]), cex=1.2)
-  abline(h=0, col="grey")
+  abline(h=0, col="grey80")
   arrows(1:6,as.numeric(medComb.sel[nn,1:6]),
          1:6, as.numeric(as.matrix(quantComb.sel[nn,1:6])),
          lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
@@ -544,33 +565,33 @@ for (nn in 1:17) {
 }
 plot.new()
 for (nn in 18:20) {
-  plot(c(1:6), medComb.sel[nn,1:6], col=colz, ylab=NA, 
-       xaxt = "n", main=names.paramTitles[nn], cex.axis=1.1,cex.main=0.9, pch=19, 
+  plot(c(1:7), medComb.sel[nn,1:7], col=colz, ylab=NA, 
+       xaxt = "n", main=names.paramTitlesOrd[nn], cex.axis=1.1,cex.main=0.9, pch=19, 
        ylim=c(yMin[nn],yMax[nn]), cex=1.2)
-  abline(h=0, col="grey")
-  arrows(1:6,as.numeric(medComb.sel[nn,1:6]),
-         1:6, as.numeric(as.matrix(quantComb.sel[nn,1:6])),
+  abline(h=0, col="grey80")
+  arrows(1:7,as.numeric(medComb.sel[nn,1:7]),
+         1:7, as.numeric(as.matrix(quantComb.sel[nn,1:7])),
          lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
-  arrows(1:6, as.numeric(medComb.sel[nn,1:6]),
-         1:6, as.numeric(as.matrix(quant10Comb.sel[nn,1:6])), 
+  arrows(1:7, as.numeric(medComb.sel[nn,1:7]),
+         1:7, as.numeric(as.matrix(quant10Comb.sel[nn,1:7])), 
          lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
 }
 plot.new()
 for (nn in 21:24) {
-  plot(c(1:6), medComb.sel[nn,1:6], col=colz, ylab=NA,
-       xaxt = "n", main=names.paramTitles[nn], cex.axis=1.1,cex.main=0.9, pch=19, 
+  plot(c(1:7), medComb.sel[nn,1:7], col=colz, ylab=NA,
+       xaxt = "n", main=names.paramTitlesOrd[nn], cex.axis=1.1,cex.main=0.9, pch=19, 
        ylim=c(yMin[nn],yMax[nn]), cex=1.2)
-  abline(h=0, col="grey")
-  arrows(1:6,as.numeric(medComb.sel[nn,1:6]),
-         1:6, as.numeric(as.matrix(quantComb.sel[nn,1:6])),
+  abline(h=0, col="grey80")
+  arrows(1:7,as.numeric(medComb.sel[nn,1:7]),
+         1:7, as.numeric(as.matrix(quantComb.sel[nn,1:7])),
          lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
-  arrows(1:6, as.numeric(medComb.sel[nn,1:6]),
-         1:6, as.numeric(as.matrix(quant10Comb.sel[nn,1:6])), 
+  arrows(1:7, as.numeric(medComb.sel[nn,1:7]),
+         1:7, as.numeric(as.matrix(quant10Comb.sel[nn,1:7])), 
          lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
 }
 plot.new()
 
-legend("center", colnames(medComb.sel)[1:6], col=colz, pch=19, cex=1.1,
+legend("center", colnames(medComb.sel)[1:7], col=colz, pch=19, cex=1,
        horiz=FALSE, bty="y",seg.len=1, xpd="NA")
 
 dev.off()
