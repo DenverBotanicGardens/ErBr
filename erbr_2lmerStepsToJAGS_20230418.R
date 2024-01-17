@@ -402,18 +402,26 @@ dats <- dats[which(dats$TagNew == dats$TagNew1),]  #Remove lines with mis-matche
 ## Growth
 global.grwth <- glmer.nb(RosNew1 ~ scale(RosNew) + scale(PptFall) + scale(PptWinter) + scale(PptSummer) + 
                          scale(TempFall) + scale(TempWinter) + scale(TempSummer) + (1|TransectNew), data=dats)
+global.grwthNS <- glmer.nb(RosNew1 ~ RosNew + PptFall + PptWinter + PptSummer + 
+                           TempFall + TempWinter + TempSummer + (1|TransectNew), data=dats)
 
 ## Survival #** Should size be logged in surv and prob repro models? **
 global.surv <- glmer(Surv1 ~ scale(RosNew) + scale(PptWinter) + scale(TempFall) + scale(TempWinter) + 
                      scale(TempSummer) + (1|TransectNew), family=binomial(link='logit'), data=dats)
+global.survNS <- glmer(Surv1 ~ RosNew + PptWinter + TempFall + (TempWinter) + 
+                       (TempSummer) + (1|TransectNew), family=binomial(link='logit'), data=dats)
 
 ## Probability of reproduction
 global.reproYesNo <- glmer(InflYesNo ~ scale(RosNew) + scale(PptFall) + scale(PptSummer) + scale(TempFall) + 
                            scale(TempWinter) + scale(TempSummer) + (1|TransectNew), family=binomial(link=logit), data=dats)
+global.reproYesNoNS <- glmer(InflYesNo ~ (RosNew) + (PptFall) + (PptSummer) + (TempFall) + 
+                             (TempWinter) + (TempSummer) + (1|TransectNew), family=binomial(link=logit), data=dats)
 
 ## Reproduction #** Should data be subset to only include reproductive plts (i.e. infs>0) in this model? **
 global.repro <- glmer.nb(InflNew ~ scale(RosNew) + scale(PptFall) + scale(PptSummer) + scale(TempFall) + 
                            scale(TempWinter) + scale(TempSummer) + (1|TransectNew), data=dats)
+global.reproNS <- glmer.nb(InflNew ~ (RosNew) + (PptFall) + (PptSummer) + (TempFall) + 
+                           (TempWinter) + (TempSummer) + (1|TransectNew), data=dats)
 
 
 ## Extract parameter estimates and SEs from GLMMs
@@ -437,6 +445,13 @@ colnames(paramsMM.repro) <- c("GLMM","SE","ParamTitle")
 paramsMM <- rbind(paramsMM.grwth, paramsMM.surv, paramsMM.reproYesNo, paramsMM.repro)
 paramsMM$SE_upr <- paramsMM$GLMM + paramsMM$SE
 paramsMM$SE_lwr <- paramsMM$GLMM - paramsMM$SE
+
+
+## Adjust param estimates to account for scaling? ***
+sd(dats$RosNew, na.rm=TRUE)
+paramsMM[1,1]/sd(dats$RosNew, na.rm=TRUE)
+sd(dats$PptSummer, na.rm=TRUE)
+paramsMM[15,1]/sd(dats$PptSummer, na.rm=TRUE)
 ## --------------------------------------------------------------
 
 
