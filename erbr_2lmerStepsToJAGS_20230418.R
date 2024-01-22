@@ -400,27 +400,28 @@ dats <- dats %>% mutate(PptFall1=lead(PptFall), PptWinter1=lead(PptWinter), PptS
 dats <- dats[which(dats$TagNew == dats$TagNew1),]  #Remove lines with mis-matched individuals 
 
 ## Growth
-global.grwth <- glmer.nb(RosNew1 ~ scale(RosNew) + scale(PptFall) + scale(PptWinter) + scale(PptSummer) + 
-                         scale(TempFall) + scale(TempWinter) + scale(TempSummer) + (1|TransectNew), data=dats)
-global.grwthNS <- glmer.nb(RosNew1 ~ RosNew + PptFall + PptWinter + PptSummer + 
+#global.grwth <- glmer.nb(RosNew1 ~ scale(RosNew) + scale(PptFall) + scale(PptWinter) + scale(PptSummer) + 
+#                         scale(TempFall) + scale(TempWinter) + scale(TempSummer) + (1|TransectNew), data=dats)
+global.grwth <- glmer.nb(RosNew1 ~ log(RosNew) + PptFall + PptWinter + PptSummer + 
                            TempFall + TempWinter + TempSummer + (1|TransectNew), data=dats)
 
 ## Survival #** Should size be logged in surv and prob repro models? **
-global.surv <- glmer(Surv1 ~ scale(RosNew) + scale(PptWinter) + scale(TempFall) + scale(TempWinter) + 
-                     scale(TempSummer) + (1|TransectNew), family=binomial(link='logit'), data=dats)
-global.survNS <- glmer(Surv1 ~ RosNew + PptWinter + TempFall + (TempWinter) + 
+## Log size in all models, to match JAGs, ending size is linear function of starting size 
+#global.surv <- glmer(Surv1 ~ scale(RosNew) + scale(PptWinter) + scale(TempFall) + scale(TempWinter) + 
+#                     scale(TempSummer) + (1|TransectNew), family=binomial(link='logit'), data=dats)
+global.surv <- glmer(Surv1 ~ log(RosNew) + PptWinter + TempFall + (TempWinter) + 
                        (TempSummer) + (1|TransectNew), family=binomial(link='logit'), data=dats)
 
 ## Probability of reproduction
-global.reproYesNo <- glmer(InflYesNo ~ scale(RosNew) + scale(PptFall) + scale(PptSummer) + scale(TempFall) + 
-                           scale(TempWinter) + scale(TempSummer) + (1|TransectNew), family=binomial(link=logit), data=dats)
-global.reproYesNoNS <- glmer(InflYesNo ~ (RosNew) + (PptFall) + (PptSummer) + (TempFall) + 
+#global.reproYesNo <- glmer(InflYesNo ~ scale(RosNew) + scale(PptFall) + scale(PptSummer) + scale(TempFall) + 
+#                           scale(TempWinter) + scale(TempSummer) + (1|TransectNew), family=binomial(link=logit), data=dats)
+global.reproYesNo <- glmer(InflYesNo ~ (RosNew) + (PptFall) + (PptSummer) + (TempFall) + 
                              (TempWinter) + (TempSummer) + (1|TransectNew), family=binomial(link=logit), data=dats)
 
 ## Reproduction #** Should data be subset to only include reproductive plts (i.e. infs>0) in this model? **
-global.repro <- glmer.nb(InflNew ~ scale(RosNew) + scale(PptFall) + scale(PptSummer) + scale(TempFall) + 
-                           scale(TempWinter) + scale(TempSummer) + (1|TransectNew), data=dats)
-global.reproNS <- glmer.nb(InflNew ~ (RosNew) + (PptFall) + (PptSummer) + (TempFall) + 
+#global.repro <- glmer.nb(InflNew ~ scale(RosNew) + scale(PptFall) + scale(PptSummer) + scale(TempFall) + 
+#                           scale(TempWinter) + scale(TempSummer) + (1|TransectNew), data=dats)
+global.repro <- glmer.nb(InflNew ~ (RosNew) + (PptFall) + (PptSummer) + (TempFall) + 
                            (TempWinter) + (TempSummer) + (1|TransectNew), data=dats)
 
 
@@ -448,10 +449,10 @@ paramsMM$SE_lwr <- paramsMM$GLMM - paramsMM$SE
 
 
 ## Adjust param estimates to account for scaling? ***
-sd(dats$RosNew, na.rm=TRUE)
-paramsMM[1,1]/sd(dats$RosNew, na.rm=TRUE)
-sd(dats$PptSummer, na.rm=TRUE)
-paramsMM[15,1]/sd(dats$PptSummer, na.rm=TRUE)
+#sd(dats$RosNew, na.rm=TRUE)
+#paramsMM[1,1]/sd(dats$RosNew, na.rm=TRUE)
+#sd(dats$PptSummer, na.rm=TRUE)
+#paramsMM[15,1]/sd(dats$PptSummer, na.rm=TRUE)
 ## --------------------------------------------------------------
 
 
@@ -558,7 +559,13 @@ yMin <- c(quant10.min[1:4] - (quant10.min[1:4]*0.05), quant10.min[5:24] - (quant
 colz <- c("#d73027","#fc8d59","#91bfdb","#4575b4","#fdcb44","#fee090","grey60")
 
 
- 
+saveRDS(medComb.sel, "20240117_medCombSel.rds")
+saveRDS(quantComb.sel, "20240117_quantCombSel.rds")
+saveRDS(quant10Comb.sel, "20240117_quant10CombSel.rds")
+medComb.sel <- readRDS("20240117_medCombSel.rds")
+quantComb.sel <- readRDS("20240117_quantCombSel.rds")
+quant10Comb.sel <- readRDS("20240117_quant10CombSel.rds")
+
 
 
 ## PLOT
