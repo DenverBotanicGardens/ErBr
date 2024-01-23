@@ -820,10 +820,10 @@ pop.sz.means.full <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internsh
 pop.sz.sds.full <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzSdFull07_20231229")  
 pop.sz.means.consec <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzMn4to13-07_20231230") 
 pop.sz.sds.consec <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzSd4to13-07_20231230")  
-pop.sz.means.evn <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzMn4to13evn-07_20231230") 
-pop.sz.sds.evn <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzSd4to13evn-07_20231230")  
-pop.sz.means.odd <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzMn4to13odd-07_20231230") 
-pop.sz.sds.odd <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzSd4to13odd-07_20231230")  
+#pop.sz.means.evn <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzMn4to13evn-07_20231230") 
+#pop.sz.sds.evn <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzSd4to13evn-07_20231230")  
+#pop.sz.means.odd <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzMn4to13odd-07_20231230") 
+#pop.sz.sds.odd <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzSd4to13odd-07_20231230")  
 
 
 ## Plot mean and SD (or CIs etc)
@@ -846,49 +846,51 @@ pop.sz.sds.odd <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/
 
 
 ## Plot from 2007 onward
-plot(as.numeric(as.character(num.indivs$Year[4:14])), num.indivs$numIndivs[4:14], type='l', ylim=c(-90,390), 
-     ylab="Number of individuals",xlab="Year", cex.lab=1.45, cex.axis=1.3, lwd=2)
+plot(as.numeric(as.character(num.indivs$Year[4:14])), num.indivs$numIndivs[4:14], type='l', ylim=c(0,250), 
+     ylab="Number of individuals",xlab="Year", cex.lab=1.2, cex.axis=1.1, lwd=2)
 
 lines(2007:2022, pop.sz.means.consec[1:length(pop.sz.means.consec)],
-      col="#fc8d59",lwd=1.9)
-arrows((2007:2022)+0.15,pop.sz.means.consec[1:length(pop.sz.means.consec)], 
-       (2007:2022)+0.15,pop.sz.means.consec[1:length(pop.sz.means.consec)]+pop.sz.sds.consec[1:length(pop.sz.means.consec)], 
-       length=0.05, angle=90, col="#fc8d59", lwd=0.6)
-arrows((2007:2022)+0.15,pop.sz.means.consec[1:length(pop.sz.means.consec)], 
-       (2007:2022)+0.15,pop.sz.means.consec[1:length(pop.sz.means.consec)]-pop.sz.sds.consec[1:length(pop.sz.means.consec)], 
-       length=0.05, angle=90, col="#fc8d59", lwd=0.6)
+      col="#fc8d59",lwd=2)
+arrows((2007:2022),pop.sz.means.consec[1:length(pop.sz.means.consec)], 
+       (2007:2022),pop.sz.means.consec[1:length(pop.sz.means.consec)]+pop.sz.sds.consec[1:length(pop.sz.means.consec)], 
+       length=0, angle=90, col="#fc8d59", lwd=0.6)
+arrows((2007:2022),pop.sz.means.consec[1:length(pop.sz.means.consec)], 
+       (2007:2022),pop.sz.means.consec[1:length(pop.sz.means.consec)]-pop.sz.sds.consec[1:length(pop.sz.means.consec)], 
+       length=0, angle=90, col="#fc8d59", lwd=0.6)
 
-lines(2007:2022, pop.sz.means.odd[1:length(pop.sz.means.odd)],
-      col="#4575b4",lwd=1.9)
-arrows((2007:2022)-0.1,pop.sz.means.odd[1:length(pop.sz.means.odd)], 
-       (2007:2022)-0.1,pop.sz.means.odd[1:length(pop.sz.means.odd)]
-       +pop.sz.sds.odd[1:length(pop.sz.means.odd)],length=0.05, angle=90, col="#4575b4", lwd=0.6)
-arrows((2007:2022)-0.1,pop.sz.means.odd[1:length(pop.sz.means.odd)], 
-       (2007:2022)-0.1,pop.sz.means.odd[1:length(pop.sz.means.odd)]
-       -pop.sz.sds.odd[1:length(pop.sz.means.odd)],length=0.05, angle=90, col="#4575b4", lwd=0.6)
+#lines(2007:2022, pop.sz.means.odd[1:length(pop.sz.means.odd)],
+#      col="#4575b4",lwd=1.9)
+#arrows((2007:2022)-0.1,pop.sz.means.odd[1:length(pop.sz.means.odd)], 
+#       (2007:2022)-0.1,pop.sz.means.odd[1:length(pop.sz.means.odd)]
+#       +pop.sz.sds.odd[1:length(pop.sz.means.odd)],length=0.05, angle=90, col="#4575b4", lwd=0.6)
+#arrows((2007:2022)-0.1,pop.sz.means.odd[1:length(pop.sz.means.odd)], 
+#       (2007:2022)-0.1,pop.sz.means.odd[1:length(pop.sz.means.odd)]
+#       -pop.sz.sds.odd[1:length(pop.sz.means.odd)],length=0.05, angle=90, col="#4575b4", lwd=0.6)
 
-lines(2007:2022, pop.sz.means.evn[1:length(pop.sz.means.evn)],
-      col="#91bfdb",lwd=1.9)
-arrows((2007:2022)+0.1,pop.sz.means.evn[1:length(pop.sz.means.evn)], 
-       (2007:2022)+0.1,pop.sz.means.evn[1:length(pop.sz.means.evn)]+pop.sz.sds.evn[1:length(pop.sz.means.evn)], 
-       length=0.05, angle=90, col="#91bfdb", lwd=0.6)
-arrows((2007:2022)+0.1,pop.sz.means.evn[1:length(pop.sz.means.evn)], 
-       (2007:2022)+0.1,pop.sz.means.evn[1:length(pop.sz.means.evn)]-pop.sz.sds.evn[1:length(pop.sz.means.evn)], 
-       length=0.05, angle=90, col="#91bfdb", lwd=0.6)
+#lines(2007:2022, pop.sz.means.evn[1:length(pop.sz.means.evn)],
+#      col="#91bfdb",lwd=1.9)
+#arrows((2007:2022)+0.1,pop.sz.means.evn[1:length(pop.sz.means.evn)], 
+#       (2007:2022)+0.1,pop.sz.means.evn[1:length(pop.sz.means.evn)]+pop.sz.sds.evn[1:length(pop.sz.means.evn)], 
+#       length=0.05, angle=90, col="#91bfdb", lwd=0.6)
+#arrows((2007:2022)+0.1,pop.sz.means.evn[1:length(pop.sz.means.evn)], 
+#       (2007:2022)+0.1,pop.sz.means.evn[1:length(pop.sz.means.evn)]-pop.sz.sds.evn[1:length(pop.sz.means.evn)], 
+#       length=0.05, angle=90, col="#91bfdb", lwd=0.6)
 
 points(as.numeric(as.character(num.indivs$Year)), num.indivs$numIndivs, pch=16, cex=0.75)
 
 lines(2007:2022,pop.sz.means.full[1:16], #pop.sz.means.full[1:length(pop.sz.means.full)]
-      col="#d73027",lwd=2.9)  
+      col="#d73027",lwd=2)  
 arrows(2007:2022,pop.sz.means.full[1:16], 
        2007:2022,pop.sz.means.full[1:16]+pop.sz.sds.full[1:16], 
-       length=0.05, angle=90, col="#d73027", lwd=0.6)
+       length=0, angle=90, col="#d73027", lwd=0.6)
 arrows(2007:2022,pop.sz.means.full[1:16], 
        2007:2022,pop.sz.means.full[1:16]-pop.sz.sds.full[1:16], 
-       length=0.05, angle=90, col="#d73027", lwd=0.6)
+       length=0, angle=90, col="#d73027", lwd=0.6)
 
-legend("bottomleft", c("Observed", "Full dataset", "2004-2013", "2004-2013 even yrs only", "2004-2013 odd yrs only"), col=c("black","#d73027","#fc8d59","#91bfdb","#4575b4"),lwd=2.95,cex=1,
+legend("bottomleft", c("Observed", "Full dataset", "2004-2013"), col=c("black","#d73027","#fc8d59"),lwd=2,cex=1.25,
        horiz=FALSE, bty="y",seg.len=1, xpd=TRUE)
+#,"#91bfdb","#4575b4"
+#, "2004-2013 even yrs only", "2004-2013 odd yrs only"
 
 ```
 
