@@ -512,7 +512,7 @@ legend("top", c("Observed", "Full dataset", "Consecutive years", "Even years", "
 
 
 
-## LOOK AT NUMBERS OF NEW PLANTS IN EACH YEAR
+## LOOK AT NUMBERS OF NEW OR SM PLANTS IN EACH YEAR
 ```{r}
 
 ## To understand the pop sz increase ~2007, that is not captured by predictions, plot nums of new plts in each yr (by sz group)
@@ -535,6 +535,12 @@ num.newPlts.lrg <- newPlts.lrg %>% group_by(Year) %>% summarise(NUM=n()) #Count 
 
 barplot(num.newPlts.sm$NUM, names=num.newPlts.sm$Year, main="New small plants (<5ros) per year", ylab="New plants")
 barplot(num.newPlts.lrg$NUM, names=num.newPlts.lrg$Year, main="New large plants (>5ros) per year", ylab="New plants") 
+
+
+## PLOT SMALL PLANTS IN EACH YEAR *****
+erbr.sm <- erbr[erbr$RosNew<5 & !is.na(erbr$RosNew),]
+num.erbr.sm <- erbr.sm %>% group_by(Year) %>% summarise(NUM=n())   #Count num small plts per year
+barplot(num.erbr.sm$NUM, names=num.erbr.sm$Year, main="Small plants (<5ros) per year", ylab="Small plants")
 
 ```
 
@@ -651,8 +657,19 @@ legend("bottomleft", names.trans, col=cols,lwd=2,cex=1,
 ## UPDATED PLOT OF ESTIMATED POP SZ PER YEAR COMPARED TO OBSERVED
 ```{r}
 
-## To obtain predicted pop size, estimate for each transect separately and then sum together. 
+## Calculate observed: Subset by year and count the number of living plants 
+num.indivs <- erbr %>% group_by(Year) %>% summarise(numIndivs=sum(surv, na.rm=TRUE)) 
+num.indivs$Year <- as.numeric(as.character(num.indivs$Year))
+num.indivs <- num.indivs[which(num.indivs$numIndivs!=0),]
+## Do counts excluding anything less than given size (e.g. 5 ros)
+erbr.lrg <- erbr[erbr$RosNew>5,]
+#length(erbr.yr$RosNew[erbr.yr$RosNew<2 & !is.na(erbr.yr$RosNew)])
+num.indivs <- erbr.lrg %>% group_by(Year) %>% summarise(numIndivs=sum(surv, na.rm=TRUE)) 
+num.indivs$Year <- as.numeric(as.character(num.indivs$Year))
+num.indivs <- num.indivs[which(num.indivs$numIndivs!=0),]
 
+
+## To obtain predicted pop size, estimate for each transect separately and then sum together. 
 ## Load matrices
 #mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_P1k_20230503")
 mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to13_P1k_20231026")
@@ -667,7 +684,7 @@ names.trans <- unique(sub('.*\\_', '', names.mx))     #Keep text following '_'
 names.param <- unique(sub('\\-.*', '', names.mx))     #Keep text preceding '-'
 
 
-## -- OPTIONAL ------   Subset to keep only years from study period (e.g. 2004-2021) 
+## Subset to keep only years from study period (e.g. 2004-2021) (OPTIONAL?)
 startYr <- "2007"
 match.yr <- as.character(c(startYr:2021))
 mx.list <- mx.list[grep(paste(match.yr,collapse="|"), names(mx.list))]
@@ -690,7 +707,7 @@ table(pltsStart$RosNew)
 minsize <- 1
 maxsize <- max(erbr$RosNew, na.rm=TRUE)
 bin.num <- 50
-vec.bin <- c(minsize, minsize+1:bin.num*(maxsize-minsize)*(1/bin.num)) 
+vec.bin <- c(minsize, minsize+1:bin.num*(maxsize-minsize)*(1/bin.num)) ##**SHOULD WE SET HIGHER MIN SZ? ##
 vec.bin <- c(0,vec.bin) #Add additional zero-1 bin for seedlings
 length(vec.bin)
 
@@ -708,8 +725,8 @@ for (cc in 1:length(names.trans)) {
   }
 }
 totsTrans <- colSums(binCounts)
-startNum <- sum(totsTrans)
-
+#startNum <- sum(totsTrans)
+startNum <- num.indivs$numIndivs[num.indivs$Year==startYr]
 
 
 ## Start parameter loop (for a given parameter draw, loop over transects and data yrs)
@@ -726,6 +743,8 @@ for (pp in 1:length(names.param)) {
 
   ## AG modified from Dan
   N.vec <- binCounts[,tt]                                    #Re-set to desired starting values
+  N.vec[1:2] <- 0                                            #**TRY EXCLUDING ANYTHING >=4 rosettes; set to zero
+
 
   ## Loop over years (from e.g. 2004-2021 to give estimates for 2005-2022)
     for (ii in 1:(sim.yrs)) {
@@ -734,6 +753,7 @@ for (pp in 1:length(names.param)) {
     
       ## Multiply matrix by vec w num indivs per sz class (initially this was observed nums)
       N.vec <- as.matrix(as_tibble(mx)) %*% N.vec        #This grows the population one year
+      N.vec[1:2] <- 0                                    #**TRY EXCLUDING ANYTHING >=4 rosettes; set to zero
       pop.sz[tt,ii]= sum(N.vec) 
 
     } # end of ii (years) loop
@@ -769,13 +789,13 @@ pop.sz.means.consec <- pop.sz.transMn
 pop.sz.sds.consec <- pop.sz.transSd
 names.yr.consec <- names.yr
 
-pop.sz.means.evn <- pop.sz.transMn
-pop.sz.sds.evn <- pop.sz.transSd
-names.yr.evn <- names.yr
+#pop.sz.means.evn <- pop.sz.transMn
+#pop.sz.sds.evn <- pop.sz.transSd
+#names.yr.evn <- names.yr
 
-pop.sz.means.odd <- pop.sz.transMn
-pop.sz.sds.odd <- pop.sz.transSd
-names.yr.odd <- names.yr
+#pop.sz.means.odd <- pop.sz.transMn
+#pop.sz.sds.odd <- pop.sz.transSd
+#names.yr.odd <- names.yr
 #pop.sz.ciHi.odd <- pop.sz.ciHi
 #pop.sz.ciLo.odd <- pop.sz.ciLo
 
@@ -806,12 +826,6 @@ saveRDS(pop.sz.all,
 saveRDS(pop.sz.all, 
         file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzAll4to13-07", dateToday, sep="_"))
 
-
-
-## Calculate observed: Subset by year and count the number of living plants 
-num.indivs <- erbr %>% group_by(Year) %>% summarise(numIndivs=sum(surv, na.rm=TRUE)) 
-num.indivs$Year <- as.numeric(as.character(num.indivs$Year))
-num.indivs <- num.indivs[which(num.indivs$numIndivs!=0),]
 
 
 ## PLOT PREDICTED VS OBSERVED POP SZ
@@ -846,7 +860,8 @@ pop.sz.sds.consec <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internsh
 
 
 ## Plot from 2007 onward
-plot(as.numeric(as.character(num.indivs$Year[4:14])), num.indivs$numIndivs[4:14], type='l', ylim=c(0,250), 
+pdf('20240124_ErBr_fig4.pdf', width=6.5, height=5, pointsize=8)
+plot(as.numeric(as.character(num.indivs$Year[4:14])), num.indivs$numIndivs[4:14], type='l', ylim=c(30,160), 
      ylab="Number of individuals",xlab="Year", cex.lab=1.2, cex.axis=1.1, lwd=2)
 
 lines(2007:2022, pop.sz.means.consec[1:length(pop.sz.means.consec)],
@@ -876,7 +891,7 @@ arrows((2007:2022),pop.sz.means.consec[1:length(pop.sz.means.consec)],
 #       (2007:2022)+0.1,pop.sz.means.evn[1:length(pop.sz.means.evn)]-pop.sz.sds.evn[1:length(pop.sz.means.evn)], 
 #       length=0.05, angle=90, col="#91bfdb", lwd=0.6)
 
-points(as.numeric(as.character(num.indivs$Year)), num.indivs$numIndivs, pch=16, cex=0.75)
+points(as.numeric(as.character(num.indivs$Year)), num.indivs$numIndivs, pch=16, cex=0.85)
 
 lines(2007:2022,pop.sz.means.full[1:16], #pop.sz.means.full[1:length(pop.sz.means.full)]
       col="#d73027",lwd=2)  
@@ -887,8 +902,10 @@ arrows(2007:2022,pop.sz.means.full[1:16],
        2007:2022,pop.sz.means.full[1:16]-pop.sz.sds.full[1:16], 
        length=0, angle=90, col="#d73027", lwd=0.6)
 
-legend("bottomleft", c("Observed", "Full dataset", "2004-2013"), col=c("black","#d73027","#fc8d59"),lwd=2,cex=1.25,
+legend("bottomleft", c("Observed", "Full dataset", "2004-2013"), col=c("black","#d73027","#fc8d59"),lwd=2,cex=1.2,
        horiz=FALSE, bty="y",seg.len=1, xpd=TRUE)
+dev.off()
+
 #,"#91bfdb","#4575b4"
 #, "2004-2013 even yrs only", "2004-2013 odd yrs only"
 
@@ -907,13 +924,23 @@ hist(erbr$RosNew, breaks=100, xlim=c(0,150), xlab="Plant size (rosette number)",
      ylab="Number of individuals", main="Distribution of plant sizes across all years")
 
 #also look at distribution of sizes in one year at a time
-erbr.yr <- erbr[erbr$Year==2005,]
+erbr.yr <- erbr[erbr$Year==2007,]
 hist(erbr.yr$RosNew, breaks=50, xlim=c(0,120))
 erbr.yr <- erbr[erbr$Year==2010,]
 hist(erbr.yr$RosNew, breaks=50, xlim=c(0,130))
 erbr.yr <- erbr[erbr$Year==2018,]
 hist(erbr.yr$RosNew, breaks=40, xlim=c(0,60))
 
+
+## Look at number of plants less than given size in different years
+erbr.yr <- erbr[erbr$Year==2007,]
+length(erbr.yr$RosNew[erbr.yr$RosNew<2 & !is.na(erbr.yr$RosNew)])
+erbr.yr <- erbr[erbr$Year==2008,]
+length(erbr.yr$RosNew[erbr.yr$RosNew<2 & !is.na(erbr.yr$RosNew)])
+erbr.yr <- erbr[erbr$Year==2009,]
+length(erbr.yr$RosNew[erbr.yr$RosNew<2 & !is.na(erbr.yr$RosNew)])
+erbr.yr <- erbr[erbr$Year==2010,]
+length(erbr.yr$RosNew[erbr.yr$RosNew<2 & !is.na(erbr.yr$RosNew)])
 
 ```
 
