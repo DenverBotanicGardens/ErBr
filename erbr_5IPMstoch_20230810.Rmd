@@ -178,8 +178,8 @@ mean(stoch.lams.all$LAMBDA)  ## Overall mean
 #mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to13_P1k_20231026") 
 #mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to13even_P1k_20231026") 
 #mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to13odd_P1k_20231026") 
-mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to8_P1k_20231028") 
-#mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_9to13_P1k_20231028") 
+#mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to8_P1k_20231028") 
+mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_9to13_P1k_20231028") 
 
 
 ## OBTAIN STABLE STAGE STRUCTURE
@@ -266,14 +266,14 @@ for (pp in 1:length(names.param)) {
 ## SAVE OUTPUT
 date <- Sys.Date()        #Get date to be added to file name
 date <- str_replace_all(date, "-", "") #library("stringr")?
-saveRDS(stoch.lams.all, file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLamsStoch_noYRE_y100r100P1k_noTrans_4to8", date, sep="_"))
+saveRDS(stoch.lams.all, file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLamsStoch_noYRE_y100r100P1k_noTrans_9to13", date, sep="_"))
 #stoch.lams.all <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLamsStoch_noYRE_y100r100P1k_220807")
 
 
 
 ## LOOK AT RESULTS
 hist(stoch.lams.all$LAMBDA, breaks=150, border=FALSE, xlab="Short term stochastic population growth rate",
-     main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0.45,1.5), col="grey90")
+     main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0,15), col="grey90")
 abline(v=1, col="red", lwd=0.75)
 
 
