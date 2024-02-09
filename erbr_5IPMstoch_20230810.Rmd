@@ -301,6 +301,60 @@ mean(stoch.lams.all$LAMBDA)
 
 ```
 
+## NEW PLOTS OF STOCH LAMBDA FOR EACH DATASET 
+```{r}
+
+stoch.lams.9to13 <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLamsStoch_noYRE_y100r100P1k_noTrans_9to13_20240127")
+stoch.lams.4to8 <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLamsStoch_noYRE_y100r100P1k_noTrans_4to8_20240127")
+stoch.lams.4to13evn <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLamsStoch_noYRE_y100r100P1k_noTrans_4to13evn_20240126")
+stoch.lams.4to13odd <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLamsStoch_noYRE_y100r100P1k_noTrans_4to13odd_20240126")
+stoch.lams.4to13 <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLamsStoch_noYRE_y100r100P1k_noTrans_4to13_20240126")
+stoch.lams.full <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLamsStoch_noYRE_y100r100P1k_noTrans_Full_20240126")
+
+## LOOK AT RESULTS
+## Plot each dataset in a different panel
+cols <- c("#d73027","#fc8d59","#91bfdb","#4575b4","#fdcb44","#fee090")
+#brks <- c(20,30,40,30,40,40,40,30,40,40,30,40)
+par(mfrow=c(3,2))  
+hist(stoch.lams.full$LAMBDA, breaks=100, border=FALSE, xlab="Short term stochastic population growth rate",
+     main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0.9,1), col=cols[1])
+abline(v=1, col="red", lwd=0.75)
+hist(stoch.lams.4to13$LAMBDA, breaks=115, border=FALSE, xlab="Short term stochastic population growth rate",
+     main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0.9,1.05), col=cols[2])
+abline(v=1, col="red", lwd=0.75)
+hist(stoch.lams.4to13evn$LAMBDA, breaks=100, border=FALSE, xlab="Short term stochastic population growth rate",
+     main=NA, cex.lab=1.4, cex.axis=1.2, col=cols[3])
+abline(v=1, col="red", lwd=0.75)
+hist(stoch.lams.4to13odd$LAMBDA, breaks=290, border=FALSE, xlab="Short term stochastic population growth rate",
+     main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0.5,1.6), col=cols[4])
+abline(v=1, col="red", lwd=0.75)
+hist(stoch.lams.4to8$LAMBDA, breaks=100, border=FALSE, xlab="Short term stochastic population growth rate",
+     main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0.6,1.6), col=cols[5])
+abline(v=1, col="red", lwd=0.75)
+hist(stoch.lams.9to13$LAMBDA, breaks=100, border=FALSE, xlab="Short term stochastic population growth rate",
+     main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0,1.1), col=cols[6])
+abline(v=1, col="red", lwd=0.75)
+
+legend("center", c("Full dataset","2004-2013","2004-2013 even yrs only","2004-2013 odd yrs only",
+                   "2004-2008","2009-2013","GLMM"), col=colz, pch=19, cex=1,
+       horiz=FALSE, bty="y",seg.len=1, xpd="NA")                    
+
+#for (tt in 1:length(names.trans)) {
+#  lam.trns <- subset(stoch.lams.all, TRANS==names.trans[tt])
+
+#hist(lam.trns$LAMBDA, breaks=brks[tt], border=FALSE, xlab="Short term stochastic lambda",
+#     main=names.trans[tt], cex.lab=1.4, cex.axis=1.2, xlim=c(0.6,1.2), col=cols[tt])
+#abline(v=1, col="red", lwd=0.5)
+#}
+
+
+## Calculate mean
+mean(stoch.lams.all$LAMBDA)
+
+
+
+```
+
 
 
 
