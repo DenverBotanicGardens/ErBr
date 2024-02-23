@@ -195,12 +195,12 @@ dats[1217,]$InflYesNo <- 0
 
 ## LOOK AT MODEL OUTPUT ---------------------------------------------------------------------------
 #jags.modNYE <- jags.mod
-#jags.mod <- readRDS("erbr_JAGSmod_c3t10s30b10_210602.rds")
-#summary(jags.mod)
+jags.mod <- readRDS("Results_data_ms_archive/erbr_JAGSmod_c3t10s30b10_noYRE_4to13even_210617.rds")
+summary(jags.mod)
 #plot(jags.mod)
-#summ.mod <- summary(jags.mod)
-#tail(summ.mod[,1:3], n=34)
-#gelman.diag(jags.mod, confidence = 0.95, transform=FALSE)
+summ.mod <- summary(jags.mod)
+tail(summ.mod[,1:3], n=31)
+gelman.diag(jags.mod, confidence = 0.95, transform=FALSE)
 
 
 ## Compare median param estimates b/w models (e.g. with and without RE)
