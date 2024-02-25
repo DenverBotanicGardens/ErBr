@@ -75,7 +75,18 @@ points(climStudyYrs$Tot_winter_ppt, climStudyYrs$Mean_winter_temp, pch=16, col="
 
 
 
-## ** LOOK AT ADDITIONAL CLIM VARS AND/ OR PLOT ANNUAL PRECIP..? ** 
+
+## PLOT ANNUAL PRECIP AND MEAN ANNUAL TEMP  
+clim32yr.tots <- clim32yr %>% mutate(Tot_ann_ppt=rowSums(across(Tot_fall_ppt:Tot_summer_ppt)),
+                            Mean_ann_temp=rowMeans(across(Mean_fall_temp:Mean_summer_temp)))
+climStudyYrs.tots <- clim32yr.tots[clim32yr.tots$Year>2003 & clim32yr.tots$Year<2023,]
+
+par(mar=c(4.3,4.5,2,2))
+par(pty="s")
+plot(clim32yr.tots$Tot_ann_ppt, clim32yr.tots$Mean_ann_temp, pch=16, ylab="Mean annual temperature (°C)",
+     xlab="Annual precipitation (mm)", cex.lab=1.4, cex.axis=1.05, cex=1.25)
+points(climStudyYrs.tots$Tot_ann_ppt, climStudyYrs.tots$Mean_ann_temp, pch=16, col="red")
+
 
 
 
