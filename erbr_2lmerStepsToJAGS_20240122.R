@@ -259,23 +259,6 @@ colnames(medComb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13")
 medComb$Names <- colnames(chains)
 
 
-## SUBSET OUTPUT TO JUST KEEP PARAMS OF INTEREST
-names.param <- colnames(chains)[55:85]
-names.param <- names.param[c(2:8,12:16,18:23,25:30)] #Remove intercept plots 
-names.paramTitles <- c("Grwth Size","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
-                       "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Size",
-                       "Surv Winter Precip","Surv Fall Temp","Surv Summer Temp","Surv Winter Temp",
-                       "p(Repro) Size","p(Repro) Fall Precip","p(Repro) Summer Precip",
-                       "p(Repro) Fall Temp","p(Repro) Summer Temp","p(Repro) Winter Temp",
-                       "Repro Size","Repro Fall Precip","Repro Summer Precip",
-                       "Repro Winter Temp","Repro Fall Temp","Repro Summer Temp")
-
-## Re-order parameter names for plotting 
-index<-c(1,9,5,13,20,17,23,2,24,10,6,14,3,21,18,11,7,15,4,22,19,16,12,8)
-names.paramOrd <- names.param[order(index)]
-names.paramTitlesOrd <- names.paramTitles[order(index)]
-## ------------------------------------------------------------------------------------------------
-
 
 
 ## CALCULATE 90th PERCENTILE ON JAGS ESTIMATES ------------------
@@ -317,6 +300,25 @@ quant10Comb <- as.data.frame(cbind(quant10Params, quant10Params.4to13, quant10Pa
 colnames(quant10Comb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13")
 quant10Comb$Names <- colnames(chains)
 ## ----------------------------------------------------------------------------
+
+
+
+## SUBSET OUTPUT TO JUST KEEP PARAMS OF INTEREST
+names.param <- colnames(chains)[55:85]
+names.param <- names.param[c(2:8,12:16,18:23,25:30)] #Remove intercept plots 
+names.paramTitles <- c("Grwth Size","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
+                       "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Size",
+                       "Surv Winter Precip","Surv Fall Temp","Surv Summer Temp","Surv Winter Temp",
+                       "p(Repro) Size","p(Repro) Fall Precip","p(Repro) Summer Precip",
+                       "p(Repro) Fall Temp","p(Repro) Summer Temp","p(Repro) Winter Temp",
+                       "Repro Size","Repro Fall Precip","Repro Summer Precip",
+                       "Repro Winter Temp","Repro Fall Temp","Repro Summer Temp")
+
+## Re-order parameter names for plotting 
+index<-c(1,9,5,13,20,17,23,2,24,10,6,14,3,21,18,11,7,15,4,22,19,16,12,8)
+names.paramOrd <- names.param[order(index)]
+names.paramTitlesOrd <- names.paramTitles[order(index)]
+## ------------------------------------------------------------------------------------------------
 
 
 
@@ -485,3 +487,136 @@ legend("center", c("Full dataset","2004-2013","2004-2013 even yrs only","2004-20
 
 dev.off()
 ## -----------------------------------------------------------------
+
+
+
+
+
+## MAKE FIGURE SHOWING ESTIMATES FOR TRANSECT RANDOM EFFECTS FOR EACH MODEL AND DATASET
+## Use code to calculate medians and quntiles and GLMMs above 
+
+## SUBSET OUTPUT TO JUST KEEP PARAMS OF INTEREST (I.E. TRANSECT RANDOM EFFECT ESTIMATES)
+namesRE <- colnames(chains)[3:50]
+
+
+## Make dataframe of selected relevant values for plotting 
+medComb.selRE <- NULL
+for (nn in 1:length(namesRE)) {
+  medComb.selRE <- rbind(medComb.selRE, as.data.frame(medComb[which(medComb$Names==namesRE[nn]),1:6]))
+}
+
+## Combine JAGS and GLMM estimates
+#medComb.sel$ParamTitle <- names.paramTitlesOrd
+#medComb.sel <- dplyr::left_join(medComb.sel, paramsMM, by="ParamTitle")
+#medComb.sel <- medComb.sel %>% relocate(ParamTitle, .after=last_col())
+
+quantComb.selRE <- NULL
+for (uu in 1:length(namesRE)) {
+  quantComb.selRE <- rbind(quantComb.selRE, as.data.frame(quantComb[which(quantComb$Names==namesRE[uu]),1:6]))
+}
+#quantComb.selRe$GLMM_SEupr <- medComb.selRe$SE_upr
+
+quant10Comb.selRE <- NULL
+for (uu in 1:length(namesRE)) {
+  quant10Comb.selRE <- rbind(quant10Comb.selRE, as.data.frame(quant10Comb[which(quant10Comb$Names==namesRE[uu]),1:6]))
+}
+#quant10Comb.selRe$GLMM_SElwr <- medComb.selRe$SE_lwr
+## ---------------------------------------------
+
+
+
+## Calculate the min and max values of error bars & set appropriate y-axis values for plotting 
+# Change structure to allow for row min and max calcs 
+quantComb.selModRE <- cbind(as.numeric(quantComb.selRE[,1]),as.numeric(quantComb.selRE[,2]),
+                          as.numeric(quantComb.selRE[,3]),as.numeric(quantComb.selRE[,4]),
+                          as.numeric(quantComb.selRE[,5]),as.numeric(quantComb.selRE[,6]))#,
+                          #as.numeric(quantComb.selRE[,7]))
+quant.maxRE <- rowMaxs(as.matrix(quantComb.selModRE[,c(1:6)]))#7)]))
+yMaxRE <- quant.maxRE + (quant.maxRE*0.05)
+
+quant10Comb.selModRE <- cbind(as.numeric(quant10Comb.selRE[,1]),as.numeric(quant10Comb.selRE[,2]),
+                            as.numeric(quant10Comb.selRE[,3]),as.numeric(quant10Comb.selRE[,4]),
+                            as.numeric(quant10Comb.selRE[,5]),as.numeric(quant10Comb.selRE[,6]))#,
+                            #as.numeric(quant10Comb.selRE[,7]))
+quant10.minRE <- rowMins(as.matrix(quant10Comb.selModRE[,c(1:6)]))#7)]))
+#Since some min values are positive (all sz ests) and some are negative (all the rest), do separately
+yMinRE <- c(quant10.minRE[1:29] - (quant10.minRE[1:29]*-0.05), quant10.minRE[30] - (quant10.minRE[30]*0.05),
+          quant10.minRE[31:48] - (quant10.minRE[31:48]*-0.05)) 
+
+
+
+
+## Assign colors
+colz <- c("#d73027","#fc8d59","#91bfdb","#4575b4","#fdcb44","#fee090","grey60")
+
+
+
+## PLOT
+par(mfrow=c(4,3), mar=c(1.25,2,1.9,2))  
+#bottom, left, top, and right
+
+# Growth model
+for (nn in 1:12) {
+  plot(c(1:6), medComb.selRE[nn,1:6], col=colz, ylab=NA,
+       xaxt = "n", main=namesRE[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
+       ylim=c(yMinRE[nn],yMaxRE[nn]), cex=1.2)
+  abline(h=0, col="grey80")
+  arrows(1:6,as.numeric(medComb.selRE[nn,1:6]),
+         1:6, as.numeric(as.matrix(quantComb.selRE[nn,1:6])),
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
+  arrows(1:6, as.numeric(medComb.selRE[nn,1:6]),
+         1:6, as.numeric(as.matrix(quant10Comb.selRE[nn,1:6])), 
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
+}
+
+# Survival model
+for (nn in 13:24) {
+  plot(c(1:6), medComb.selRE[nn,1:6], col=colz, ylab=NA, 
+       xaxt = "n", main=namesRE[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
+       ylim=c(yMinRE[nn],yMaxRE[nn]), cex=1.2)
+  abline(h=0, col="grey80")
+  arrows(1:6,as.numeric(medComb.selRE[nn,1:6]),
+         1:6, as.numeric(as.matrix(quantComb.selRE[nn,1:6])),
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
+  arrows(1:6, as.numeric(medComb.selRE[nn,1:6]),
+         1:6, as.numeric(as.matrix(quant10Comb.selRE[nn,1:6])), 
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
+}
+
+# p(Repro) model
+for (nn in 25:36) {
+  plot(c(1:6), medComb.selRE[nn,1:6], col=colz, ylab=NA,
+       xaxt = "n", main=namesRE[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
+       ylim=c(yMinRE[nn],yMaxRE[nn]), cex=1.2)
+  abline(h=0, col="grey80")
+  arrows(1:6,as.numeric(medComb.selRE[nn,1:6]),
+         1:6, as.numeric(as.matrix(quantComb.selRE[nn,1:6])),
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
+  arrows(1:6, as.numeric(medComb.selRE[nn,1:6]),
+         1:6, as.numeric(as.matrix(quant10Comb.selRE[nn,1:6])), 
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
+}
+
+# Repro model
+par(mfrow=c(5,3))
+for (nn in 37:48) {
+  plot(c(1:6), medComb.selRE[nn,1:6], col=colz, ylab=NA,
+       xaxt = "n", main=namesRE[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
+       ylim=c(yMinRE[nn],yMaxRE[nn]), cex=1.2)
+  abline(h=0, col="grey80")
+  arrows(1:6,as.numeric(medComb.selRE[nn,1:6]),
+         1:6, as.numeric(as.matrix(quantComb.selRE[nn,1:6])),
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
+  arrows(1:6, as.numeric(medComb.selRE[nn,1:6]),
+         1:6, as.numeric(as.matrix(quant10Comb.selRE[nn,1:6])), 
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
+}
+plot.new()
+legend("center", c("Full dataset","2004-2013","2004-2013 even yrs only","2004-2013 odd yrs only",
+                   "2004-2008","2009-2013"), col=colz[1:6], pch=19, cex=1.7,
+       horiz=FALSE, bty="y",seg.len=1, xpd="NA")
+## -----------------------------------------------------------------
+
+
+
+
