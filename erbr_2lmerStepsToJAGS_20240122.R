@@ -345,9 +345,15 @@ glmm.surv <- glmer(Surv1 ~ log(RosNew) + PptWinter + TempFall + (TempWinter) +
 glmm.reproYesNo <- glmer(InflYesNo ~ log(RosNew) + (PptFall) + (PptSummer) + (TempFall) + 
                              (TempWinter) + (TempSummer) + (1|TransectNew), family=binomial(link=logit), data=dats)
 
-## Reproduction #** Should data be subset to only include reproductive plts (i.e. infs>0) in this model? *
-glmm.repro <- glmer.nb(InflNew ~ log(RosNew) + (PptFall) + (PptSummer) + (TempFall) + 
+## Reproduction 
+## ** Modify inf data to only include reproductive plts (i.e. infs>0) in this model *
+dats$InflNewMod <- dats$InflNew
+dats$InflNewMod[dats$InflNew == 0] <- NA
+
+glmm.reproOld <- glmer.nb(InflNew ~ log(RosNew) + (PptFall) + (PptSummer) + (TempFall) + 
                            (TempWinter) + (TempSummer) + (1|TransectNew), data=dats)
+glmm.repro <- glmer.nb(InflNewMod ~ log(RosNew) + (PptFall) + (PptSummer) + (TempFall) + 
+                         (TempWinter) + (TempSummer) + (1|TransectNew), data=dats)
 
 
 ## Extract parameter estimates and SEs from GLMMs
@@ -436,7 +442,7 @@ colz <- c("#d73027","#fc8d59","#91bfdb","#4575b4","#fdcb44","#fee090","grey60")
 
 ## PLOT
 #tiff('20230122_ErBr_fig2.tiff', res=400, pointsize=6, compression="lzw")
-#pdf('20240122_ErBr_fig2.pdf', width=6.7, height=9)
+pdf('20240305_ErBr_fig2.pdf', width=6.7, height=9)
 par(mfrow=c(7,4), mar=c(1.25,2,1.9,2))  #Plot so 4 VR models are in cols and upto 7 predictor vars are in rows
 #bottom, left, top, and right
 for (nn in 1:17) {
