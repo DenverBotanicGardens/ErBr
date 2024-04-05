@@ -54,6 +54,19 @@ dats <- rename(dats, PptFall=Tot_fall_ppt, PptWinter=Tot_winter_ppt, PptSummer=T
 
 
 
+## COUNT PLANT OBERVATION YEARS FOR EACH DATASET --------------------------------------------------
+sum(dats$surv, na.rm=TRUE) #Full dataset
+consec <- dats[dats$Year<2014,]
+sum(consec$surv, na.rm=TRUE) #Consecutive dataset
+consecShort1 <- dats[dats$Year<2009,]
+sum(consecShort1$surv, na.rm=TRUE) #Short consecutive dataset 2004-2008
+consecShort2 <- dats[dats$Year>2008 & dats$Year<2014,]
+sum(consecShort2$surv, na.rm=TRUE) #Short consecutive dataset 2009-2013
+## ------------------------------------------------------------------------------------------------
+
+
+
+
 ## SETTING UP NECESSARY VARIABLES -----------------------------------------------------------------
 ## Setting up the jags model with lagged values
 Nallrows <- length(dats$Site)
@@ -346,12 +359,10 @@ glmm.reproYesNo <- glmer(InflYesNo ~ log(RosNew) + (PptFall) + (PptSummer) + (Te
                              (TempWinter) + (TempSummer) + (1|TransectNew), family=binomial(link=logit), data=dats)
 
 ## Reproduction 
-## ** Modify inf data to only include reproductive plts (i.e. infs>0) in this model *
+## Modify inf data to only include reproductive plts (i.e. infs>0) in this model 
 dats$InflNewMod <- dats$InflNew
 dats$InflNewMod[dats$InflNew == 0] <- NA
 
-glmm.reproOld <- glmer.nb(InflNew ~ log(RosNew) + (PptFall) + (PptSummer) + (TempFall) + 
-                           (TempWinter) + (TempSummer) + (1|TransectNew), data=dats)
 glmm.repro <- glmer.nb(InflNewMod ~ log(RosNew) + (PptFall) + (PptSummer) + (TempFall) + 
                          (TempWinter) + (TempSummer) + (1|TransectNew), data=dats)
 
@@ -442,7 +453,7 @@ colz <- c("#d73027","#fc8d59","#91bfdb","#4575b4","#fdcb44","#fee090","grey60")
 
 ## PLOT
 #tiff('20230122_ErBr_fig2.tiff', res=400, pointsize=6, compression="lzw")
-pdf('20240305_ErBr_fig2.pdf', width=6.7, height=9)
+pdf('20240402_ErBr_fig2.pdf', width=6.7, height=9)
 par(mfrow=c(7,4), mar=c(1.25,2,1.9,2))  #Plot so 4 VR models are in cols and upto 7 predictor vars are in rows
 #bottom, left, top, and right
 for (nn in 1:17) {
@@ -450,6 +461,7 @@ for (nn in 1:17) {
        xaxt = "n", main=names.paramTitlesOrd[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
        ylim=c(yMin[nn],yMax[nn]), cex=1.2)
   abline(h=0, col="grey80")
+  abline(h=medComb.sel[nn,1], col="grey80", lty="dotted")
   arrows(1:6,as.numeric(medComb.sel[nn,1:6]),
          1:6, as.numeric(as.matrix(quantComb.sel[nn,1:6])),
          lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
@@ -463,6 +475,7 @@ for (nn in 18:20) {
        xaxt = "n", main=names.paramTitlesOrd[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
        ylim=c(yMin[nn],yMax[nn]), cex=1.2)
   abline(h=0, col="grey80")
+  abline(h=medComb.sel[nn,1], col="grey80", lty="dotted")
   arrows(1:7,as.numeric(medComb.sel[nn,1:7]),
          1:7, as.numeric(as.matrix(quantComb.sel[nn,1:7])),
          lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
@@ -476,6 +489,7 @@ for (nn in 21:24) {
        xaxt = "n", main=names.paramTitlesOrd[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
        ylim=c(yMin[nn],yMax[nn]), cex=1.2)
   abline(h=0, col="grey80")
+  abline(h=medComb.sel[nn,1], col="grey80", lty="dotted")
   arrows(1:7,as.numeric(medComb.sel[nn,1:7]),
          1:7, as.numeric(as.matrix(quantComb.sel[nn,1:7])),
          lwd = 1.25, angle = 90, code = 3, length=0, col=colz)

@@ -864,9 +864,7 @@ num.indivs <- num.indivs[which(num.indivs$numIndivs!=0),]
 ## To obtain predicted pop size, estimate for each transect separately and then sum together. 
 ## Load matrices
 #mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_P1k_20230503")
-mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to13_P1k_20231026")
-#mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to13even_P1k_20231026")
-#mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to13odd_P1k_20231026")
+#mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to13_P1k_20231026")
 #mx.list <- mx.list4to13
 
 names.mx <- unique(names(mx.list))
@@ -935,7 +933,7 @@ for (pp in 1:length(names.param)) {
 
   ## AG modified from Dan
   N.vec <- binCounts[,tt]                                    #Re-set to desired starting values
-  N.vec[1:2] <- 0                                            #**TRY EXCLUDING ANYTHING >=4 rosettes; set to zero
+  N.vec[1:2] <- 0                                            #TRY EXCLUDING ANYTHING >=4 rosettes; set to zero
 
 
   ## Loop over years (from e.g. 2004-2021 to give estimates for 2005-2022)
@@ -962,13 +960,14 @@ pop.sz.all$PARAM <- rep(names.param, each=length(names.trans))
 colnames(pop.sz.all) <- c(as.character((as.numeric(startYr)+1):2022),"TRANS","PARAM")
 
 
+
 ## Calculate mean and var of predicted pop size
 ## Sum across transects and average across params 
 pop.sz.params <- pop.sz.all %>% group_by(PARAM) %>% summarise(across(c(1:(length(pop.sz.all)-2)), sum, na.rm=TRUE))
 pop.sz.transMn <- colMeans(pop.sz.params[,2:length(pop.sz.params)])
-pop.sz.transSd <- matrixStats::colSds(as.matrix(pop.sz.params[,2:length(pop.sz.params)]))
+#pop.sz.transSd <- matrixStats::colSds(as.matrix(pop.sz.params[,2:length(pop.sz.params)]))
 pop.sz.transMn <- c(startNum, pop.sz.transMn)  #Add observed num at start
-pop.sz.transSd <- c(0, pop.sz.transSd)
+#pop.sz.transSd <- c(0, pop.sz.transSd)
 
 
 
@@ -981,15 +980,7 @@ pop.sz.means.consec <- pop.sz.transMn
 pop.sz.sds.consec <- pop.sz.transSd
 names.yr.consec <- names.yr
 
-#pop.sz.means.evn <- pop.sz.transMn
-#pop.sz.sds.evn <- pop.sz.transSd
-#names.yr.evn <- names.yr
 
-#pop.sz.means.odd <- pop.sz.transMn
-#pop.sz.sds.odd <- pop.sz.transSd
-#names.yr.odd <- names.yr
-#pop.sz.ciHi.odd <- pop.sz.ciHi
-#pop.sz.ciLo.odd <- pop.sz.ciLo
 
 
 ## Save output 
@@ -1002,35 +993,57 @@ saveRDS(pop.sz.means.consec,
         file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzMn4to13-07", dateToday, sep="_"))
 saveRDS(pop.sz.sds.consec, 
         file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzSd4to13-07", dateToday, sep="_"))
-saveRDS(pop.sz.means.evn, 
-        file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzMn4to13evn-07", dateToday, sep="_"))
-saveRDS(pop.sz.sds.evn, 
-        file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzSd4to13evn-07", dateToday, sep="_"))
-saveRDS(pop.sz.means.odd, 
-        file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzMn4to13odd-07", dateToday, sep="_"))
-saveRDS(pop.sz.sds.odd, 
-        file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzSd4to13odd-07", dateToday, sep="_"))
+#saveRDS(pop.sz.means.evn, 
+#        file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzMn4to13evn-07", dateToday, sep="_"))
+#saveRDS(pop.sz.sds.evn, 
+#        file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzSd4to13evn-07", dateToday, sep="_"))
+#saveRDS(pop.sz.means.odd, 
+#        file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzMn4to13odd-07", dateToday, sep="_"))
+#saveRDS(pop.sz.sds.odd, 
+#        file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzSd4to13odd-07", dateToday, sep="_"))
+
 ## So can load and re-calc var (e.g. as quantiles instead of SD) later and re-plot
 saveRDS(pop.sz.all, 
         file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzAllFull07", dateToday, sep="_"))
 saveRDS(pop.sz.all, 
-        file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzAll4to13odd-07", dateToday, sep="_"))
-saveRDS(pop.sz.all, 
         file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzAll4to13-07", dateToday, sep="_"))
 
 
+## LOAD
+pop.sz.all.full <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzAllFull07_20231230") 
+pop.sz.all.consec <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzAll4to13-07_20240102") 
+
+
+
+## Calculate mean and 95% quantiles of predicted pop size
+## Sum across transects and average across params 
+pop.sz.params.full <- pop.sz.all.full %>% group_by(PARAM) %>% summarise(across(c(1:(length(pop.sz.all.full)-2)), sum, na.rm=TRUE))
+pop.sz.params.consec <- pop.sz.all.consec %>% group_by(PARAM) %>% summarise(across(c(1:(length(pop.sz.all.consec)-2)), sum, na.rm=TRUE))
+
+pop.sz.means.full <- colMeans(pop.sz.params.full[,2:length(pop.sz.params.full)])
+pop.sz.means.consec <- colMeans(pop.sz.params.consec[,2:length(pop.sz.params.consec)])
+pop.sz.means.full <- c(startNum, pop.sz.means.full)      #Add observed num at start
+pop.sz.means.consec <- c(startNum, pop.sz.means.consec)  #Add observed num at start
+
+quantPopSz95.full <- as.data.frame(pop.sz.params.full[,2:ncol(pop.sz.params.full)]) %>% summarise_all(funs(quantile(., probs=0.95)))
+quantPopSz95.full <- as.data.frame(t(quantPopSz95.full))
+#quantPopSz95.full <- c(0, quantPopSz95.full)
+quantPopSz05.full <- as.data.frame(pop.sz.params.full[,2:ncol(pop.sz.params.full)]) %>% summarise_all(funs(list(quantile(., probs=0.05)))) 
+#quantPopSz05.full <- c(0, quantPopSz05.full)
+quantPopSz95.consec <- as.data.frame(pop.sz.params.consec[,2:ncol(pop.sz.params.consec)]) %>% 
+  summarise_all(funs(list(quantile(., probs=0.95)))) 
+#quantPopSz95.consec <- c(0, quantPopSz95.consec)
+quantPopSz05.consec <- as.data.frame(pop.sz.params.consec[,2:ncol(pop.sz.params.consec)]) %>% 
+  summarise_all(funs(quantile(., probs=0.05)))
+quantPopSz05.consec <- as.data.frame(t(quantPopSz05.consec))
+#quantPopSz05.consec <- c(0, quantPopSz05.consec)
 
 ## PLOT PREDICTED VS OBSERVED POP SZ
 ## Read in saved files
-pop.sz.means.full <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzMnFull07_20231229") 
-pop.sz.sds.full <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzSdFull07_20231229")  
-pop.sz.means.consec <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzMn4to13-07_20231230") 
-pop.sz.sds.consec <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzSd4to13-07_20231230")  
-#pop.sz.means.evn <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzMn4to13evn-07_20231230") 
-#pop.sz.sds.evn <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzSd4to13evn-07_20231230")  
-#pop.sz.means.odd <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzMn4to13odd-07_20231230") 
-#pop.sz.sds.odd <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzSd4to13odd-07_20231230")  
-
+#pop.sz.means.full <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzMnFull07_20231229") 
+#pop.sz.sds.full <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzSdFull07_20231229")  
+#pop.sz.means.consec <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzMn4to13-07_20231230") 
+#pop.sz.sds.consec <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzSd4to13-07_20231230")  
 
 ## Plot mean and SD (or CIs etc)
 #plot(as.numeric(as.character(num.indivs$Year)), num.indivs$numIndivs, type='l', ylim=c(0,250), 
@@ -1058,8 +1071,8 @@ plot(as.numeric(as.character(num.indivs$Year[4:14])), num.indivs$numIndivs[4:14]
 
 lines(2007:2022, pop.sz.means.consec[1:length(pop.sz.means.consec)],
       col="#fc8d59",lwd=2)
-arrows((2007:2022),pop.sz.means.consec[1:length(pop.sz.means.consec)], 
-       (2007:2022),pop.sz.means.consec[1:length(pop.sz.means.consec)]+pop.sz.sds.consec[1:length(pop.sz.means.consec)], 
+arrows((2008:2022),pop.sz.means.consec[2:length(pop.sz.means.consec)], 
+       (2008:2022),quantPopSz05.consec[1:15,1], 
        length=0, angle=90, col="#fc8d59", lwd=0.6)
 arrows((2007:2022),pop.sz.means.consec[1:length(pop.sz.means.consec)], 
        (2007:2022),pop.sz.means.consec[1:length(pop.sz.means.consec)]-pop.sz.sds.consec[1:length(pop.sz.means.consec)], 
