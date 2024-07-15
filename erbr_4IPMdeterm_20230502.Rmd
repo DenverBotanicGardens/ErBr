@@ -262,7 +262,7 @@ for (bb in 1:length(bin.num)) {
 
         
         ## Plug in median param vals, mean climate and selected size predictor values for sz classes/ loop into model formulas
-        ## Exclude random trasenct effects here (alternatively, could try mean values)
+        ## Exclude random transect effects here (alternatively, could try mean values)
         ## Growth (neg binom)
         pred.grwth <- exp(medParams$grwth_intercept + medParams$grwth_RosCoef*log(in.data$RosNew) 
                           + medParams$grwth_TempFallCoef*climMeans["Mean_fall_temp"]
@@ -290,7 +290,7 @@ for (bb in 1:length(bin.num)) {
                                       medParams$reproyesno_TempSummerCoef*climMeans["Mean_summer_temp"] +
                                       medParams$reproyesno_TempWinterCoef*climMeans["Mean_winter_temp"]))) 
 
-        ## Reroduction (neg binom)
+        ## Reproduction (neg binom)
         pred.repro <- exp(medParams$repro_intercept + medParams$repro_RosCoef*log(in.data$RosNew) + 
                           medParams$repro_PptFallCoef*climMeans["Tot_fall_ppt"] +
                           medParams$repro_PptSummerCoef*climMeans["Tot_summer_ppt"] +
