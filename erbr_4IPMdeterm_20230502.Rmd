@@ -495,7 +495,7 @@ for (pp in 1:params) {
                            + selParams$reproyesno_TempWinterCoef*in.data$TempWinter 
                            + as.numeric(selParams[randTrans.reproYesNo[tt]])))) 
 
-        ## Reroduction (neg binom)
+        ## Reproduction (neg binom)
         pred.repro <- exp(selParams$repro_intercept + selParams$repro_RosCoef*log(in.data$RosNew) + 
                       selParams$repro_PptSummerCoef*in.data$PptSummer + selParams$repro_PptFallCoef*in.data$PptFall
                       + selParams$repro_TempFallCoef*in.data$TempFall + selParams$repro_TempSummerCoef*in.data$TempSummer
