@@ -115,13 +115,6 @@ sz.startPlts <- sample(x=binmids, size=num.startPlts, replace=TRUE, prob=N.start
 
 ## 3. 
 
-#Matrices to hold sz & repro where rows are yrs and columns are plants
-mx.sz <- as.data.frame(matrix(NA, nrow=length(1:num.yrs), ncol=length(1:num.startPlts)))
-mx.repro <- as.data.frame(matrix(NA, nrow=length(1:num.yrs), ncol=length(1:num.startPlts)))
-
-#One thing to note: you are never making a matrix for the vital rates, you are just getting each plt's own fate in each yr w the vital rate functions.
-
-
 #at the start of this code, you should make vectors of the parameter values for each of the vital rate functions 
 #these are the 'rules' that will determine each vital rate's predicted value for each plant in each year. I'd start off with the ones estimated by the analyses of the real data.
 
@@ -149,6 +142,14 @@ params.numSdlg <- medParams$newplt_intercept
 #the one exception might be to simplify by not including grwthVar being variable, 
 #or by rerunning the analyses to only have one climate variable. 
 #Also, it would be easiest to make the predicted vital rate equations a function that can be called w/in the loops that follow (so, for pred.grwth, pred.surv, etc).
+
+
+#Matrices to hold sz & repro where rows are yrs and columns are plants
+mx.sz <- as.data.frame(matrix(NA, nrow=length(1:num.yrs), ncol=length(1:num.startPlts)))
+mx.repro <- as.data.frame(matrix(NA, nrow=length(1:num.yrs), ncol=length(1:num.startPlts)))
+
+#One thing to note: you are never making a matrix for the vital rates, you are just getting each plt's own fate in each yr w the vital rate functions.
+
 
 
 #for 1 to the num of starting plants 
@@ -233,9 +234,11 @@ for (pp in 1:num.startPlts) {
 }
 
 
+## 4. After doing this, you would go back to the number of new plants in each year: for these, do the same approach as with the starting plants, but starting in the year they are born, and then simulate them going forward. I would use NA for the size in the years before they are 'born'.
 
 
-## DAN: I am stuck here. I am not sure how I figure out probs of surv, growth, repro given the fns for these vital rates and climate (where do the parameter values come from?).
+
+## DAN: I am stuck. I am not sure how I figure out probs of surv, growth, repro given the fns for these vital rates and climate (where do the parameter values come from?).
 ## I don't quite understand: "make this a monte carlo: you pick a random chance of survival from the prob of survival, choose one new size from the distribution of possible new sizes, etc."
 ## I pasted some code here from our SSDM deterministic estimates. I feel like some of this code might be relevant, but not sure. Can you point me in the right direction? 
 
@@ -272,8 +275,3 @@ lam.out.template[bb,2] <- Re(eigen(mx)$values[1])         #Calculate & store lam
 ###### ********END OF PASTED CODE******** ##################################################################################
 
 
-
-
-
-
-## 4. After doing this, you would go back to the number of new plants in each year: for these, do the same approach as with the starting plants, but starting in the year they are born, and then simulate them going forward. I would use NA for the size in the years before they are 'born'.
