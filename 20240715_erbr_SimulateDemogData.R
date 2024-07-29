@@ -118,7 +118,7 @@ sz.startPlts <- sample(x=binmids, size=num.startPlts, replace=TRUE, prob=N.start
 #at the start of this code, you should make vectors of the parameter values for each of the vital rate functions 
 #these are the 'rules' that will determine each vital rate's predicted value for each plant in each year. I'd start off with the ones estimated by the analyses of the real data.
 
-## Calc median param values from JAGS output from real data
+## Calculate median param values from JAGS output from real data
 chains <- readRDS("Manuscript/chains.c3t10s30b10_noYRE_20230420.rds")
 medParams <- as.data.frame(colMedians(as.matrix(chains)))
 medParams <-as.data.frame(t(as.data.frame(medParams)))
@@ -157,12 +157,18 @@ for (pp in 1:num.startPlts) {
   
   sel.plt <- sz.startPlts[pp]
   #in the loop across years for one plant you do this:
-  #a. Initialize with a starting size in year one. Then, each year:
+  #Then, each year:
   
   #it will be easiest to make the loop across yrs a while loop, so that once a plant is dead, you stop and go to the next plant.
-  for (yy in 1:num.yrs) { #add zero if the plant is dead
+  realzd.surv <- 1
+  while (realzd.surv == 1 && nrow(mx.sz)<=num.yrs) {
+  #for (yy in 1:(num.yrs-1)) {
     
     sel.yr <- sim.clim[yy,]
+    
+    #a. Initialize with a starting size in year one. 
+    mx.sz[yy,pp] <- sel.plt  #Put start sz in size matrix
+    
 
     #In all cases, you'll want to make this a monte carlo: for e.g., you pick a random chance of surv from the prob of surv, choose 1 new sz from the distribution of possible new szs, etc. 
     #And, store the number of new seedlings produced that are predicted to be seen in the new year.
@@ -171,15 +177,11 @@ for (pp in 1:num.startPlts) {
     #in the first year, figure out probs of survival, growth, and reproduction for that year, given the fns for these vital rates, and the climate
     #b. based on sz & that yr's clim variables (which you choose already) get all the predicted vital rates using these fns (e.g., pred.grwth)
     
-    pred.grwth <- exp(medParams$grwth_intercept + medParams$grwth_RosCoef*log(sel.plt) 
-                      + medParams$grwth_TempFallCoef*sel.yr$Mean_fall_temp
-                      + medParams$grwth_TempSummerCoef*sel.yr$Mean_summer_temp
-                      + medParams$grwth_TempWinterCoef*sel.yr$Mean_winter_temp
-                      + medParams$grwth_PptFallCoef*sel.yr$Tot_fall_ppt
-                      + medParams$grwth_PptSummerCoef*sel.yr$Tot_summer_ppt
-                      + medParams$grwth_PptWinterCoef*sel.yr$Tot_winter_ppt)
-    
-    pred.grwthVar <- exp(medParams$grwthvar_intercept + medParams$grwthvar_RosCoef*log(sel.plt)) 
+    #c. then, use the random variate functions to get the realized values for that plt in that yr. 
+    #For e.g., you would get pred.surv and then use rbinom to get whether it lived (1) or died (0), based on the yr's clim & the plts sz. 
+    #Similarly you would use pred.grwth and pred.grwthVar with rnorm to get a predicted size for the plant. This is the 'monte carlo' part.
+    #d. then, use these actual values to get the data for end of the yr: if surv=0, it is dead, but if not, it has the sz from rnorm. 
+    #And reproduction is determined by the vital rates governing repro.
     
     pred.surv <- 1/(1+exp(-(medParams$surv_intercept + medParams$surv_RosCoef*sel.plt + 
                             medParams$surv_PptWinterCoef*sel.yr$Tot_winter_ppt + 
@@ -187,91 +189,88 @@ for (pp in 1:num.startPlts) {
                             medParams$surv_TempSummerCoef*sel.yr$Mean_summer_temp +
                             medParams$surv_TempFallCoef*sel.yr$Mean_fall_temp)))
     
-    pred.reproYesNo <- 1/(1+exp(-(medParams$reproyesno_intercept + medParams$reproyesno_RosCoef*log(sel.plt) +
-                                  medParams$reproyesno_TempFallCoef*sel.yr$Mean_fall_temp +
-                                  medParams$reproyesno_PptFallCoef*sel.yr$Tot_fall_ppt +
-                                  medParams$reproyesno_PptSummerCoef*sel.yr$Tot_summer_ppt +
-                                  medParams$reproyesno_TempSummerCoef*sel.yr$Mean_summer_temp +
-                                  medParams$reproyesno_TempWinterCoef*sel.yr$Mean_winter_temp))) 
-    
-    pred.repro <- exp(medParams$repro_intercept + medParams$repro_RosCoef*log(sel.plt) + 
-                      medParams$repro_TempFallCoef*sel.yr$Mean_fall_temp +
-                      medParams$repro_PptFallCoef*sel.yr$Tot_fall_ppt +
-                      medParams$repro_PptSummerCoef*sel.yr$Tot_summer_ppt +
-                      medParams$repro_TempSummerCoef*sel.yr$Mean_summer_temp +
-                      medParams$repro_TempWinterCoef*sel.yr$Mean_winter_temp)
-    
-    sdlg <- 1            #set size to be 1 ros for seedlings
-    pred.survSdlg <- 1/(1+exp(-(medParams$surv_intercept + medParams$surv_RosCoef*log(sdlg) + 
-                                medParams$surv_PptWinterCoef*sel.yr$Tot_winter_ppt + 
-                                medParams$surv_TempWinterCoef*sel.yr$Mean_winter_temp +
-                                medParams$surv_TempSummerCoef*sel.yr$Mean_summer_temp +
-                                medParams$surv_TempFallCoef*sel.yr$Mean_fall_temp)))
-    
-    pred.numSdlg <- exp(medParams$newplt_intercept + log(pred.repro))
-    
-    
-    #c. then, use the random variate functions to get the realized values for that plt in that yr. 
-    #For e.g., you would get pred.surv and then use rbinom to get whether it lived (1) or died (0), based on the yr's clim & the plts sz. 
-    #Similarly you would use pred.grwth and pred.grwthVar with rnorm to get a predicted size for the plant. This is the 'monte carlo' part.
-    #d. then, use these actual values to get the data for end of the yr: if surv=0, it is dead, but if not, it has the sz from rnorm. 
-    #And reproduction is determined by the vital rates governing repro.
     realzd.surv <- rbinom(n=1, size=1, prob=pred.surv)
-    realzd.grwth <- rnorm(n=1, mean=pred.grwth, sd=sqrt(pred.grwthVar))
-    realzd.reproYesNo <- rbinom(n=1, size=1, prob=pred.reproYesNo)
-    #realzd.repro <- pred.repro #rnorm(n=1, mean=pred.repro, sd=??)
-    realzd.survSdlg <- rbinom(n=1, size=1, prob=pred.survSdlg) #Where does this get used? 
-    realzd.numSdlg <- pred.numSdlg #rnorm(n=1, mean=pred.numSdlg, sd=??)
+    ##If survived, keep going, if realzd.surv=0, add zero to matrices, and end current loop (while loop)
+      if (realzd.surv==0) {
+      mx.sz[yy+1,pp] <- 0 
+      mx.repro[yy,pp] <- 0 } #else { 
+      
+        pred.grwth <- exp(medParams$grwth_intercept + medParams$grwth_RosCoef*log(sel.plt) 
+                          + medParams$grwth_TempFallCoef*sel.yr$Mean_fall_temp
+                          + medParams$grwth_TempSummerCoef*sel.yr$Mean_summer_temp
+                          + medParams$grwth_TempWinterCoef*sel.yr$Mean_winter_temp
+                          + medParams$grwth_PptFallCoef*sel.yr$Tot_fall_ppt
+                          + medParams$grwth_PptSummerCoef*sel.yr$Tot_summer_ppt
+                          + medParams$grwth_PptWinterCoef*sel.yr$Tot_winter_ppt)
+        
+        pred.grwthVar <- exp(medParams$grwthvar_intercept + medParams$grwthvar_RosCoef*log(sel.plt)) 
+        
+        realzd.grwth <- rnorm(n=1, mean=pred.grwth, sd=sqrt(pred.grwthVar))
+        
+        ##Enter realized size into size matrix
+        mx.sz[yy+1,pp] <- realzd.grwth 
+        
+        
+        pred.reproYesNo <- 1/(1+exp(-(medParams$reproyesno_intercept + medParams$reproyesno_RosCoef*log(sel.plt) +
+                                      medParams$reproyesno_TempFallCoef*sel.yr$Mean_fall_temp +
+                                      medParams$reproyesno_PptFallCoef*sel.yr$Tot_fall_ppt +
+                                      medParams$reproyesno_PptSummerCoef*sel.yr$Tot_summer_ppt +
+                                      medParams$reproyesno_TempSummerCoef*sel.yr$Mean_summer_temp +
+                                      medParams$reproyesno_TempWinterCoef*sel.yr$Mean_winter_temp))) 
     
-    #add zero if the plant is dead
-    mx.sz[yy,pp] <- realzd.grwth 
-    mx.repro[yy,pp] <- realzd.reproYesNo * realzd.numSdlg #Is this correct? 
+          realzd.reproYesNo <- rbinom(n=1, size=1, prob=pred.reproYesNo)
+          #If realized reproYesNo is 1, then continue. If 0 then enter 0 in repro matrix
+          #if statement
+          if (realzd.reproYesNo==0) {
+          mx.repro[yy,pp] <- 0 
+          } #else {
     
-    #e. then, if the plt is still alive, you go to the next year and do the same.
-    
+            pred.repro <- exp(medParams$repro_intercept + medParams$repro_RosCoef*log(sel.plt) + 
+                              medParams$repro_TempFallCoef*sel.yr$Mean_fall_temp +
+                              medParams$repro_PptFallCoef*sel.yr$Tot_fall_ppt +
+                              medParams$repro_PptSummerCoef*sel.yr$Tot_summer_ppt +
+                              medParams$repro_TempSummerCoef*sel.yr$Mean_summer_temp +
+                              medParams$repro_TempWinterCoef*sel.yr$Mean_winter_temp)
+            
+            realzd.repro <- rnorm(n=1, mean=pred.repro, sd=1) #DAN ** is this sd and everything else correct? Or should it be rnegbin? **
+            
+            #then use the survival function to get the mean prob of survival to the following year, and apply this to the number of seedlings to get the number surviving. 
+            #I don't remember if surv.sdlg and num.sdlg functions are getting from repro one year to the next year? 
+            #I think that just num.sdlg is - which is the number of seedlings predicted from the number of inflors produced, right?
+            
+            #for getting the predicted 'actual' survival, yes or no, you just use the mean predicted surv prob on each plant. 
+            #But both the number of inflors and number of seedlings are neg binomials. so, for these, you want to use the predicted mean numbers 
+            #(e.g., the number of inflors given a plants size, climate, etc: repro_amount) and the dispersion parameter (e.g., r.inflors) to get the two parameters for a negbinomial 
+            #and then use rnegbin to get a single value.
+            
+            sdlg <- 1            #set size to be 1 ros for seedlings
+            pred.survSdlg <- 1/(1+exp(-(medParams$surv_intercept + medParams$surv_RosCoef*log(sdlg) + 
+                                          medParams$surv_PptWinterCoef*sel.yr$Tot_winter_ppt + 
+                                          medParams$surv_TempWinterCoef*sel.yr$Mean_winter_temp +
+                                          medParams$surv_TempSummerCoef*sel.yr$Mean_summer_temp +
+                                          medParams$surv_TempFallCoef*sel.yr$Mean_fall_temp)))
+            
+            #realzd.survSdlg <- rbinom(n=1, size=1, prob=pred.survSdlg) #Does this get used? 
+            
+            pred.numSdlg <- exp(medParams$newplt_intercept + log(pred.repro)) #DAN: Do we use predicted or realized repro here? 
+            
+            #realzd.numSdlg <- rnorm(n=1, mean=pred.numSdlg, sd=1) #Note: this can be negative. But rnorm isn't correct here anyway? **
+            #realzd.numSdlg <- rnegbin(n=1, mu=pred.numSdlg, theta=??) #DAN ** Is rnegbin correct, or should this be rnbinom? **
+            #From rnbinom manual: size=dispersionParam, prob=size/(size+mu)
+            #Does then dispersionParam = (prob*mu) / (1-prob) ?
+            r.inf <- (pred.survSdlg*pred.numSdlg) / (1-pred.survSdlg) #Should prob be reproYesNo or survSdlg or?
+            realzd.numSdlg <- rnbinom(n=1, size=r.inf, mu=pred.numSdlg)   #Should mu be pred.repro or pred.numSdlg?
+            
+            #Enter data into reproduction matrix
+            mx.repro[yy,pp] <- realzd.numSdlg  #} }
+            
+            #e. then, if the plt is still alive, you go to the next year and do the same.
+         # } 
+        #  }  
+  ## 4. After doing this, you would go back to the number of new plants in each year: for these, do the same approach as with the starting plants, but starting in the year they are born, and then simulate them going forward. I would use NA for the size in the years before they are 'born'.
   }
-  
-}
+  #}
 
 
-## 4. After doing this, you would go back to the number of new plants in each year: for these, do the same approach as with the starting plants, but starting in the year they are born, and then simulate them going forward. I would use NA for the size in the years before they are 'born'.
-
-
-
-## DAN: I am stuck. I am not sure how I figure out probs of surv, growth, repro given the fns for these vital rates and climate (where do the parameter values come from?).
-## I don't quite understand: "make this a monte carlo: you pick a random chance of survival from the prob of survival, choose one new size from the distribution of possible new sizes, etc."
-## I pasted some code here from our SSDM deterministic estimates. I feel like some of this code might be relevant, but not sure. Can you point me in the right direction? 
-
-##### ***PASTED CODE FROM ONE SSDM SCRIPT********** ##################################################################
-
-
-## From Dan's code
-## Constructing matrix models
-grwth.mx <- matrix(data=NA, nrow=n.bin, ncol=n.bin)
-## Growth probs using cdf fn
-for (ss in 1:(n.bin)) {
-  grwth.cdf <- pnorm(vec.bin, pred.grwth[ss], sqrt(pred.grwthVar[ss]))
-  grwth <- grwth.cdf[2:length(vec.bin)] - grwth.cdf[1:(length(vec.bin)-1)]
-  if (sum(grwth)>0) {   #If statement breaks code (puts NA's into mx) if sum of PDF is 0 (which happens if all prob is outside of sz bounds)
-    grwth <- grwth/sum(grwth)
-    grwth.mx[,ss] <- grwth
-  } else {
-    grwth.mx[,ss] <- NA
-  } 
-} #End ss loop
-
-## Make survival * growth matrix
-surv.grwth.mx <- grwth.mx * t(matrix(rep(pred.surv,(n.bin)),(n.bin)))
-mx1 <- surv.grwth.mx #Growth and survival, without repro
-## Add reproduction and recruitment
-mx <- matrix(0, (n.bin+1), (n.bin+1))
-mx[2:(n.bin+1), 2:(n.bin+1)] <- mx1
-mx[2,1] <- pred.survSdlg                                  #First column (seedling surv in element 2,1)
-mx[1,2:(n.bin+1)] <- pred.reproYesNo * pred.numSdlg       #First row (new seedlings)
-
-
-lam.out.template[bb,2] <- Re(eigen(mx)$values[1])         #Calculate & store lambda
-
-###### ********END OF PASTED CODE******** ##################################################################################
 
 
