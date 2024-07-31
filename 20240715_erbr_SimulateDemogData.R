@@ -28,7 +28,7 @@ erbr$Year <- as.factor(erbr$Year)
 
 ## 1. First, for a set number of years (lets say 30), simulate climate variables for each year. 
 ## What I would do is use the real data from the study to choose sets of annual data values for the set of climate variables.
-num.yrs <- 30 #Assign number of years to simulate climate data for 
+num.yrs <- 31 #Assign number of years to simulate climate data for 
 
 #Create empty variable to hold simulated climate data
 column.names <- colnames(clim32yr)
@@ -145,8 +145,11 @@ params.numSdlg <- medParams$newplt_intercept
 
 
 #Matrices to hold sz & repro where rows are yrs and columns are plants
-mx.sz <- as.data.frame(matrix(NA, nrow=length(1:num.yrs), ncol=length(1:num.startPlts)))
-mx.repro <- as.data.frame(matrix(NA, nrow=length(1:num.yrs), ncol=length(1:num.startPlts)))
+mx.sz <- as.data.frame(matrix(NA, nrow=length(1:(num.yrs-1)), ncol=length(1:num.startPlts)))
+mx.repro <- as.data.frame(matrix(NA, nrow=length(1:(num.yrs-1)), ncol=length(1:num.startPlts)))
+#vec.repro <- NULL
+#mx.sz <- NULL
+#mx.repro <- NULL
 
 #One thing to note: you are never making a matrix for the vital rates, you are just getting each plt's own fate in each yr w the vital rate functions.
 
@@ -154,22 +157,28 @@ mx.repro <- as.data.frame(matrix(NA, nrow=length(1:num.yrs), ncol=length(1:num.s
 
 #for 1 to the num of starting plants 
 for (pp in 1:num.startPlts) {
+#while (is.null(mx.sz) || nrow(mx.sz) <= num.startPlts) {
   
   sel.plt <- sz.startPlts[pp]
+  
+  #a. Initialize with a starting size in year one 
+  #vec.sz <- sel.plt  #Put start sz in size vector
+  
   #in the loop across years for one plant you do this:
-  #Then, each year:
   
   #it will be easiest to make the loop across yrs a while loop, so that once a plant is dead, you stop and go to the next plant.
-  realzd.surv <- 1
-  while (realzd.surv == 1 && nrow(mx.sz)<=num.yrs) {
-  #for (yy in 1:(num.yrs-1)) {
+  for (yy in 1:(num.yrs-1)) {
+  
+  #sel.yr <- sim.clim[yy,]
+  
+  #a. Initialize with a starting size in year one 
+  #mx.sz[yy,pp] <- sel.plt  #Put start sz in size matrix
+  #mx.sz[yy,pp] <- sel.plt  #Put start sz in size matrix
+  
+ # realzd.surv <- 1
+ # while (realzd.surv == 1 && length(vec.sz) <= num.yrs) {
+  
     
-    sel.yr <- sim.clim[yy,]
-    
-    #a. Initialize with a starting size in year one. 
-    mx.sz[yy,pp] <- sel.plt  #Put start sz in size matrix
-    
-
     #In all cases, you'll want to make this a monte carlo: for e.g., you pick a random chance of surv from the prob of surv, choose 1 new sz from the distribution of possible new szs, etc. 
     #And, store the number of new seedlings produced that are predicted to be seen in the new year.
     #In this way, yr after yr, you get the data (sz, repro and surv) of each plt. So, populate a matrix w rows that are yrs, columns for each plt, that are the sz & repro & also 0 if the plt is dead.
@@ -184,53 +193,65 @@ for (pp in 1:num.startPlts) {
     #And reproduction is determined by the vital rates governing repro.
     
     pred.surv <- 1/(1+exp(-(medParams$surv_intercept + medParams$surv_RosCoef*sel.plt + 
-                            medParams$surv_PptWinterCoef*sel.yr$Tot_winter_ppt + 
-                            medParams$surv_TempWinterCoef*sel.yr$Mean_winter_temp +
-                            medParams$surv_TempSummerCoef*sel.yr$Mean_summer_temp +
-                            medParams$surv_TempFallCoef*sel.yr$Mean_fall_temp)))
+                              medParams$surv_PptWinterCoef*sim.clim[yy+1,]$Tot_winter_ppt + 
+                              medParams$surv_TempWinterCoef*sim.clim[yy+1,]$Mean_winter_temp +
+                              medParams$surv_TempSummerCoef*sim.clim[yy+1,]$Mean_summer_temp +
+                              medParams$surv_TempFallCoef*sim.clim[yy+1,]$Mean_fall_temp)))
+    
+    #pred.surv <- 1/(1+exp(-(medParams$surv_intercept + medParams$surv_RosCoef*sel.plt + 
+    #                        medParams$surv_PptWinterCoef*sel.yr$Tot_winter_ppt + 
+    #                        medParams$surv_TempWinterCoef*sel.yr$Mean_winter_temp +
+    #                        medParams$surv_TempSummerCoef*sel.yr$Mean_summer_temp +
+    #                        medParams$surv_TempFallCoef*sel.yr$Mean_fall_temp)))
     
     realzd.surv <- rbinom(n=1, size=1, prob=pred.surv)
     ##If survived, keep going, if realzd.surv=0, add zero to matrices, and end current loop (while loop)
       if (realzd.surv==0) {
-      mx.sz[yy+1,pp] <- 0 
-      mx.repro[yy,pp] <- 0 } #else { 
+        #vec.sz <- c(vec.sz, 0) 
+        #vec.repro <- c(vec.repro, 0) }
+        mx.sz[yy,pp] <- 0 
+        mx.repro[yy,pp] <- 0 
+        break } 
       
         pred.grwth <- exp(medParams$grwth_intercept + medParams$grwth_RosCoef*log(sel.plt) 
-                          + medParams$grwth_TempFallCoef*sel.yr$Mean_fall_temp
-                          + medParams$grwth_TempSummerCoef*sel.yr$Mean_summer_temp
-                          + medParams$grwth_TempWinterCoef*sel.yr$Mean_winter_temp
-                          + medParams$grwth_PptFallCoef*sel.yr$Tot_fall_ppt
-                          + medParams$grwth_PptSummerCoef*sel.yr$Tot_summer_ppt
-                          + medParams$grwth_PptWinterCoef*sel.yr$Tot_winter_ppt)
+                          + medParams$grwth_TempFallCoef*sim.clim[yy+1,]$Mean_fall_temp
+                          + medParams$grwth_TempSummerCoef*sim.clim[yy+1,]$Mean_summer_temp
+                          + medParams$grwth_TempWinterCoef*sim.clim[yy+1,]$Mean_winter_temp
+                          + medParams$grwth_PptFallCoef*sim.clim[yy+1,]$Tot_fall_ppt
+                          + medParams$grwth_PptSummerCoef*sim.clim[yy+1,]$Tot_summer_ppt
+                          + medParams$grwth_PptWinterCoef*sim.clim[yy+1,]$Tot_winter_ppt)
         
         pred.grwthVar <- exp(medParams$grwthvar_intercept + medParams$grwthvar_RosCoef*log(sel.plt)) 
         
         realzd.grwth <- rnorm(n=1, mean=pred.grwth, sd=sqrt(pred.grwthVar))
         
         ##Enter realized size into size matrix
-        mx.sz[yy+1,pp] <- realzd.grwth 
+        mx.sz[yy,pp] <- realzd.grwth 
+        #vec.sz <- c(vec.sz, realzd.grwth) 
         
         
         pred.reproYesNo <- 1/(1+exp(-(medParams$reproyesno_intercept + medParams$reproyesno_RosCoef*log(sel.plt) +
-                                      medParams$reproyesno_TempFallCoef*sel.yr$Mean_fall_temp +
-                                      medParams$reproyesno_PptFallCoef*sel.yr$Tot_fall_ppt +
-                                      medParams$reproyesno_PptSummerCoef*sel.yr$Tot_summer_ppt +
-                                      medParams$reproyesno_TempSummerCoef*sel.yr$Mean_summer_temp +
-                                      medParams$reproyesno_TempWinterCoef*sel.yr$Mean_winter_temp))) 
+                                      medParams$reproyesno_TempFallCoef*sim.clim[yy,]$Mean_fall_temp +
+                                      medParams$reproyesno_PptFallCoef*sim.clim[yy,]$Tot_fall_ppt +
+                                      medParams$reproyesno_PptSummerCoef*sim.clim[yy,]$Tot_summer_ppt +
+                                      medParams$reproyesno_TempSummerCoef*sim.clim[yy,]$Mean_summer_temp +
+                                      medParams$reproyesno_TempWinterCoef*sim.clim[yy,]$Mean_winter_temp))) 
     
           realzd.reproYesNo <- rbinom(n=1, size=1, prob=pred.reproYesNo)
           #If realized reproYesNo is 1, then continue. If 0 then enter 0 in repro matrix
           #if statement
           if (realzd.reproYesNo==0) {
-          mx.repro[yy,pp] <- 0 
-          } #else {
+            #vec.repro <- c(vec.repro, 0) }
+            
+            mx.repro[yy,pp] <- 0 
+            } 
     
             pred.repro <- exp(medParams$repro_intercept + medParams$repro_RosCoef*log(sel.plt) + 
-                              medParams$repro_TempFallCoef*sel.yr$Mean_fall_temp +
-                              medParams$repro_PptFallCoef*sel.yr$Tot_fall_ppt +
-                              medParams$repro_PptSummerCoef*sel.yr$Tot_summer_ppt +
-                              medParams$repro_TempSummerCoef*sel.yr$Mean_summer_temp +
-                              medParams$repro_TempWinterCoef*sel.yr$Mean_winter_temp)
+                              medParams$repro_TempFallCoef*sim.clim[yy,]$Mean_fall_temp +
+                              medParams$repro_PptFallCoef*sim.clim[yy,]$Tot_fall_ppt +
+                              medParams$repro_PptSummerCoef*sim.clim[yy,]$Tot_summer_ppt +
+                              medParams$repro_TempSummerCoef*sim.clim[yy,]$Mean_summer_temp +
+                              medParams$repro_TempWinterCoef*sim.clim[yy,]$Mean_winter_temp)
             
             realzd.repro <- rnorm(n=1, mean=pred.repro, sd=1) #DAN ** is this sd and everything else correct? Or should it be rnegbin? **
             
@@ -245,10 +266,10 @@ for (pp in 1:num.startPlts) {
             
             sdlg <- 1            #set size to be 1 ros for seedlings
             pred.survSdlg <- 1/(1+exp(-(medParams$surv_intercept + medParams$surv_RosCoef*log(sdlg) + 
-                                          medParams$surv_PptWinterCoef*sel.yr$Tot_winter_ppt + 
-                                          medParams$surv_TempWinterCoef*sel.yr$Mean_winter_temp +
-                                          medParams$surv_TempSummerCoef*sel.yr$Mean_summer_temp +
-                                          medParams$surv_TempFallCoef*sel.yr$Mean_fall_temp)))
+                                          medParams$surv_PptWinterCoef*sim.clim[yy+1,]$Tot_winter_ppt + 
+                                          medParams$surv_TempWinterCoef*sim.clim[yy+1,]$Mean_winter_temp +
+                                          medParams$surv_TempSummerCoef*sim.clim[yy+1,]$Mean_summer_temp +
+                                          medParams$surv_TempFallCoef*sim.clim[yy+1,]$Mean_fall_temp)))
             
             #realzd.survSdlg <- rbinom(n=1, size=1, prob=pred.survSdlg) #Does this get used? 
             
@@ -262,14 +283,21 @@ for (pp in 1:num.startPlts) {
             realzd.numSdlg <- rnbinom(n=1, size=r.inf, mu=pred.numSdlg)   #Should mu be pred.repro or pred.numSdlg?
             
             #Enter data into reproduction matrix
+            #vec.repro <- c(vec.repro, realzd.numSdlg)  #} }
             mx.repro[yy,pp] <- realzd.numSdlg  #} }
             
             #e. then, if the plt is still alive, you go to the next year and do the same.
-         # } 
-        #  }  
-  ## 4. After doing this, you would go back to the number of new plants in each year: for these, do the same approach as with the starting plants, but starting in the year they are born, and then simulate them going forward. I would use NA for the size in the years before they are 'born'.
-  }
-  #}
+  } 
+  
+ # mx.sz <- as.data.frame(cbind(mx.sz, vec.sz))
+ # mx.repro <- as.data.frame(cbind(mx.repro, vec.repro))
+}
+
+
+
+## 4. After doing this, you would go back to the number of new plants in each year: for these, do the same approach as with the starting plants, but starting in the year they are born, and then simulate them going forward. I would use NA for the size in the years before they are 'born'.
+
+
 
 
 
