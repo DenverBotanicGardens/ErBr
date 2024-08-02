@@ -294,9 +294,133 @@ for (pp in 1:num.startPlts) {
 }
 
 
-
+## ** DRAFT, MISC, EXTRA CODE ** 
 ## 4. After doing this, you would go back to the number of new plants in each year: for these, do the same approach as with the starting plants, but starting in the year they are born, and then simulate them going forward. I would use NA for the size in the years before they are 'born'.
 
+
+
+#Alternatively, subset mx.repro to only contain cols (plts) w 1s. Then loop thru that. 
+#mx.reproPos <- mx.repro[,!(colSums(mx.repro)==0)]
+
+#mx.repro %>% select_if(colSums(mx.repro) > 0)
+#test<-mx.repro[colSums(mx.repro) == 0]
+
+#mx.reproPos <- as.data.frame(mx.repro[colSums(mx.repro)>0,])
+#mx.reproPos <- subset(mx.repro, )
+
+#for (pp in 1:nrow(mx.repro)) {
+
+#sel.plt <- mx.repro[,pp] #Select repro info for given plt
+#If non-zero, continue to next loop
+#if (sel.plt==0) {
+#  break
+#} 
+
+
+# Subset repro matrix to only contain cols (plts) with non-zero number of seedlings. Then loop thru that.
+#https://stackoverflow.com/questions/53078088/select-or-subset-variables-whose-column-sums-are-not-zero
+#mx.reproPos <- mx.repro %>% select_if(funs(sum(.) > 0))
+#mx.repro %>% select_if(~ sum(.) > 0)
+#mxreproNew <- as.data.frame(matrix(NA, nrow=length(1:(num.yrs-1)), ncol=ncol(mx.reproPos)))
+
+
+
+#for (rr in 1:ncol(mx.reproPos)) { #Loop over parent plants
+  
+#  realzd.grwth <- 1
+  
+  #if (mx.reproPos[,rr] > 0) { #if repro is non-zero, add rows corresponding to number of seedlings 
+
+#mx.sz <- as.data.frame(cbind(mx.sz,t(rep(NA,length(sdlg.strtYr)))))
+
+
+#for (ss in 1:length(sdlg.strtYr)) { 
+  
+#  startYr <- sdlg.strtYr[ss]
+  #mx.sz <- as.data.frame(cbind(mx.sz,t(rep(NA,sum(mx.reproPos[,rr])))))
+  #mx.sz[startYr,num.startPlts+rr+ss] <- sdlg  
+#  mx.sz[startYr,colCount+ss] <- sdlg  
+
+
+#for (yy in startYr:(num.yrs-2)) {     #For each new seedling, loop over years
+  
+  #mx.sz <- as.data.frame(cbind(mx.sz,t(rep(NA,mx.reproPos[yy,rr]))))
+  #mx.sz[startYr,num.startPlts+rr] <- sdlg  
+  
+  ## Loop for if in a given yr, a parent had more than 1 seedling
+  #for (nn in 1:mx.reproPos[yy,rr]) {
+
+
+
+
+##If survived, keep going, if realzd.survSdlg=0, add zero to matrix, and end current loop (using break statement)
+#if (realzd.surv==0) {
+ # mx.sz[yy+1,colCount+ss] <- 0 
+  #mx.sz[yy+1,num.startPlts+rr] <- 0 
+  #mx.repro[yy,pp] <- 0 
+#  break }  
+## --
+
+
+
+
+##Enter realized size into size matrix
+#mx.sz[yy+1,num.startPlts+rr] <- realzd.grwth 
+#mx.sz[yy+1,colCount+ss] <- realzd.grwth 
+## --
+
+
+
+
+
+##Add repro to this?? ** Probably. But then what to do with additional new seedlings?? **!! 
+## Reproduction --   
+#pred.reproYesNo <- 1/(1+exp(-(medParams$reproyesno_intercept + medParams$reproyesno_RosCoef*log(plt.sz) +
+#                                medParams$reproyesno_TempFallCoef*sim.clim[yy,]$Mean_fall_temp +
+#                                medParams$reproyesno_PptFallCoef*sim.clim[yy,]$Tot_fall_ppt +
+#                                medParams$reproyesno_PptSummerCoef*sim.clim[yy,]$Tot_summer_ppt +
+#                                medParams$reproyesno_TempSummerCoef*sim.clim[yy,]$Mean_summer_temp +
+#                                medParams$reproyesno_TempWinterCoef*sim.clim[yy,]$Mean_winter_temp))) 
+
+#realzd.reproYesNo <- rbinom(n=1, size=1, prob=pred.reproYesNo)
+#If realized reproYesNo is 1, then continue. If 0 then enter 0 in repro matrix
+#if (realzd.reproYesNo==0) {
+#  mx.repro[yy,pp] <- 0 
+#} else {
+  
+#  pred.repro <- exp(medParams$repro_intercept + medParams$repro_RosCoef*log(plt.sz) + 
+#                      medParams$repro_TempFallCoef*sim.clim[yy,]$Mean_fall_temp +
+#                      medParams$repro_PptFallCoef*sim.clim[yy,]$Tot_fall_ppt +
+#                      medParams$repro_PptSummerCoef*sim.clim[yy,]$Tot_summer_ppt +
+#                      medParams$repro_TempSummerCoef*sim.clim[yy,]$Mean_summer_temp +
+#                      medParams$repro_TempWinterCoef*sim.clim[yy,]$Mean_winter_temp)
+  
+#  realzd.repro <- rnorm(n=1, mean=pred.repro, sd=1) 
+  
+  #then use the survival function to get the mean prob of survival to the following year, and apply this to the number of seedlings to get the number surviving. 
+  #I don't remember if surv.sdlg and num.sdlg functions are getting from repro one year to the next year? 
+  #I think that just num.sdlg is - which is the number of seedlings predicted from the number of inflors produced, right?
+  
+  #for getting the predicted 'actual' survival, yes or no, you just use the mean predicted surv prob on each plant. 
+  #But both the number of inflors and number of seedlings are neg binomials. so, for these, you want to use the predicted mean numbers 
+  #(e.g., the number of inflors given a plants size, climate, etc: repro_amount) and the dispersion parameter (e.g., r.inflors) to get the two parameters for a negbinomial 
+  #and then use rnegbin to get a single value.
+  
+#  pred.numSdlg <- exp(medParams$newplt_intercept + log(pred.repro)) #DAN: Do we use predicted or realized repro here? 
+  
+  #realzd.numSdlg <- rnorm(n=1, mean=pred.numSdlg, sd=1) #** Note: this can be negative. But rnorm isn't correct here anyway? **
+  #realzd.numSdlg <- rnegbin(n=1, mu=pred.numSdlg, theta=??) #** Is rnegbin correct, or should this be rnbinom? **
+  #From rnbinom manual: size=dispersionParam, prob=size/(size+mu)
+  #Does then dispersionParam = (prob*mu) / (1-prob) ?
+#  r.inf <- (pred.survSdlg*pred.numSdlg) / (1-pred.survSdlg)     #Should prob be reproYesNo or survSdlg or?
+#  realzd.numSdlg <- rnbinom(n=1, size=r.inf, mu=pred.numSdlg)   #Should mu be pred.repro or pred.numSdlg?
+  
+  #Enter data into reproduction matrix
+#  mx.repro[yy,pp] <- realzd.numSdlg  } 
+## --
+
+#Then, if the plt is still alive, you go to the next year and do the same.
+#   }
 
 
 
