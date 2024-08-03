@@ -22,7 +22,7 @@ clim32yr <- read.csv("Manuscript/erbr_climData3seas32yr_221114.csv", header=TRUE
 erbr <- read.csv("Manuscript/erbr_TagClust2022_20230408.csv", header=TRUE)
 erbr$Year <- as.factor(erbr$Year)
 #mx.list <- readRDS("erbrIPMmxList_noYRE_P1k_20230503")  #Output generated from erbr_4IPMdeterm script 
-chains <- readRDS("Manuscript/chains.c3t10s30b10_noYRE_20230420.rds")
+#chains <- readRDS("Manuscript/chains.c3t10s30b10_noYRE_20230420.rds")
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -72,7 +72,7 @@ N.startNum <- 181                 #Set starting pop sz as 2007 obs sz?
 
 #Load mean matrix variable 
 mx.mean <- readRDS("erbrMeanMatrix_noYRE_P1k_20240715")
-#Does second row of matrix look funny (particularly column 1)? 
+# ** DAN: Does second row of matrix look funny (particularly column 1)? 
 
 mnees=eigenall(mx.mean)
 N.vecStart=N.startNum * mnees$stable.stage
@@ -127,6 +127,13 @@ sz.startPlts <- sample(x=binmids, size=num.startPlts, replace=TRUE, prob=N.start
 medParams <- as.data.frame(colMedians(as.matrix(chains)))
 medParams <-as.data.frame(t(as.data.frame(medParams)))
 colnames(medParams) <- colnames(chains)
+
+#date <- Sys.Date()        #Get date to be added to file name
+#date <- str_replace_all(date, "-", "") 
+#saveRDS(medParams, file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrMedParams_noYRE", date, sep="_"))
+
+#Load mean parameters variable 
+medParams <- readRDS("erbrMedParams_noYRE_20240803")
 
 #Make vector of param values for growth
 params.grwth <- c(medParams$grwth_intercept, medParams$grwth_RosCoef, medParams$grwth_TempFallCoef)
