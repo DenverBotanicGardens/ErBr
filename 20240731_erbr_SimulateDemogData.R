@@ -37,6 +37,7 @@ library(dplyr)
 ## 1. First, for a set number of years (lets say 30), simulate climate variables for each year. 
 ## What I would do is use the real data from the study to choose sets of annual data values for the set of climate variables.
 num.yrs <- 31 #Assign number of years to simulate climate data for 
+## add additional simulations of varying lengths, e.g. 10, 20, 50 years. ** 
 
 #Create empty variable to hold simulated climate data
 column.names <- colnames(clim32yr)
@@ -132,7 +133,7 @@ colnames(medParams) <- colnames(chains)
 #date <- str_replace_all(date, "-", "") 
 #saveRDS(medParams, file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrMedParams_noYRE", date, sep="_"))
 
-#Load mean parameters variable 
+#Load median parameters variable 
 medParams <- readRDS("erbrMedParams_noYRE_20240803")
 
 #Make vector of param values for growth
@@ -376,4 +377,34 @@ for (rr in 1:ncol(mx.sdlgYes)) { #Loop over parent plants
 
 
 ## ** DAN: Reproduction of new seedlings/ plants is not included here yet. Should this be added? ** 
+
+
+
+
+
+## Modify output to contain missing years of data **
+## You'll get the records for each individual, but then say that if a year is one of the missing data years, just set that years data to NA. 
+## In writing this, I am also realizing that there is one complication: if a plant dies one year, but it was not censused the next year, 
+## then it should be censused the following year: in other words, usually a plant that is dead one year would have no records for subsequent years, 
+## but in the case of one that died the missing year, there should be a census the next year. 
+## The easiest way to deal with this might be to set two years of data to zero following death, for a plant that dies, 
+## but then to say that if, after adding in the Nas for missing data, any record that is after a year recording zero is removed.
+## -----------------------------------------------------------------------------------------------------
+
+
+
+
+## Modify output to match format of raw data so can be appropriately modified for use with JAGs code **
+## 'Site' column should be optional, but if adding, could split individuals between site 'E.' and 'W.'
+## 'Year' column could be e.g. 1-50 or change to e.g. 2004-2022
+## 'Transect' column could be entered as 'TransectNew' where individuals are assigned to E.1-E.7 and W.1-W.5
+## 'TagNew' column should be added where indivs have a unique tag ID that is E.### or W.###
+## Should be able to omit the following columns 'X', 'Y', 'DiameterX', 'DiameterY', 'Rust', 'BrType', 'InflBr', 'Comments'
+## Therefore columns to have: 'Year', 'TransectNew', 'TagNew', 'RosNew', 'InflNew'
+## Change output from above so there are rows for all individuals across all year (rows are years and plants)
+
+
+## NOTE- from Dan: "What we want to do is make a data file of the simulated data that is exactly the same format as the real data, 
+## so it can run through the same jags program. Then, we do this multiple times 
+## and compare the distribution of fitted parameters to the ones that were used to create the simulated data." ** 
   
