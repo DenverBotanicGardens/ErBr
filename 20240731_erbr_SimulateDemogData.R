@@ -36,7 +36,7 @@ library(dplyr)
 
 ## 1. First, for a set number of years (lets say 30), simulate climate variables for each year. 
 ## What I would do is use the real data from the study to choose sets of annual data values for the set of climate variables.
-num.yrs <- 31 #Assign number of years to simulate climate data for 
+num.yrs <- 51 #Assign number of years to simulate climate data for 
 ## add additional simulations of varying lengths, e.g. 10, 20, 50 years. ** 
 
 #Create empty variable to hold simulated climate data
@@ -110,10 +110,13 @@ binmids <- c(1, binmids)
   
   
 ## Select starting sizes of plants for simulated data using SSD and median sz classes
-num.startPlts <- 20 #Num of starting plts. Set much larger later (e.g. 500?) (make this considerably larger than you think you want to have)
+num.startPlts <- 30 #Num of starting plts. Set much larger later (e.g. 500?) (make this considerably larger than you think you want to have)
 N.startProbs <- (N.vecStart*1) / N.startNum
 sum(N.startProbs) #Should equal 1
 sz.startPlts <- sample(x=binmids, size=num.startPlts, replace=TRUE, prob=N.startProbs)  
+
+## ** Round to nearest integer **
+## ** Can this be negative? If so, set lower bound to 1 ** 
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -125,9 +128,9 @@ sz.startPlts <- sample(x=binmids, size=num.startPlts, replace=TRUE, prob=N.start
 #these are the 'rules' that will determine each vital rate's predicted value for each plant in each year. I'd start off with the ones estimated by the analyses of the real data.
 
 ## Calculate median param values from JAGS output from real data
-medParams <- as.data.frame(colMedians(as.matrix(chains)))
-medParams <-as.data.frame(t(as.data.frame(medParams)))
-colnames(medParams) <- colnames(chains)
+#medParams <- as.data.frame(colMedians(as.matrix(chains)))
+#medParams <-as.data.frame(t(as.data.frame(medParams)))
+#colnames(medParams) <- colnames(chains)
 
 #date <- Sys.Date()        #Get date to be added to file name
 #date <- str_replace_all(date, "-", "") 
@@ -152,11 +155,14 @@ params.survSdlg <- c(medParams$surv_intercept, medParams$surv_RosCoef, medParams
 params.numSdlg <- medParams$newplt_intercept  
 
 
-## ** DAN: I haven't tried these suggestions yet. Thoughts on which are priority? ** 
+## ** DAN: I haven't done these suggestions yet. Thoughts on which are priority? ** 
 #the one exception might be to simplify by not including grwthVar being variable, 
 #or by rerunning the analyses to only have one climate variable.  
 #Also, it would be easiest to make the predicted vital rate equations a function that can be called w/in the loops that follow 
 
+
+## Set number of desired years for particular simulation, e.g. 10, 20, 50
+num.yrs <- 51 #Desired number of years of data plus 1 
 
 
 #Matrices to hold sz & repro where rows are yrs and columns are plants
@@ -201,7 +207,7 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
     
     ##If survived, keep going, if realzd.surv=0, add zero to matrices, and end current loop (using break statement)
       if (realzd.surv==0) {
-        mx.sz[yy,pp] <- 0 
+        mx.sz[yy,pp] <- 0            ## ** do we need two yrs of zero here following death? For missing data code below **
         mx.reproInf[yy,pp] <- 0 
         mx.reproSdlg[yy+1,pp] <- 0 
         break } 
@@ -220,6 +226,7 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
         pred.grwthVar <- exp(medParams$grwthvar_intercept + medParams$grwthvar_RosCoef*log(sel.plt)) 
         
         realzd.grwth <- rnorm(n=1, mean=pred.grwth, sd=sqrt(pred.grwthVar)) #* AG: Round size to integer since unit is rosettes? *
+        ## Bound minimum at 1? **
         
         ##Enter realized size into size matrix
         mx.sz[yy,pp] <- realzd.grwth 
@@ -257,6 +264,7 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
               
               #* DAN: Should this be rnorm (I had this 1st as I thought it was same as growth) or rnegbin as you said in comment above? **
               realzd.repro <- rnorm(n=1, mean=pred.repro, sd=1) 
+              ## ** Round to nearest integer? ** 
               
               #Enter inf data into repro matrix
               mx.reproInf[yy,pp] <- realzd.repro
@@ -282,7 +290,7 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
   
 }   ##End starting number of plants loop
 
-## ** DAN: Note that the starting sizes are not in the size output matrix. Does that make sense? 
+## ** DAN: Note that the starting sizes are not in the size output matrix. Does that seem right? 
 ## so year 1 is the 'realized' size and inflor number based on the starting size and climate. ** 
 ## New seedlings can appear in year 2 or later based on the inflor numbers from year 1. Does that seem correct? ** 
 
@@ -346,13 +354,13 @@ for (rr in 1:ncol(mx.sdlgYes)) { #Loop over parent plants
         
           ##If survived, keep going, if realzd.survSdlg=0, add zero to matrix, and end current loop (using break statement)
           if (realzd.surv==0) {
-            mx.sz[yy+1,colCount+ss] <- 0 
+            mx.sz[yy+1,colCount+ss] <- 0   ## ** do we need two yrs of zero here following death? For missing data code below **
             break }  
           ## --
         
           
           ## Growth (negative binomial) --   
-          pred.grwth <- exp(medParams$grwth_intercept + medParams$grwth_RosCoef*log(plt.sz) 
+          pred.grwth <- exp(medParams$grwth_intercept + medParams$grwth_RosCoef*log(plt.sz)  
                           + medParams$grwth_TempFallCoef*sim.clim[yy+1,]$Mean_fall_temp
                           + medParams$grwth_TempSummerCoef*sim.clim[yy+1,]$Mean_summer_temp
                           + medParams$grwth_TempWinterCoef*sim.clim[yy+1,]$Mean_winter_temp
@@ -384,6 +392,28 @@ for (rr in 1:ncol(mx.sdlgYes)) { #Loop over parent plants
 
 ## Modify output to contain missing years of data **
 ## You'll get the records for each individual, but then say that if a year is one of the missing data years, just set that years data to NA. 
+## Add a year column
+mx.szWyr <- cbind.data.frame(1:(num.yrs-1), mx.sz)
+colnames(mx.szWyr) <- c("Year", colnames(mx.sz))
+
+mx.reproWyr <- cbind.data.frame(1:(num.yrs-1), mx.reproInf)
+colnames(mx.reproWyr) <- c("Year", colnames(mx.reproInf))
+
+## Assign years to be missing
+startConsecYrs <- 10
+yrs.missing <- as.integer(seq((startConsecYrs+1),(num.yrs-1), by=2))
+
+## Change missing years to NA
+mx.szWyr[mx.szWyr$Year %in% (yrs.missing),] <- NA 
+mx.reproWyr[mx.reproWyr$Year %in% (yrs.missing),] <- NA 
+#Delete:
+#mx.reproWyr[mx.reproWyr$Year == ,]
+#yrs.missing
+#mx.reproWyr[grep(yrs.missing, mx.reproWyr$Year),]
+#mx.reproWyr[mx.reproWyr['Year'] == (yrs.missing),] <- NA 
+#mx.reproWyr[mx.reproWyr$Year == 4:6,] <- NA 
+
+
 ## In writing this, I am also realizing that there is one complication: if a plant dies one year, but it was not censused the next year, 
 ## then it should be censused the following year: in other words, usually a plant that is dead one year would have no records for subsequent years, 
 ## but in the case of one that died the missing year, there should be a census the next year. 
