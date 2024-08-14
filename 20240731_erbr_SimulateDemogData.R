@@ -29,6 +29,7 @@ erbr$Year <- as.factor(erbr$Year)
 
 ## LOAD PACKAGES ----------------------------------------------------------------------------------
 library(dplyr)
+library(matrixStats)
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -110,13 +111,13 @@ binmids <- c(1, binmids)
   
   
 ## Select starting sizes of plants for simulated data using SSD and median sz classes
-num.startPlts <- 30 #Num of starting plts. Set much larger later (e.g. 500?) (make this considerably larger than you think you want to have)
+num.startPlts <- 50 #Num of starting plts. Set much larger later (e.g. 500?) (make this considerably larger than you think you want to have)
 N.startProbs <- (N.vecStart*1) / N.startNum
 sum(N.startProbs) #Should equal 1
 sz.startPlts <- sample(x=binmids, size=num.startPlts, replace=TRUE, prob=N.startProbs)  
+sz.startPlts <- round(sz.startPlts, digits=0)   #Round to nearest integer 
 
-## ** Round to nearest integer **
-## ** Can this be negative? If so, set lower bound to 1 ** 
+## ** Can this be negative? If so, set lower bound to 1? ** 
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -313,9 +314,9 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
 ## AG: Check if repro for a given year means num of seedlings in subsequent year or not, and if this is what it should be... **
 
 # Subset repro matrix to only contain cols (plts) with non-zero number of seedlings. Then loop thru that.
-#mx.repro %>% select_if(~ sum(.) > 0)
 mx.sdlgYes <- mx.reproSdlg %>% select_if(funs(sum(., na.rm=TRUE) > 0))
-mx.sdlgYes <- mx.sdlgYes[1:(num.yrs-1),] #Remove year 31 of data to match size matrix which contains only 30 years
+#mx.sdlgYes <- mx.reproSdlg %>% select_if(~ sum(.) > 0)  #Try this is error re. funs above
+mx.sdlgYes <- mx.sdlgYes[1:(num.yrs-1),] #Remove final year of data to match size matrix which contains only 30 years
 
 sdlg <- 1            #set size to be 1 ros for seedlings
 
@@ -385,6 +386,7 @@ for (rr in 1:ncol(mx.sdlgYes)) { #Loop over parent plants
 
 
 ## ** DAN: Reproduction of new seedlings/ plants is not included here yet. Should this be added? ** 
+## ** I reckon we can say that we followed seedlings resulting from original plants but not subsequent seedlings that may have been born **  
 
 
 
@@ -393,7 +395,7 @@ for (rr in 1:ncol(mx.sdlgYes)) { #Loop over parent plants
 ## Modify output to contain missing years of data **
 ## You'll get the records for each individual, but then say that if a year is one of the missing data years, just set that years data to NA. 
 ## Add a year column
-mx.szWyr <- cbind.data.frame(1:(num.yrs-1), mx.sz)
+mx.szWyr <- cbind.data.frame(1:(num.yrs-1), mx.sz[1:(num.yrs-1),])
 colnames(mx.szWyr) <- c("Year", colnames(mx.sz))
 
 mx.reproWyr <- cbind.data.frame(1:(num.yrs-1), mx.reproInf)
@@ -406,12 +408,14 @@ yrs.missing <- as.integer(seq((startConsecYrs+1),(num.yrs-1), by=2))
 ## Change missing years to NA
 mx.szWyr[mx.szWyr$Year %in% (yrs.missing),] <- NA 
 mx.reproWyr[mx.reproWyr$Year %in% (yrs.missing),] <- NA 
-#Delete:
-#mx.reproWyr[mx.reproWyr$Year == ,]
-#yrs.missing
-#mx.reproWyr[grep(yrs.missing, mx.reproWyr$Year),]
-#mx.reproWyr[mx.reproWyr['Year'] == (yrs.missing),] <- NA 
-#mx.reproWyr[mx.reproWyr$Year == 4:6,] <- NA 
+
+## Add columns to repro matrix so number matches that of size mx. Values can be 0 for no repro ** change above in sdlg loop later **
+N.addnCols <- ncol(mx.szWyr) - ncol(mx.reproWyr)
+mx.reproWyrAdCol 
+addnCols <- as.data.frame(matrix(0, nrow=nrow(mx.reproWyr), ncol=N.addnCols))
+mx.reproWyrAdCol <- cbind(mx.reproWyr, addnCols)
+
+## Remove NA values from year column **
 
 
 ## In writing this, I am also realizing that there is one complication: if a plant dies one year, but it was not censused the next year, 
@@ -433,8 +437,28 @@ mx.reproWyr[mx.reproWyr$Year %in% (yrs.missing),] <- NA
 ## Therefore columns to have: 'Year', 'TransectNew', 'TagNew', 'RosNew', 'InflNew'
 ## Change output from above so there are rows for all individuals across all year (rows are years and plants)
 
+## Combine all plants into 1 column, where all years for a given plt appear sequentially
+datComb <- NULL
+
+for (ll in 2:ncol(mx.szWyr)) {   
+  temp <- cbind(mx.szWyr$Year, mx.szWyr[,ll], mx.reproWyrAdCol[,ll])
+  datComb <- rbind(datComb, temp)
+}
+
+## Names cols 'Year', 'RosNew', 'InflNew'
+## Assign plants to one of the following transects (random but equal distribution?)
+tran <- c("E.1","E.2","E.3","E.4","E.5","E.6","E.7","W.1","W.2","W.3","W.4","W.5")
+
+## Assign unique tag ID to each plant
+
+
 
 ## NOTE- from Dan: "What we want to do is make a data file of the simulated data that is exactly the same format as the real data, 
 ## so it can run through the same jags program. Then, we do this multiple times 
 ## and compare the distribution of fitted parameters to the ones that were used to create the simulated data." ** 
+
+## ** Modify erbr_1ReformatData_forJAGS ** 
+## Edit text to include methods, results, discussion on simulation and add figure(s) **
+## Ask Dan if figure like current fig 2 is appropriate ** 
+
   
