@@ -111,7 +111,7 @@ binmids <- c(1, binmids)
   
   
 ## Select starting sizes of plants for simulated data using SSD and median sz classes
-num.startPlts <- 50 #Num of starting plts. Set much larger later (e.g. 500?) (make this considerably larger than you think you want to have)
+num.startPlts <- 100 #Num of starting plts. Set much larger later (e.g. 500?) (make this considerably larger than you think you want to have)
 N.startProbs <- (N.vecStart*1) / N.startNum
 sum(N.startProbs) #Should equal 1
 sz.startPlts <- sample(x=binmids, size=num.startPlts, replace=TRUE, prob=N.startProbs)  
@@ -226,7 +226,8 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
         
         pred.grwthVar <- exp(medParams$grwthvar_intercept + medParams$grwthvar_RosCoef*log(sel.plt)) 
         
-        realzd.grwth <- rnorm(n=1, mean=pred.grwth, sd=sqrt(pred.grwthVar)) #* AG: Round size to integer since unit is rosettes? *
+        realzd.grwth <- rnorm(n=1, mean=pred.grwth, sd=sqrt(pred.grwthVar)) 
+        realzd.grwth <- round(realzd.grwth, digits=0)   #Round to nearest integer since unit is rosettes
         ## Bound minimum at 1? **
         
         ##Enter realized size into size matrix
@@ -265,7 +266,7 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
               
               #* DAN: Should this be rnorm (I had this 1st as I thought it was same as growth) or rnegbin as you said in comment above? **
               realzd.repro <- rnorm(n=1, mean=pred.repro, sd=1) 
-              ## ** Round to nearest integer? ** 
+              realzd.repro <- round(realzd.repro, digits=0)   #Round to nearest integer since unit is inflor
               
               #Enter inf data into repro matrix
               mx.reproInf[yy,pp] <- realzd.repro
@@ -314,9 +315,9 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
 ## AG: Check if repro for a given year means num of seedlings in subsequent year or not, and if this is what it should be... **
 
 # Subset repro matrix to only contain cols (plts) with non-zero number of seedlings. Then loop thru that.
-mx.sdlgYes <- mx.reproSdlg %>% select_if(funs(sum(., na.rm=TRUE) > 0))
-#mx.sdlgYes <- mx.reproSdlg %>% select_if(~ sum(.) > 0)  #Try this is error re. funs above
-mx.sdlgYes <- mx.sdlgYes[1:(num.yrs-1),] #Remove final year of data to match size matrix which contains only 30 years
+mx.sdlgYes <- mx.reproSdlg[1:(num.yrs-1),] %>% select_if(funs(sum(., na.rm=TRUE) > 0)) #Exclude final yr of data to match sz matrix
+#mx.sdlgYes <- mx.reproSdlg %>% select_if(~ sum(., na.rm=TRUE) > 0)  #Try this if error re. funs above
+#mx.sdlgYes <- mx.sdlgYes[1:(num.yrs-1),] #Remove final year of data to match size matrix
 
 sdlg <- 1            #set size to be 1 ros for seedlings
 
@@ -410,12 +411,14 @@ mx.szWyr[mx.szWyr$Year %in% (yrs.missing),] <- NA
 mx.reproWyr[mx.reproWyr$Year %in% (yrs.missing),] <- NA 
 
 ## Add columns to repro matrix so number matches that of size mx. Values can be 0 for no repro ** change above in sdlg loop later **
-N.addnCols <- ncol(mx.szWyr) - ncol(mx.reproWyr)
+num.addnCols <- ncol(mx.szWyr) - ncol(mx.reproWyr)
 mx.reproWyrAdCol 
-addnCols <- as.data.frame(matrix(0, nrow=nrow(mx.reproWyr), ncol=N.addnCols))
+addnCols <- as.data.frame(matrix(0, nrow=nrow(mx.reproWyr), ncol=num.addnCols))
 mx.reproWyrAdCol <- cbind(mx.reproWyr, addnCols)
 
-## Remove NA values from year column **
+## Remove NA values from year column
+mx.szWyr$Year <- 1:(num.yrs-1)
+mx.reproWyrAdCol$Year <- 1:(num.yrs-1)
 
 
 ## In writing this, I am also realizing that there is one complication: if a plant dies one year, but it was not censused the next year, 
@@ -437,6 +440,8 @@ mx.reproWyrAdCol <- cbind(mx.reproWyr, addnCols)
 ## Therefore columns to have: 'Year', 'TransectNew', 'TagNew', 'RosNew', 'InflNew'
 ## Change output from above so there are rows for all individuals across all year (rows are years and plants)
 
+
+
 ## Combine all plants into 1 column, where all years for a given plt appear sequentially
 datComb <- NULL
 
@@ -445,11 +450,26 @@ for (ll in 2:ncol(mx.szWyr)) {
   datComb <- rbind(datComb, temp)
 }
 
-## Names cols 'Year', 'RosNew', 'InflNew'
+datComb <- as.data.frame(datComb)
+colnames(datComb) <- c("Year", "RosNew", "InflNew") #Names cols 'Year', 'RosNew', 'InflNew'
+
+
 ## Assign plants to one of the following transects (random but equal distribution?)
 tran <- c("E.1","E.2","E.3","E.4","E.5","E.6","E.7","W.1","W.2","W.3","W.4","W.5")
+num.plt <- ncol(mx.sz)
+tran.rep <- rep(tran, (ceiling(num.plt/length(tran))))
+tran.rep <- tran.rep[1:num.plt]
+tran.rand <- sample(tran.rep, replace=FALSE)
+datComb$TransectNew <- NULL
+datComb$TransectNew <- rep(tran.rand, each=(num.yrs-1), replace=FALSE)
 
-## Assign unique tag ID to each plant
+##DELETE ** 
+#N.rep <- ceiling(nrow(datComb)/length(tran))
+#tran.rep <- rep(tran,each=(nrow(datComb)/num.yrs))
+
+
+## Assign unique tag ID to each plant ** 
+
 
 
 
