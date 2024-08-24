@@ -12,14 +12,15 @@ rm(list=ls())
 
 ## SET WD -----------------------------------------------------------------------------------------
 setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
+#setwd("C:/Users/Dan Doak/Desktop/Students/April/eriogonum models/manu fall2024")
 ## ------------------------------------------------------------------------------------------------
 
 
 
 ## LOAD DATA --------------------------------------------------------------------------------------
-source('R_scripts/eigenall.r')
-clim32yr <- read.csv("Manuscript/erbr_climData3seas32yr_221114.csv", header=TRUE)
-erbr <- read.csv("Manuscript/erbr_TagClust2022_20230408.csv", header=TRUE)
+#source('eigenall.r')
+clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
+erbr <- read.csv("erbr_TagClust2022_20230408.csv", header=TRUE)
 erbr$Year <- as.factor(erbr$Year)
 ## ------------------------------------------------------------------------------------------------
 
@@ -74,8 +75,12 @@ mx.mean <- readRDS("erbrMeanMatrix_noYRE_P1k_20240715")
 ## Check if first sz class is seedlings in the next year or not. **
 ## Currently model assumes plt is always in the smallest subsequent sz class if you survive. 
 
-mnees=eigenall(mx.mean)
-N.vecStart=N.startNum * mnees$stable.stage
+# mnees=eigenall(mx.mean)
+# N.vecStart=N.startNum * mnees$stable.stage
+# DFD: for some reason the eigenall isn't working with this mx, so i am doing it with the base fn eigen:
+SSD=eigen(mx.mean)$vectors[,1]
+SSD=Re(SSD/sum(SSD))
+N.vecStart=N.startNum * SSD
 
 
 
@@ -109,7 +114,7 @@ binmids <- c(1, binmids)
   
   
 ## Select starting sizes of plants for simulated data using SSD and median sz classes
-num.startPlts <- 100 #Num of starting plts. Set much larger later (e.g. 500?) (make this considerably larger than you think you want to have)
+num.startPlts <- 300 #Num of starting plts. Set much larger later (e.g. 500?) (make this considerably larger than you think you want to have)
 N.startProbs <- (N.vecStart*1) / N.startNum
 sum(N.startProbs) #Should equal 1
 sz.startPlts <- sample(x=binmids, size=num.startPlts, replace=TRUE, prob=N.startProbs)  
@@ -173,7 +178,7 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
   
   
   for (yy in 1:(num.yrs-1)) {  #Loop over years
-    ## ** AG: Consider making the time loop start in yr 2, so that yr 1 is the starting values 
+    ## ** Consider making the time loop start in yr 2, so that yr 1 is the starting values 
     ## ** This will make it easier to do this below, although you can also just loop over parent plts & yrs, as I think I am doing **
   
     #In the loop across years for one plant you do this:
@@ -189,9 +194,9 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
     #Similarly you would use pred.grwth and pred.grwthVar with rnorm to get a predicted size for the plant. This is the 'monte carlo' part.
     #Then, use these actual values to get the data for end of the yr: if surv=0, it is dead, but if not, it has the sz from rnorm. 
     #And reproduction is determined by the vital rates governing repro.
-    
+
     ## Survival (binomial) --
-    pred.surv <- 1/(1+exp(-(medParams$surv_intercept + medParams$surv_RosCoef*sel.plt + 
+    pred.surv <- 1/(1+exp(-(medParams$surv_intercept + medParams$surv_RosCoef*log(sel.plt) + 
                               medParams$surv_PptWinterCoef*sim.clim[yy+1,]$Tot_winter_ppt + 
                               medParams$surv_TempWinterCoef*sim.clim[yy+1,]$Mean_winter_temp +
                               medParams$surv_TempSummerCoef*sim.clim[yy+1,]$Mean_summer_temp +
@@ -268,38 +273,26 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
               
               #* This should be a random from a neg binomial, as that is how it is fit. **** 
               #* So, you also need to pull out the fitted r.infls variable and fit this way
-              #*erbr_JAGSmodbest_noYRE lines 92-99: Only loop over rows with >0 inflors, to compare estimated inflors to observed
-              #for(i in 1:Nrows.w.inflors) {
-                # p.infls[i] <- r.infls/(r.infls + repro_amount[rows.w.inflors[i]])
-                #InflNew[rows.w.inflors[i]] ~ dnegbin(p.infls[i], r.infls) }
               #From rnbinom manual: size=dispersionParam, prob=size/(size+mu)
               #Then dispersionParam = (prob*mu) / (1-prob)
-              #**Does this need to change to only include plts that are reproducing?
-              r.inf <- (pred.reproYesNo*pred.repro) / (1 - pred.reproYesNo) #** Is prob=pred.reproYesNo correct here?
-              realzd.repro <- rnbinom(n=1, size=r.inf, mu=pred.repro)       #** Is mu=pred.repro correct here?
+              r.inf <- (pred.reproYesNo*pred.repro) / (1 - pred.reproYesNo) 
+              realzd.repro <- rnbinom(n=1, size=r.inf, mu=pred.repro)       
 
               #Enter inf data into repro matrix
               mx.reproInf[yy,pp] <- realzd.repro
               
-              # Seedlings per inflor (negative binomial)
-              pred.numSdlg <- exp(medParams$newplt_intercept + log(pred.repro))  
-              r.sdlg <- (pred.reproYesNo*pred.numSdlg) / (1-pred.reproYesNo)     
+              # Seedlings (negative binomial)
+              pred.numSdlg <- exp(medParams$newplt_intercept + log(realzd.repro))  
+              #r.sdlg <- (realzd.reproYesNo*pred.numSdlg) / (1-realzd.reproYesNo)  
+              r.sdlg <- (pred.reproYesNo*pred.numSdlg) / (1-pred.reproYesNo)     #Is pred.reproYesNo used here rather than realzd?
               realzd.numSdlg <- rnbinom(n=1, size=r.sdlg, mu=pred.numSdlg)       
-              
-              ##*What I would do here is take the product of the realized (result of a random draw) values for 
-              ##did.the.plant.reproduce*number.inflors.if.reproducing*new.plts.per.inflor. I think that I have all the steps laid out correctly to get the realized # new plants. 
-              ##so there is no need here for a new and different random draw, just the product of these other values. 
-              ##*And this should be an integer already.
-              realzd.numSdlg <- realzd.reproYesNo * realzd.repro * realzd.numSdlg  
               
               #Enter seedling data into seedling matrix
               mx.reproSdlg[yy+1,pp] <- realzd.numSdlg  } 
           ## ** Alternatively, consider adding up the number of seedlings each year, so that you just automatically get a total of new ones for each year. 
           ## or leave it and then add up so that you get a single vector of totals for each year, as I think it's doing below.**
           ## --
-          
-          ## ** Now the number of sdlgs, when not 0, seems too high *** 
-            
+        
             #Then, if the plt is still alive, you go to the next year and do the same.
           
   } ##End year loop

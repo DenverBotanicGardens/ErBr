@@ -1,14 +1,8 @@
 ## April Goebl & Dan Doak
-## Script modified 20-05-03
-## Collaboration with Denver Botanic Gardens
-## Re-format Eriogonum brandegeei data for use with JAGS and IPMs
-## Either CLUSTER individuals by related (same truncated number) tag ID
-## Or keep individuals SEPARATE by unique tag ID (i.e. truncated and demical tag IDs)
-## Either keep all data years and rows with missing/ no data
-## Or make pruned year datasets
-## Add survival for current year
+## Script modified 2024-08-24
+## Eriogonum brandegeei collaboration with Denver Botanic Gardens
+## Re-format simulated data for use with JAGS 
 ## Add lag columns for modeling with jags
-## Add in column with probability of reproducing (yes or no)
 
 
 rm(list=ls())
@@ -17,17 +11,12 @@ graphics.off()
 
 ## SET WD -----------------------------------------------------------------------------------------
 setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
-#username <- "deprengm" 
-#setwd(paste("C:/Users/",username, 
-#            "/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Data",
-#            sep=""))
 ## ------------------------------------------------------------------------------------------------
 
 
 ## LOAD PACKAGES AND FUNCTIONS --------------------------------------------------------------------
 library(dplyr)
 library(bazar)
-## 2023.01.03 additions
 library(stringr) 
 library(tidyr)   
 ## ------------------------------------------------------------------------------------------------
@@ -35,20 +24,14 @@ library(tidyr)
 
 ## LOAD DATA --------------------------------------------------------------------------------------
 erbr <- read.csv("Files_from_Michelle/rawdata_2022.csv", header=TRUE)
-#erbr.18 <- read.csv("Files_from_Michelle/rawdata_2018_1.csv", header=TRUE)
 
 clim3seas <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE) #Check that my clim data is same as Michelle's
-#load("C:/Users/deprengm/OneDrive - Denver Botanic Gardens/P drive/hackathon/ErBr/erbr_climData3seas2022-10-11.Rdata")
-#load("ErBr/erbr_climData3seas2022-10-11.Rdata") #This is not the same as my clim3seas. I think Michelle and I worked out that her 2022-10-11 needs updating.
 ## ------------------------------------------------------------------------------------------------
 
 
 ## MODIFY FORM OF DATA ----------------------------------------------------------------------------
 erbr <- erbr[!duplicated(erbr),]    #Remove 10 duplicate rows
 erbr <- erbr[erbr$Tag != 259,]      #MEDL: E. jamesii # added 2023.01.03 from 2020_erbr_1ReformatData_forJAGS_20210823.R
-
-## Remove Cleora sites since only 1 year of data collected
-erbr.1 <- erbr[erbr$Site!="Cleora",]
 
 ## Change zeros in Rosettes (no data entered) to NAs in Ros and Infl columns to indicate dead, missing, or subsumed
 erbr.1$Rosettes[erbr.1$Rosettes==0] <- NA
@@ -59,121 +42,8 @@ erbr.1$Infl[is.na(erbr.1$Rosettes)] <- NA
 ## ------------------------------------------------------------------------------------------------
 
 
-## MEDL Note: 2022-10-11 get num of clusters in recent yrs for ability of model to predict counts- skip this portion
-## OPTIONAL *******************************************************************
-## FOR MAKING CONSECUTIVE-ONLY OR PRUNED YEAR DATASETS
-## Remove years 2013 onwards
-# erbr.1 <- erbr.1[which(erbr.1$Year <= 2013),] ### commented out to get total individuals each year
-
-## PRUNE DATA TO HAVE EVERY-OTHER YEARS ONLY
-#yrs <- unique(erbr.1$Year)
-
-## To keep even years
-#yrs.even <- yrs[lapply(yrs, "%%",2)==0] #Keep values where the remainder after division by 2 is zero
-#erbr.1 <- erbr.1[which(erbr.1$Year %in% yrs.even),]
-
-## To keep odd years
-#yrs.odd <- yrs[lapply(yrs, "%%",2)!=0]
-#erbr.1 <- erbr.1[which(erbr.1$Year %in% yrs.odd),]
-
-## PRUNE DATA TO HAVE SHORT CONSECUTIVE YEARS ONLY
-## To keep 1st 5 yeras
-#erbr.1 <- erbr.1[which(erbr.1$Year <=2008),]
-
-## To keep 2nd 5 years
-# erbr.1 <- erbr.1[which(erbr.1$Year >=2009),] ## Commented out to get total individuals each year
-### ***************************************************************************
 
 
-
-## MDL Note: 2022-10-11 to get the number of clusters in 2020 and 2022 for fit of predictions skipped portion above
-## CLUSTER BY RELATED TAG OR KEEP UNIQUE TAGS SEPARATE -----------------------------------
-
-## RUN EITHER THIS ...
-## For tag CLUST
-## Add a modified Tag column (site, transect, tag) to hold truncated tag values only (for clustered analysis)
-erbr.1$TagNew <- NA
-erbr.1$TagNew[which(erbr.1$Site=="Garden Park East")] <- paste("E",erbr.1$Transect[which(erbr.1$Site=="Garden Park East")],sep=".",trunc(erbr.1$Tag[which(erbr.1$Site=="Garden Park East")]))
-erbr.1$TagNew[which(erbr.1$Site=="Garden Park West")] <- paste("W",erbr.1$Transect[which(erbr.1$Site=="Garden Park West")],sep=".",trunc(erbr.1$Tag[which(erbr.1$Site=="Garden Park West")]))
-
-
-
-## MEDL ADDED JAN 2023 TO ONLY CLUSTER PLTS W/IN 30cm OF TAG ----------------------------------------------------
-### RUN THIS 2023.01.03 ...
-### truncate only if within 30cm of original tag. Tags generally placed 10cm downhill from cluster. Due to the easily erroded soil, tags that did not wash away are sometimes used to mark new plants. These new plants can be
-### MEDL 2022.12.15 realizing that some tags are used when closer tag is lost, need to limit truncation to a certain distance
-## From the PHPmyadmin database, the tags, transects, and sites tables to join to get the location information
-# tagsPHP <- read.csv("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Projects/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels/_erbr_tags_PHP2022.csv")
-# sitesPHP <- read.csv("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Projects/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels/_erbr_sites_PHP2022.csv")
-# transectsPHP <- read.csv("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Projects/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels/_erbr_transects_PHP2022.csv")
-tagsPHP <- read.csv("Files_from_Michelle/_erbr_tags_PHP2022.csv")
-sitesPHP <- read.csv("Files_from_Michelle/_erbr_sites_PHP2022.csv")
-transectsPHP <- read.csv("Files_from_Michelle/_erbr_transects_PHP2022.csv")
-
-#names(tagsPHP)
-#names(sitesPHP)
-#names(transectsPHP)
-#names(erbr.1)
-
-## recorded as either "XXcm Dir of tag" or "Tag XXcm dir" sometimes XX cm sometimes XXcm
-## soil erodes easily, tags are lost and used sparingly. Some plants are added to tags even at great distances.
-## setting an arbitrary cutoff to keep what are most likely different plants separate
-erbr.loc <- tagsPHP %>%
-left_join(transectsPHP, by = "ErBr_transect_id") %>%
-left_join(sitesPHP, by = "ErBr_site_id") %>%
-left_join(erbr.1, by = c("tag_number" = "Tag", "transect_number" = "Transect", "site_name" = "Site")) %>%
-dplyr::select(c(site_name ,Year,transect_number,tag_number ,X:Comments, TagNew, location_comment )) %>% ## keep all matching erbr.1 plus the location comment which has distance to tag
-filter(site_name != "Cleora") %>%
-filter(!is.na(Year))
-
-## Missing some years, filter out, some are tags that no longer exist or were missing tag numbers
-# head(erbr.loc[is.na(erbr.loc$Year),],100)
-
-str(erbr.loc)
-erbr.loc$location_comment <- as.character(erbr.loc$location_comment)
-## by hand delete all the extra numbers that aren't distances
-table(erbr.loc$location_comment, useNA = "always") ## There are no NAs; there are 3619 NULL
-erbr.loc$location_comment[erbr.loc$location_comment == "x=24.9, y=0.46, location of plant (no tag), 140cm E of #698"] <- "140cm E of"
-erbr.loc$location_comment[erbr.loc$location_comment == "22cm NW of tag 706"] <- "22cm NW of tag"
-erbr.loc$location_comment[erbr.loc$location_comment == "downhill of nail, (plant 9cm S of tag) plant 10cm N of tag, tag 10N"] <- "downhill of nail, tag 10N"
-erbr.loc$location_comment[erbr.loc$location_comment == "plant out of transect, plant at nail; plant within 50 cm of transect and at tag"] <- "plant out of transect, plant at nail; plant within"
-
-## Add a column with the distance to tag information from the location comments 
-erbr.loc1 <- erbr.loc %>%
-mutate(TagDist = if_else(grepl("tag", location_comment),                 #If reference to distance of plant from tag
-                           if_else(nchar(gsub("[^0-9.-]", "", location_comment)) > 0,
-                           gsub("[^0-9.-]", "", location_comment), "0"), #Then pull numbers, some cases where there's the word "tag" but no distance given
-                           "0")) %>%                                     #If not, the numbers do not refer to distance and are zero, NA would be fine too
-       mutate(TagDist = if_else(is.na(TagDist), as.numeric(0), as.numeric(TagDist))) #Make Tag dist numeric
-
-
-## Check that numbers that don't refer to distance from Tag were removed  
-#erbr.loc1[which(nchar(erbr.loc1$TagDist)>4),] ## any that have more than one number or a number greater than 4 digits should catch all the locations with multiple numbers
-#table(erbr.loc1$TagDist, useNA = "always") ## Distribution of distances of tags to plants (clusters) ## 290 with NA
-#erbr.loc1[which(erbr.loc1$TagDist > 30),]  ##More checks
-#erbr.loc1[erbr.loc1$TagDist > 30,] ## Woo hoo! (looks good)
-#table(erbr.loc1$location_comment[which(erbr.loc1$TagDist > 30)]) #Looking to see that all looks good
-names(erbr.loc1) <- c(names(erbr.1),"location_comment","TagDist")
-erbr.1 <- erbr.loc1
-
-### truncate only if distance is within 30cm of tag
-erbr.1 <- erbr.loc1 %>%
-  mutate(TagNew = case_when(Site == "Garden Park East" & TagDist < 30 ~ paste("E",Transect,trunc(Tag),sep="."),
-                            Site == "Garden Park East" & TagDist >= 30 ~ paste("E",Transect,Tag,sep="."),
-                            Site == "Garden Park West" & TagDist < 30 ~ paste("W",Transect,trunc(Tag),sep="."),
-                            Site == "Garden Park West" & TagDist >= 30 ~ paste("W",Transect,Tag,sep=".") ))
-
-## Checks 
-head(erbr.1[which(erbr.1$TagDist > 30),],100)
-head(erbr.1[erbr.1$TagDist > 30,], 100)
-head(erbr.1[which(erbr.1$TagDist > 20 & erbr.1$TagDist < 35),],100)
-
-
-## Combine size (Rosettes) and repro (Infl) for clusters of plts with same truncated tag number
-## MEDL Note: TagNew has the Site and Transect info in it
-erbr.1 <- erbr.1 %>% dplyr::group_by(TagNew, Year) %>% dplyr::mutate(RosNew=sumNA(Rosettes,na.rm=TRUE), InflNew=sumNA(Infl,na.rm=TRUE)) %>% 
-          ungroup() 
-## MEDL Note: bazar::sumNA returns NA instead of 0 when input contains only missing values
 
 ## Remove rows that are duplicates in terms of TagNew and Year values
 erbr.1 <- erbr.1[!duplicated(erbr.1[,c("TagNew","Year")]),]
@@ -197,16 +67,6 @@ erbr.1 <- erbr.1[!duplicated(erbr.1[,c("TagNew","Year")]),]
 ## MEDL ADDED CODE ENDS --------------------------------------------------------------
 
 
-## ... OR RUN THIS
-## For tag SEP
-## Add a new Tag column with unique tag ID (i.e. incorporates transect and tag)
-#erbr.1$TagNew <- NA
-#erbr.1$TagNew[which(erbr.1$Site=="Garden Park East")] <- paste("E",erbr.1$Transect[which(erbr.1$Site=="Garden Park East")],sep=".",erbr.1$Tag[which(erbr.1$Site=="Garden Park East")])
-#erbr.1$TagNew[which(erbr.1$Site=="Garden Park West")] <- paste("W",erbr.1$Transect[which(erbr.1$Site=="Garden Park West")],sep=".",erbr.1$Tag[which(erbr.1$Site=="Garden Park West")])
-
-## Rename variables for consistency with above
-#erbr.1 <- rename(erbr.1, RosNew=Rosettes, InflNew=Infl)
-## -----------------------------------------------------------------------------------
 
 
 
@@ -258,11 +118,6 @@ nrow(dats[dats$Year==2022,])
 
 
 
-## MANUALLY ADJUST OR REMOVE TAG NUMS FOR SOME PLTS THAT NEED UNIQUE ID OR ARE OUT OF PLOTS
-dats$TagNew[dats$TagNew=="E.7.691" & dats$Year>=2018] <- "E.7.691.1" #This plt was 3 pieces from 2007-2010 ~20 ros, died, then new 1 ros in 2018
-dats$TagNew[dats$TagNew=="E.3.110" & dats$Year>=2020] <- "E.3.110.1" #This plt was 2 pieces from 2004-2006 ~60 ros, died, then new 2 ros in 2020
-dats <- dats[dats$TagNew !="W.4.304.1",]
-## -----------------------------------------------------------------------------------
 
 
 
