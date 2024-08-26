@@ -23,30 +23,29 @@ library(tidyr)
 
 
 ## LOAD DATA --------------------------------------------------------------------------------------
-erbr <- read.csv("Files_from_Michelle/rawdata_2022.csv", header=TRUE)
-
-clim3seas <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE) #Check that my clim data is same as Michelle's
+erbr <- read.csv("20240826_SimData.csv", header=TRUE)
+clim3seas <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
 ## ------------------------------------------------------------------------------------------------
 
 
 ## MODIFY FORM OF DATA ----------------------------------------------------------------------------
-erbr <- erbr[!duplicated(erbr),]    #Remove 10 duplicate rows
-erbr <- erbr[erbr$Tag != 259,]      #MEDL: E. jamesii # added 2023.01.03 from 2020_erbr_1ReformatData_forJAGS_20210823.R
-
-## Change zeros in Rosettes (no data entered) to NAs in Ros and Infl columns to indicate dead, missing, or subsumed
-erbr.1$Rosettes[erbr.1$Rosettes==0] <- NA
-erbr.1$Infl[erbr.1$Rosettes==0] <- NA
-erbr.1$Infl[is.na(erbr.1$Rosettes)] <- NA
-## Change Infl to zero from NA if Rosettes has data ***
-
+## Change zeros in Rosettes & Infls to NAs in RosNew & InflNew columns to indicate dead
+erbr$RosNew[erbr$RosNew==0] <- NA
+erbr[erbr$RosNew==0 & !is.na(erbr$RosNew),] #Confirm that no RosNew=0
+erbr$InflNew[erbr$InflNew==0] <- NA
+erbr$InflNew[is.na(erbr$RosNew) & !is.na(erbr$InflNew)] #Confirm
+## Change Infl to zero from NA if Rosettes has data 
+erbr$InflNew[erbr$RosNew>0 & !is.na(erbr$RosNew) & is.na(erbr$InflNew)] <- 0
 ## ------------------------------------------------------------------------------------------------
 
 
 
 
+## Confirm no rows are duplicates in terms of TagNew and Year values
+erbr[duplicated(erbr[,c("TagNew","Year")]),]
 
-## Remove rows that are duplicates in terms of TagNew and Year values
-erbr.1 <- erbr.1[!duplicated(erbr.1[,c("TagNew","Year")]),]
+## ********************** ## 
+
 # table(erbr.1$RosNew, useNA = "always") #Checks
 # nrow(erbr.1) #Checks
 

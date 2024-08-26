@@ -276,7 +276,11 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
               #From rnbinom manual: size=dispersionParam, prob=size/(size+mu)
               #Then dispersionParam = (prob*mu) / (1-prob)
               r.inf <- (pred.reproYesNo*pred.repro) / (1 - pred.reproYesNo) 
-              realzd.repro <- rnbinom(n=1, size=r.inf, mu=pred.repro)       
+              realzd.repro <- rnbinom(n=1, size=r.inf, mu=pred.repro)  
+              if (realzd.repro < 1) {   #If num inf less than 1, change to 1 (min number of infs when reproducing)
+                realzd.repro <- 1
+              }
+          
 
               #Enter inf data into repro matrix
               mx.reproInf[yy,pp] <- realzd.repro
@@ -284,7 +288,7 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
               # Seedlings (negative binomial)
               pred.numSdlg <- exp(medParams$newplt_intercept + log(realzd.repro))  
               #r.sdlg <- (realzd.reproYesNo*pred.numSdlg) / (1-realzd.reproYesNo)  
-              r.sdlg <- (pred.reproYesNo*pred.numSdlg) / (1-pred.reproYesNo)     #Is pred.reproYesNo used here rather than realzd?
+              r.sdlg <- (pred.reproYesNo*pred.numSdlg) / (1-pred.reproYesNo)     #Should pred.reproYesNo be used here rather than realzd?
               realzd.numSdlg <- rnbinom(n=1, size=r.sdlg, mu=pred.numSdlg)       
               
               #Enter seedling data into seedling matrix
@@ -477,6 +481,7 @@ datComb$TagNew <- paste(datComb$TransectNew, tag.rep, sep='.') #Tag new included
 
 
 ## ** save as csv ** 
+write.csv(datComb, "20240826_SimData.csv", row.names=FALSE)
 
 
 ## NOTE- from Dan: "What we want to do is make a data file of the simulated data that is exactly the same format as the real data, 
