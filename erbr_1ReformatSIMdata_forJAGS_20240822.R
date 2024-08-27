@@ -44,75 +44,13 @@ erbr$InflNew[erbr$RosNew>0 & !is.na(erbr$RosNew) & is.na(erbr$InflNew)] <- 0
 ## Confirm no rows are duplicates in terms of TagNew and Year values
 erbr[duplicated(erbr[,c("TagNew","Year")]),]
 
-## ********************** ## 
-
-# table(erbr.1$RosNew, useNA = "always") #Checks
-# nrow(erbr.1) #Checks
-
 
 
 
 ## How many observed individuals (tag clusters) were there each year
-#indivXyear <- erbr.1 %>%
-#  dplyr::group_by(Year) %>%
-#  dplyr::summarise(Indivs = n_distinct(TagNew[RosNew > 0]))
-#as.data.frame(indivXyear) ## Only 4 transects were read at GPE instead of 7 in 2020. Totals are wrong. One year of NA?
-
-### Save data for number and size of clusters in predicted years (after 2013)
-# save(erbr.1, file = paste("C:/Users/deprengm/OneDrive - Denver Botanic Gardens/P drive/hackathon/ErBr/erbr.1",
-#                          Sys.Date(),".Rdata", sep=""))
-
-
-## MEDL ADDED CODE ENDS --------------------------------------------------------------
-
-
-
-
-
-## ADD IN NA ROWS FOR 2020 AND 2022 IF MISSING --------------------------------------- 
-tags <- unique(erbr.1$TagNew)
-prevYr <- 2018    #All data collection years have rows in data sheet up until this year     
-latestYr <- 2022  #Most recent year of data collection
-dats <- NULL      #Placeholder for the new data
-
-for (tt in tags){
-    dds <- erbr.1[which(erbr.1$TagNew==tt),] #Temporary data
-    
-    if (length(dds$Year)>1){
-      
-      ## Find and add in the missing recent year (no data collected) rows:
-      recentyrs <- prevYr:latestYr
-      yrs <- c(dds$Year)
-      missingyrs <- recentyrs[which(recentyrs%in%yrs ==FALSE)]
-      missingyrs <- missingyrs[missingyrs==2020 | missingyrs==2022] #Keep only if 2020 and 2022 missing
-      ddsmissing <- do.call('rbind',replicate(length(missingyrs),dds[1,],simplify=FALSE))
-      ddsmissing$Year <- missingyrs
-      ddsmissing$DiameterX=ddsmissing$DiameterY=
-      ddsmissing$RosNew=ddsmissing$InflNew=ddsmissing$Rosettes=ddsmissing$Infl=
-      ddsmissing$Rust=ddsmissing$BrType=ddsmissing$InflBr=ddsmissing$Comments=NA
-      dds <- rbind(dds,ddsmissing)
-      dds <- dds[order(dds$Year),] #Reordered, full record for this plt
-        } #End if the plt was observed more than once
-    
-    dats <- rbind(dats,dds)
-    } #End going through each plt
-
-
-## Check if desired rows added
-nrow(erbr.1[erbr.1$Year==2004,])
-nrow(erbr.1[erbr.1$Year==2010,])
-nrow(erbr.1[erbr.1$Year==2012,])
-nrow(erbr.1[erbr.1$Year==2013,])
-nrow(erbr.1[erbr.1$Year==2016,])
-nrow(erbr.1[erbr.1$Year==2018,])
-nrow(erbr.1[erbr.1$Year==2020,])
-nrow(erbr.1[erbr.1$Year==2022,])
-
-nrow(dats[dats$Year==2013,])
-nrow(dats[dats$Year==2016,])
-nrow(dats[dats$Year==2018,])
-nrow(dats[dats$Year==2020,])
-nrow(dats[dats$Year==2022,])
+indivXyear <- erbr %>%
+  dplyr::group_by(Year) %>%
+  dplyr::summarise(Indivs = n_distinct(TagNew[RosNew > 0]))
 ## -----------------------------------------------------------------------------------
 
 
@@ -123,6 +61,7 @@ nrow(dats[dats$Year==2022,])
 ## START OF CHANGES NEEDED FOR JAGS --------------------------------------------------
 
 ## Make a column that indicates if a line should be kept: removes lines w NAs before a plt appeared or after died. Keeps lines that are NAs but bracketed by sz data yrs
+dats <- erbr      #Placeholder for the new data
 dats$save <- 0   #Start with save = 0, or no
 dats$surv <- NA  #Column to show plt survival/ if plant is alive in current year
 
@@ -199,53 +138,41 @@ for (tt in tags){
   dats2 <- rbind(dats2,dds)
 } #End going through each plt
 
+
 ## Check lag values to ensure biologically reasonable
 table(dats2$lagforsurv) 
 table(dats2$lagsrtsz) 
-lagCheck <- dats2[dats2$lagsrtsz>5,]
+lagCheck <- dats2[dats2$lagsrtsz>3,]
 
-erbr.2 <- dats2
+erbr.1 <- dats2
 ## -----------------------------------------------------------------------------------
 
 
+## ** years in sim data need to match actual years in order to combine clim data **
+## ** Make change in Sim Demog Data script ** 
 
 ## ADD IN CLIMATE VARIABLES ----------------------------------------------------------
-erbr.2 <- erbr.2 %>%
+erbr.1 <- erbr.1 %>%
   left_join(clim3seas, by = c("Year" = "Year"))
 ## -----------------------------------------------------------------------------------
 
 
 
-## MAKE TRANSECT UNIQUE (ie. transect, site combo) FOR USE AS PREDICTOR VARIABLE -----
-erbr.2$TransectNew <- NA
-erbr.2$TransectNew[which(erbr.2$Site=="Garden Park East")] <- paste("E.",erbr.2$Transect[which(erbr.2$Site=="Garden Park East")], sep='')
-erbr.2$TransectNew[which(erbr.2$Site=="Garden Park West")] <- paste("W.",erbr.2$Transect[which(erbr.2$Site=="Garden Park West")], sep='')
-## -----------------------------------------------------------------------------------
-
-
 ## ADD PROBABILITY OF REPRO RESPONSE VARIABLE ----------------------------------------
 ## Determine whether or not reproduction occurred
-erbr.2$InflYesNo <- NA
-erbr.2$InflYesNo[erbr.2$InflNew > 0] <- 1
-erbr.2$InflYesNo[erbr.2$InflNew == 0] <- 0
+erbr.1$InflYesNo <- NA
+erbr.1$InflYesNo[erbr.1$InflNew > 0] <- 1
+erbr.1$InflYesNo[erbr.1$InflNew == 0] <- 0
 ## -----------------------------------------------------------------------------------
 
-
-## KEEP RELEVANT COLUMNS ONLY --------------------------------------------------------
-erbr.3 <- erbr.2 %>% dplyr::select(!c(Transect, Tag, save)) 
-
-### 2023.01.03 changes
-# erbr.3 <- erbr.2 %>% dplyr::select(!c(Transect, # Tag, X, Y, DiameterX, DiameterY, Rust, BrType, InflBr, Comments,
-#                                   save))
-## -----------------------------------------------------------------------------------
 
 
 ## SAVE FORMATTED DATA ---------------------------------------------------------------
-date <- Sys.Date() #as.character(210617)        #Enter date to be added to file name
+date <- Sys.Date()                        #Enter date to be added to file name
 date <- str_replace_all(date, "-", "")
-name <- as.character("TagClust2022_")     #Enter name of file, e.g. Tagclust, 4to13, 4to13odd, 4to13even, 4to8, 9to13
+name <- as.character("SimData_")          #Enter name of file, e.g. Tagclust, 4to13, simulated data...
 
-write.csv(erbr.3, file=paste("erbr_", name, date, ".csv", sep=""), row.names=FALSE)
+write.csv(erbr.1, file=paste(date, "erbr_", name, ".csv", sep=""), row.names=FALSE)
 ## -----------------------------------------------------------------------------------
 
 
