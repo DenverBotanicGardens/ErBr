@@ -55,6 +55,7 @@ erbr.1$Rosettes[erbr.1$Rosettes==0] <- NA
 erbr.1$Infl[erbr.1$Rosettes==0] <- NA
 erbr.1$Infl[is.na(erbr.1$Rosettes)] <- NA
 ## Change Infl to zero from NA if Rosettes has data ***
+#erbr.1$Infl[is.na(erbr.1$Infl) & erbr.1$Rosettes > 0] <- 0 #Check this and include ** 
 
 ## ------------------------------------------------------------------------------------------------
 
