@@ -23,7 +23,7 @@ library(tidyr)
 
 
 ## LOAD DATA --------------------------------------------------------------------------------------
-erbr <- read.csv("20240826_SimData.csv", header=TRUE)
+erbr <- read.csv("20240829_SimData_20yrs.csv", header=TRUE)
 clim3seas <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
 ## ------------------------------------------------------------------------------------------------
 
@@ -148,12 +148,10 @@ erbr.1 <- dats2
 ## -----------------------------------------------------------------------------------
 
 
-## ** years in sim data need to match actual years in order to combine clim data **
-## ** Make change in Sim Demog Data script ** 
 
 ## ADD IN CLIMATE VARIABLES ----------------------------------------------------------
 erbr.1 <- erbr.1 %>%
-  left_join(clim3seas, by = c("Year" = "Year"))
+  left_join(clim3seas, by = c("ClimYr" = "Year"))
 ## -----------------------------------------------------------------------------------
 
 
@@ -168,9 +166,9 @@ erbr.1$InflYesNo[erbr.1$InflNew == 0] <- 0
 
 
 ## SAVE FORMATTED DATA ---------------------------------------------------------------
-date <- Sys.Date()                        #Enter date to be added to file name
+date <- Sys.Date()                             #Enter date to be added to file name
 date <- str_replace_all(date, "-", "")
-name <- as.character("SimData_")          #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+name <- as.character("SimData20yrs_")          #Enter name of file, e.g. Tagclust, 4to13, simulated data...
 
 write.csv(erbr.1, file=paste(date, "erbr_", name, ".csv", sep=""), row.names=FALSE)
 ## -----------------------------------------------------------------------------------

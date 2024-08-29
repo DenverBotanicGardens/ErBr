@@ -33,8 +33,8 @@ library(matrixStats)
 
 
 ## LOAD DATA --------------------------------------------------------------------------------------
-dats <- read.csv("erbr_TagClust2022_20230408.csv", header = TRUE)
-#dats <- read.csv("erbr_TagClust4to8_210617.csv", header = TRUE)
+#dats <- read.csv("erbr_TagClust2022_20230408.csv", header = TRUE)
+dats <- read.csv("20240829erbr_SimData20yrs_.csv", header = TRUE)
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -188,10 +188,6 @@ newplt.yrtranscombo=100*newplt.trans+newplt.yr
 ## ------------------------------------------------------------------------------------------------
 
 
-## 20230420 In response to error, make sure any rows with data for RosNew don't have NA for InflNew and InflYesNo
-## For future, make change in erbr_1ReformatData_forJAGS script
-dats[1217,]$InflNew <- 0
-dats[1217,]$InflYesNo <- 0
 
 
 
@@ -201,8 +197,10 @@ dats[1217,]$InflYesNo <- 0
 #jags.mod <- run.jags('erbr_JAGSmodComplx_noYRE_210827.R', n.chains=3, data=dats, burnin=10000, thin=10, sample=30000, adapt=500, method='parallel')
 #jags.mod <- run.jags('Scripts/erbr_JAGSmodBest_noYRE_20230418.R', n.chains=3, data=dats, burnin=10000, thin=10, sample=30000, adapt=500, method='parallel')
 
+jags.mod <- run.jags('ErBr/erbr_JAGSmodBest_noYRE_20230418.R', n.chains=3, data=dats, burnin=5000, thin=5, sample=10000, adapt=500, method='parallel')
+
 #save(jags.mod, file='erbr_JAGSmod_c3t10s20b5_210406.rdata')
-#saveRDS(jags.mod, "erbr_JAGSmodBest_c3t10s30b10_noYRE_20230420.rds")
+saveRDS(jags.mod, "erbr_JAGSmodBest_SIM20yr_c3t5s10b5_noYRE_20240829.rds")
 ## ------------------------------------------------------------------------------------------------
 
 

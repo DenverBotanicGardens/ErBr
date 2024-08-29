@@ -22,6 +22,8 @@ setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
 clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
 erbr <- read.csv("erbr_TagClust2022_20230408.csv", header=TRUE)
 erbr$Year <- as.factor(erbr$Year)
+r.inf <- 2.820055e+00
+r.sdlg <- 2.530210e-01
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -290,7 +292,7 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
               pred.numSdlg <- exp(medParams$newplt_intercept + log(realzd.repro))  
               #r.sdlg <- (realzd.reproYesNo*pred.numSdlg) / (1-realzd.reproYesNo)  
               #r.sdlg <- (pred.reproYesNo*pred.numSdlg) / (1-pred.reproYesNo)     #Should pred.reproYesNo be used here rather than realzd?
-              realzd.numSdlg <- rnbinom(n=1, size=r.newplts, mu=pred.numSdlg)       
+              realzd.numSdlg <- rnbinom(n=1, size=r.sdlg, mu=pred.numSdlg)       
               
               #Enter seedling data into seedling matrix
               mx.reproSdlg[yy+1,pp] <- realzd.numSdlg  } 
@@ -408,11 +410,11 @@ for (rr in 1:ncol(mx.sdlgYes)) { #Loop over parent plants
 ## Modify output to contain missing years of data 
 ## You'll get the records for each individual, but then say that if a year is one of the missing data years, just set that years data to NA. 
 ## Add a year column
-mx.szWyr <- cbind.data.frame(1:(num.yrs-1), mx.sz[1:(num.yrs-1),])
-colnames(mx.szWyr) <- c("Year", colnames(mx.sz))
+mx.szWyr <- cbind.data.frame(1:(num.yrs-1), sim.clim$Clim_yr[(2:num.yrs)], mx.sz[1:(num.yrs-1),])
+colnames(mx.szWyr) <- c("Year", "Clim_yr", colnames(mx.sz))
 
-mx.reproWyr <- cbind.data.frame(1:(num.yrs-1), mx.reproInf)
-colnames(mx.reproWyr) <- c("Year", colnames(mx.reproInf))
+mx.reproWyr <- cbind.data.frame(1:(num.yrs-1), sim.clim$Clim_yr[(2:num.yrs)], mx.reproInf[1:(num.yrs-1),])
+colnames(mx.reproWyr) <- c("Year", "Clim_yr", colnames(mx.reproInf))
 
 ## Assign years to be missing
 startConsecYrs <- 10
@@ -424,14 +426,14 @@ mx.reproWyr[mx.reproWyr$Year %in% (yrs.missing),] <- NA
 
 ## Add columns to repro matrix so number matches that of size mx. Values can be 0 for no repro ** change above in sdlg loop later **
 num.addnCols <- ncol(mx.szWyr) - ncol(mx.reproWyr)
-#mx.reproWyrAdCol 
 addnCols <- as.data.frame(matrix(0, nrow=nrow(mx.reproWyr), ncol=num.addnCols))
 mx.reproWyrAdCol <- cbind(mx.reproWyr, addnCols)
 
-## Remove NA values from year column
+## Remove NA values from year columns
 mx.szWyr$Year <- 1:(num.yrs-1)
 mx.reproWyrAdCol$Year <- 1:(num.yrs-1)
-
+mx.szWyr$Clim_yr <- sim.clim$Clim_yr[(2:num.yrs)]
+mx.reproWyrAdCol$Clim_yr <- sim.clim$Clim_yr[(2:num.yrs)]
 
 ## In writing this, I am also realizing that there is one complication: if a plant dies one year, but it was not censused the next year, 
 ## then it should be censused the following year: in other words, usually a plant that is dead one year would have no records for subsequent years, 
@@ -456,13 +458,13 @@ mx.reproWyrAdCol$Year <- 1:(num.yrs-1)
 ## Combine all plants into 1 column, where all years for a given plt appear sequentially
 datComb <- NULL
 
-for (ll in 2:ncol(mx.szWyr)) {   
-  temp <- cbind(mx.szWyr$Year, mx.szWyr[,ll], mx.reproWyrAdCol[,ll])
+for (ll in 3:ncol(mx.szWyr)) {   
+  temp <- cbind(mx.szWyr$Year, mx.szWyr$Clim_yr, mx.szWyr[,ll], mx.reproWyrAdCol[,ll])
   datComb <- rbind(datComb, temp)
 }
 
 datComb <- as.data.frame(datComb)
-colnames(datComb) <- c("Year", "RosNew", "InflNew") #Names cols 'Year', 'RosNew', 'InflNew'
+colnames(datComb) <- c("Year", "ClimYr", "RosNew", "InflNew") #Names cols 'Year', 'RosNew', 'InflNew'
 
 
 ## Assign plants to one of the following transects (random but equal distribution)
@@ -481,8 +483,8 @@ tag.rep <- rep(tag, each=(num.yrs-1), replace=FALSE)
 datComb$TagNew <- paste(datComb$TransectNew, tag.rep, sep='.') #Tag new included site and transect; same format as real data
 
 
-## ** save as csv ** 
-write.csv(datComb, "20240826_SimData.csv", row.names=FALSE)
+## save as csv 
+write.csv(datComb, "20240829_SimData_20yrs.csv", row.names=FALSE)
 
 
 ## NOTE- from Dan: "What we want to do is make a data file of the simulated data that is exactly the same format as the real data, 
