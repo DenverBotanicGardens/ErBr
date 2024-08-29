@@ -43,6 +43,7 @@ column.names <- colnames(clim32yr)
 sim.clim <- as.data.frame(matrix(NA, nrow=length(1:num.yrs), ncol=length(column.names)))
 colnames(sim.clim) <- column.names
 sim.clim$Year <- 1:num.yrs
+ 
 
 #List of random numbers that corresponds to a set of climate values 
 rel.yrs <- 2002:2021 #Select relevant subset of yrs (this matches what was used for stoch lam to keep Methods consistent) 
@@ -51,6 +52,7 @@ randVals.yr <- sample(1:nrow(climYrs.rel), size=num.yrs, prob=NULL, replace=TRUE
 
 for (cc in 1:length(1:num.yrs)) {
   sim.clim[cc,2:7] <- climYrs.rel[randVals.yr[cc],2:7] 
+  sim.clim$Clim_yr[cc] <- climYrs.rel[randVals.yr[cc],1]
 }
 ## ------------------------------------------------------------------------------------------------
 
@@ -275,21 +277,20 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
               #* So, you also need to pull out the fitted r.infls variable and fit this way
               #From rnbinom manual: size=dispersionParam, prob=size/(size+mu)
               #Then dispersionParam = (prob*mu) / (1-prob)
-              r.inf <- (pred.reproYesNo*pred.repro) / (1 - pred.reproYesNo) 
+              #r.inf <- (pred.reproYesNo*pred.repro) / (1 - pred.reproYesNo) 
               realzd.repro <- rnbinom(n=1, size=r.inf, mu=pred.repro)  
               if (realzd.repro < 1) {   #If num inf less than 1, change to 1 (min number of infs when reproducing)
                 realzd.repro <- 1
-              }
+              } ## *Is this still needed? **
           
-
               #Enter inf data into repro matrix
               mx.reproInf[yy,pp] <- realzd.repro
               
               # Seedlings (negative binomial)
               pred.numSdlg <- exp(medParams$newplt_intercept + log(realzd.repro))  
               #r.sdlg <- (realzd.reproYesNo*pred.numSdlg) / (1-realzd.reproYesNo)  
-              r.sdlg <- (pred.reproYesNo*pred.numSdlg) / (1-pred.reproYesNo)     #Should pred.reproYesNo be used here rather than realzd?
-              realzd.numSdlg <- rnbinom(n=1, size=r.sdlg, mu=pred.numSdlg)       
+              #r.sdlg <- (pred.reproYesNo*pred.numSdlg) / (1-pred.reproYesNo)     #Should pred.reproYesNo be used here rather than realzd?
+              realzd.numSdlg <- rnbinom(n=1, size=r.newplts, mu=pred.numSdlg)       
               
               #Enter seedling data into seedling matrix
               mx.reproSdlg[yy+1,pp] <- realzd.numSdlg  } 
