@@ -22,7 +22,7 @@ setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
 clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
 erbr <- read.csv("erbr_TagClust2022_20230408.csv", header=TRUE)
 erbr$Year <- as.factor(erbr$Year)
-r.inf <- 2.820055e+00
+r.inf <- 2.820055e+00      #Median values from JAGS run of real data 
 r.sdlg <- 2.530210e-01
 ## ------------------------------------------------------------------------------------------------
 
