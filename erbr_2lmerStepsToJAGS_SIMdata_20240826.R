@@ -197,7 +197,7 @@ newplt.yrtranscombo=100*newplt.trans+newplt.yr
 #jags.mod <- run.jags('erbr_JAGSmodComplx_noYRE_210827.R', n.chains=3, data=dats, burnin=10000, thin=10, sample=30000, adapt=500, method='parallel')
 #jags.mod <- run.jags('Scripts/erbr_JAGSmodBest_noYRE_20230418.R', n.chains=3, data=dats, burnin=10000, thin=10, sample=30000, adapt=500, method='parallel')
 
-jags.mod <- run.jags('ErBr/erbr_JAGSmodBest_noYRE_20230418.R', n.chains=3, data=dats, burnin=5000, thin=5, sample=10000, adapt=500, method='parallel')
+jags.mod <- run.jags('erbr_JAGSmodBest_noYRE_20230418.R', n.chains=3, data=dats, burnin=5000, thin=5, sample=10000, adapt=500, method='parallel')
 
 #save(jags.mod, file='erbr_JAGSmod_c3t10s20b5_210406.rdata')
 saveRDS(jags.mod, "erbr_JAGSmodBest_SIM20yr_c3t5s10b5_noYRE_20240829.rds")
