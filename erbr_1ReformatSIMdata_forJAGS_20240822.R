@@ -23,7 +23,7 @@ library(tidyr)
 
 
 ## LOAD DATA --------------------------------------------------------------------------------------
-erbr <- read.csv("20240829_SimData_20yrs.csv", header=TRUE)
+erbr <- read.csv("20240830_SimData_20yrs.csv", header=TRUE)
 clim3seas <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
 ## ------------------------------------------------------------------------------------------------
 
@@ -34,9 +34,11 @@ erbr$RosNew[erbr$RosNew==0] <- NA
 erbr[erbr$RosNew==0 & !is.na(erbr$RosNew),] #Confirm that no RosNew=0
 erbr$InflNew[erbr$InflNew==0] <- NA
 erbr$InflNew[is.na(erbr$RosNew) & !is.na(erbr$InflNew)] #Confirm
+erbr$InflNew[is.na(erbr$RosNew)] <- NA
 ## Change Infl to zero from NA if Rosettes has data 
 erbr$InflNew[erbr$RosNew>0 & !is.na(erbr$RosNew) & is.na(erbr$InflNew)] <- 0
 ## ------------------------------------------------------------------------------------------------
+
 
 
 
@@ -168,9 +170,9 @@ erbr.1$InflYesNo[erbr.1$InflNew == 0] <- 0
 ## SAVE FORMATTED DATA ---------------------------------------------------------------
 date <- Sys.Date()                             #Enter date to be added to file name
 date <- str_replace_all(date, "-", "")
-name <- as.character("SimData20yrs_")          #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+name <- as.character("SimData20yrs")          #Enter name of file, e.g. Tagclust, 4to13, simulated data...
 
-write.csv(erbr.1, file=paste(date, "erbr_", name, ".csv", sep=""), row.names=FALSE)
+write.csv(erbr.1, file=paste(date, "_erbr_", name, "_Format4JAGS", ".csv", sep=""), row.names=FALSE)
 ## -----------------------------------------------------------------------------------
 
 

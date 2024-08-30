@@ -118,7 +118,7 @@ binmids <- c(1, binmids)
   
   
 ## Select starting sizes of plants for simulated data using SSD and median sz classes
-num.startPlts <- 300 #Num of starting plts. Set much larger later (e.g. 500?) (make this considerably larger than you think you want to have)
+num.startPlts <- 200 #Num of starting plts. Set much larger later (e.g. 500?) (make this considerably larger than you think you want to have)
 N.startProbs <- (N.vecStart*1) / N.startNum
 sum(N.startProbs) #Should equal 1
 sz.startPlts <- sample(x=binmids, size=num.startPlts, replace=TRUE, prob=N.startProbs)  
@@ -493,7 +493,7 @@ datComb$TagNew <- paste(datComb$TransectNew, tag.rep, sep='.') #Tag new included
 
 
 ## save as csv 
-write.csv(datComb, "20240829_SimData_20yrs.csv", row.names=FALSE)
+write.csv(datComb, "20240830_SimData20yrs.csv", row.names=FALSE)
 
 
 ## NOTE- from Dan: "What we want to do is make a data file of the simulated data that is exactly the same format as the real data, 

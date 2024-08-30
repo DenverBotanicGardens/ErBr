@@ -34,7 +34,7 @@ library(matrixStats)
 
 ## LOAD DATA --------------------------------------------------------------------------------------
 #dats <- read.csv("erbr_TagClust2022_20230408.csv", header = TRUE)
-dats <- read.csv("20240829erbr_SimData20yrs.csv", header = TRUE)
+dats <- read.csv("20240830_erbr_SimData20yrs_Format4JAGS.csv", header = TRUE)
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -190,16 +190,16 @@ newplt.yrtranscombo=100*newplt.trans+newplt.yr
 
 ## ** quick fix for now. Change in SimDemog Data R script later **
 ## ** round all size to integer **
-dats$RosNew <- round(dats$RosNew, digits=0)
+#dats$RosNew <- round(dats$RosNew, digits=0)
 
 ## ** Check RosNew for zero values. Move to above later **
-dats[dats$RosNew==0 & !is.na(dats$RosNew),]
+#dats[dats$RosNew==0 & !is.na(dats$RosNew),]
 ## ** Change all RosNew=0 to NAs And Same with Infs
-dats$RosNew[dats$RosNew==0] <- NA
-dats$InflNew[is.na(dats$RosNew)] <- NA
+#dats$RosNew[dats$RosNew==0] <- NA
+#dats$InflNew[is.na(dats$RosNew)] <- NA
 
 ## ** Save dats for now for troubleshooting ** 
-write.csv(dats, "20240830_SimData_20yrs_JAGSready.csv", row.names=FALSE)
+#write.csv(dats, "20240830_SimData20yrs_JAGSready.csv", row.names=FALSE)
 
 
 
