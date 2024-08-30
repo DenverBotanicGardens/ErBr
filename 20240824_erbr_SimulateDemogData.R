@@ -370,9 +370,11 @@ for (rr in 1:ncol(mx.sdlgYes)) { #Loop over parent plants
         
           ##If survived, keep going, if realzd.survSdlg=0, add zero to matrix, and end current loop (using break statement)
           if (realzd.surv==0) {
-            mx.sz[yy+1,colCount+ss] <- 0   ## ** do we need two yrs of zero here following death? For missing data code below **
+            mx.sz[yy+1,colCount+ss] <- 0   
+            mx.sz[yy+2,pp] <- 0            #Add 2nd yr w zero following death so that if dead in missing data yr, death is recorded
             break }  
           ## --
+          
         
           
           ## Growth (negative binomial) --   
@@ -387,10 +389,17 @@ for (rr in 1:ncol(mx.sdlgYes)) { #Loop over parent plants
           pred.grwthVar <- exp(medParams$grwthvar_intercept + medParams$grwthvar_RosCoef*log(plt.sz)) 
         
           realzd.grwth <- rnorm(n=1, mean=pred.grwth, sd=sqrt(pred.grwthVar)) 
-          if (realzd.grwth <= 0) {     #If size is equal to or less than 0, change to 1. Is there a better way to do this? **
-            realzd.grwth <- 1
+          realzd.grwth <- round(realzd.grwth, digits=0)   #Round to nearest integer since unit is rosettes
+          
+          ## Bound by largest and smallest sz class
+          if (realzd.grwth < minsize) {   #If sz is equal to or less than 0, change to 1 (smallest sz) 
+            realzd.grwth <- minsize
+          }
+          if (realzd.grwth > maxsize) {   #If sz is over upper sz bound, change to largest sz
+            realzd.grwth <- maxsize
           }
         
+          
           ##Enter realized size into size matrix
           mx.sz[yy+1,colCount+ss] <- realzd.grwth 
           ## --
