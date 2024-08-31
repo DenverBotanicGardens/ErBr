@@ -163,7 +163,7 @@ params.numSdlg <- medParams$newplt_intercept
 
 
 ## Set number of desired years for particular simulation, e.g. 10, 20, 50
-num.yrs <- 21 #Desired number of years of data plus 1 
+num.yrs <- 51 #Desired number of years of data plus 1 
 
 
 #Matrices to hold sz & repro where rows are yrs and columns are plants
@@ -331,7 +331,7 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
 # Subset repro matrix to only contain cols (plts) with non-zero number of seedlings. Then loop thru that.
 #mx.sdlgYes <- mx.reproSdlg[1:(num.yrs-1),] %>% select_if(funs(sum(., na.rm=TRUE) > 0)) #Exclude final yr of data to match sz matrix
 mx.sdlgYes <- mx.reproSdlg %>% select_if(~ sum(., na.rm=TRUE) > 0)  #Try this if error re. funs above
-#mx.sdlgYes <- mx.sdlgYes[1:(num.yrs-1),] #Remove final year of data to match size matrix
+mx.sdlgYes <- mx.sdlgYes[1:(num.yrs-1),] #Remove final year of data to match size matrix
 
 sdlg <- 1            #set size to be 1 ros for seedlings
 
@@ -493,7 +493,7 @@ datComb$TagNew <- paste(datComb$TransectNew, tag.rep, sep='.') #Tag new included
 
 
 ## save as csv 
-write.csv(datComb, "20240830_SimData20yrs.csv", row.names=FALSE)
+write.csv(datComb, "20240831_SimData50yrs.csv", row.names=FALSE)
 
 
 ## NOTE- from Dan: "What we want to do is make a data file of the simulated data that is exactly the same format as the real data, 
