@@ -496,11 +496,34 @@ datComb$TagNew <- paste(datComb$TransectNew, tag.rep, sep='.') #Tag new included
 write.csv(datComb, "20240831_SimData50yrs.csv", row.names=FALSE)
 
 
+
+
 ## NOTE- from Dan: "What we want to do is make a data file of the simulated data that is exactly the same format as the real data, 
 ## so it can run through the same jags program. Then, we do this multiple times 
 ## and compare the distribution of fitted parameters to the ones that were used to create the simulated data." ** 
 
-## **TO DO: Modify erbr_1ReformatData_forJAGS ** 
 ## Edit text to include methods, results, discussion on simulation and add figure(s) **
 
+
+##I think that one particular comment was how well the fitting worked with different life histories. Do get that, what I would do is 
+##fit a model with, say, considerably lower survival and boosted fertility, or lower survival and higher growth, 
+##and do a little ad hoc estimation of how much higher one rate had to be to get approximately lambda =1.
+## For the different life histories, what I would do is this: first, fix each of the climate drivers at their mean values. 
+##Then, with these fixed, do something like: a) reduce the intercept for the survival function so that effectively all survival rates are lowered 
+##(we will have to plot the size dependent fns for survival to see what will generate something like a 50% reduction for medium sized plants). 
+##b) then, make a loop where the intercept for the repro function is increased by increments over a range of values, 
+##and the functions in the loop estimate all the vital rate functions (using the mean climate values) and makes a matrix and gets lambda. 
+##This is all that is needed, so it is a simple blind search to get values that are somewhat close to correct.
+
+
+##And I would think about not doing al 9 sets of runs (3 data amounts x 3 life histories). 
+##I would do 3 different amounts of data, and then for the medium amount, do two other life histories (3 data amounts + 2 other LHs).
+
+##I think we'd want to basically do the same kind of figure (as main text fig 2), but for only a few parameters (like the ones for growth and survival, only)
+##and for both a range of data amounts, and also for, say, 3 different 'life histories', which would involve different growth and survival and repro rates, 
+##as that was one of the reviewer's requests, if I remember right. 
+##we'd also want to show on the figure a horizontal line on each panel that indicates the correct parameter for that simulation.
+
+##Only doing every other year missing, but do this in combination with differing lengths of data sets (like, 10 years, 20, 50) 
+##and also maybe adding in an initial run of years without missing data (like 10 years).
   
