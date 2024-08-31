@@ -34,7 +34,7 @@ library(matrixStats)
 
 ## LOAD DATA --------------------------------------------------------------------------------------
 #dats <- read.csv("erbr_TagClust2022_20230408.csv", header = TRUE)
-dats <- read.csv("20240830_erbr_SimData20yrs_Format4JAGS.csv", header = TRUE)
+dats <- read.csv("20240831_erbr_SimData50yrs_Format4JAGS.csv", header = TRUE)
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -56,12 +56,8 @@ dats <- rename(dats, PptFall=Tot_fall_ppt, PptWinter=Tot_winter_ppt, PptSummer=T
 
 ## COUNT PLANT OBERVATION YEARS FOR EACH DATASET --------------------------------------------------
 sum(dats$surv, na.rm=TRUE) #Full dataset
-consec <- dats[dats$Year<2014,]
-sum(consec$surv, na.rm=TRUE) #Consecutive dataset
-consecShort1 <- dats[dats$Year<2009,]
-sum(consecShort1$surv, na.rm=TRUE) #Short consecutive dataset 2004-2008
-consecShort2 <- dats[dats$Year>2008 & dats$Year<2014,]
-sum(consecShort2$surv, na.rm=TRUE) #Short consecutive dataset 2009-2013
+#consec <- dats[dats$Year<2014,]
+#sum(consec$surv, na.rm=TRUE) #Consecutive dataset
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -188,15 +184,6 @@ newplt.yrtranscombo=100*newplt.trans+newplt.yr
 ## ------------------------------------------------------------------------------------------------
 
 
-## ** quick fix for now. Change in SimDemog Data R script later **
-## ** round all size to integer **
-#dats$RosNew <- round(dats$RosNew, digits=0)
-
-## ** Check RosNew for zero values. Move to above later **
-#dats[dats$RosNew==0 & !is.na(dats$RosNew),]
-## ** Change all RosNew=0 to NAs And Same with Infs
-#dats$RosNew[dats$RosNew==0] <- NA
-#dats$InflNew[is.na(dats$RosNew)] <- NA
 
 ## ** Save dats for now for troubleshooting ** 
 #write.csv(dats, "20240830_SimData20yrs_JAGSready.csv", row.names=FALSE)
@@ -211,7 +198,7 @@ newplt.yrtranscombo=100*newplt.trans+newplt.yr
 jags.mod <- run.jags('erbr_3JAGSmodBest_noYRE_20230418.R', n.chains=3, data=dats, burnin=5000, thin=5, sample=10000, adapt=500, method='parallel')
 
 #save(jags.mod, file='erbr_JAGSmod_c3t10s20b5_210406.rdata')
-saveRDS(jags.mod, "erbr_JAGSmodBest_SIM20yr_c3t5s10b5_noYRE_20240830.rds")
+saveRDS(jags.mod, "erbr_JAGSmodBest_SIM50yr_c3t5s10b5_noYRE_20240831.rds")
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -224,7 +211,7 @@ saveRDS(jags.mod, "erbr_JAGSmodBest_SIM20yr_c3t5s10b5_noYRE_20240830.rds")
 #jags.modNYE <- jags.mod
 jags.mod <- readRDS("Results_data_ms_archive/erbr_JAGSmod_c3t10s30b10_noYRE_4to13even_210617.rds")
 summary(jags.mod)
-#plot(jags.mod)
+plot(jags.mod)
 summ.mod <- summary(jags.mod)
 tail(summ.mod[,1:3], n=37)
 gelman.diag(jags.mod, confidence = 0.95, transform=FALSE)
