@@ -226,7 +226,7 @@ jags.mod <- readRDS("Results_data_ms_archive/erbr_JAGSmod_c3t10s30b10_noYRE_4to1
 summary(jags.mod)
 #plot(jags.mod)
 summ.mod <- summary(jags.mod)
-tail(summ.mod[,1:3], n=31)
+tail(summ.mod[,1:3], n=37)
 gelman.diag(jags.mod, confidence = 0.95, transform=FALSE)
 
 
