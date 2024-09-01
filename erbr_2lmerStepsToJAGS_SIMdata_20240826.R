@@ -215,95 +215,81 @@ summ.mod <- summary(jags.mod)
 tail(summ.mod[,1:3], n=37)
 gelman.diag(jags.mod, confidence = 0.95, transform=FALSE)
 
-medParams <- readRDS("erbrMedParams_noYRE_20240803")
-
-
-
 
 ## Calculate median and SD of param estimates
 chains <- jags.mod$mcmc
 chains <- bind_rows(lapply(chains, as.data.frame))
 colMeds <- apply(chains,2,median)
-colSDs <- apply(chains,2,sd)
+#colSDs <- apply(chains,2,sd)
 ## -----------------------------------------------------------------------------------------------
 
 
 
-## Make plot comparing median param ests b/w diff datasets ---------------------------------
-## Show median param ests b/w diff datasets as points and 90% limits; include glmm estimates
+## Make plot comparing median param ests of diff simulated datasets & compare to param values used on making sim data
+## Show median param ests of diff datasets as points and 90% limits
 
 ## Load data from previous JAGS runs
-#setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
-chains <- readRDS("chains.c3t10s30b10_noYRE_20230420.rds")
-chains.4to13 <- readRDS("chains.c3t10s30b10_noYRE_4to13_210616.rds")
-chains.4to13evn <- readRDS("chains.c3t10s30b10_noYRE_4to13even_210617.rds")
-chains.4to13odd <- readRDS("chains.c3t10s30b10_noYRE_4to13odd_210621.rds")
-chains.4to8 <- readRDS("chains.c3t10s30b10_noYRE_4to8_210701.rds")
-chains.9to13 <- readRDS("chains.c3t10s30b10_noYRE_9to13_210623.rds")
+saveRDS(chains, "chains_SIM20yr_c3t5s10b5_noYRE_20240901.rds")
+chains.sim20 <- readRDS("chains_SIM20yr_c3t5s10b5_noYRE_20240901.rds")
+
+
+# Load data from previous JAGS runs of real data
+medParams.realDat <- readRDS("erbrMedParams_noYRE_20240803")
+colnames(medParams.realDat)
+medParams.realDat <- as.data.frame(t(medParams.realDat))
+#as.data.frame(cbind(medParams.realDat$`colMedians(as.matrix(chains))`,))
 
 
 
 ## CALCULATE MEDIAN PARAMETER VALUES 
-medParams <- as.data.frame(colMedians(as.matrix(chains)))
-medParams.4to13 <- as.data.frame(colMedians(as.matrix(chains.4to13)))
-medParams.4to13evn <- as.data.frame(colMedians(as.matrix(chains.4to13evn)))
-medParams.4to13odd <- as.data.frame(colMedians(as.matrix(chains.4to13odd)))
-medParams.4to8 <- as.data.frame(colMedians(as.matrix(chains.4to8)))
-medParams.9to13 <- as.data.frame(colMedians(as.matrix(chains.9to13)))
+medParams.sim20 <- as.data.frame(colMedians(as.matrix(chains)))
+medParams.sim20wName <- as.data.frame(cbind(medParams.sim20$`colMedians(as.matrix(chains))`,colnames(chains.sim20)))
+colnames(medParams.sim20wName) <- c("sim20", "Name")
 
-medComb <- as.data.frame(cbind(medParams, medParams.4to13, medParams.4to13evn, medParams.4to13odd, 
-                               medParams.4to8, medParams.9to13))
-colnames(medComb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13")
-medComb$Names <- colnames(chains)
+#medParams.4to13 <- as.data.frame(colMedians(as.matrix(chains.4to13)))
+
+
+#medComb <- as.data.frame(cbind(medParams, medParams.4to13, medParams.4to13evn, medParams.4to13odd, 
+#                               medParams.4to8, medParams.9to13))
+#colnames(medComb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13")
+#medComb$Names <- colnames(chains)
 
 
 
 
 ## CALCULATE 90th PERCENTILE ON JAGS ESTIMATES ------------------
-quantParams <- chains %>% summarise_all(funs(list(quantile(., probs=0.9)))) #%>% transpose
-quantParams <- as.data.frame(t(quantParams))
-quantParams.4to13 <- chains.4to13 %>% summarise_all(funs(list(quantile(., probs=0.9))))
-quantParams.4to13 <- as.data.frame(t(quantParams.4to13))
-quantParams.4to13evn <- chains.4to13evn %>% summarise_all(funs(list(quantile(., probs=0.9))))
-quantParams.4to13evn <- as.data.frame(t(quantParams.4to13evn))
-quantParams.4to13odd <- chains.4to13odd %>% summarise_all(funs(list(quantile(., probs=0.9))))
-quantParams.4to13odd <- as.data.frame(t(quantParams.4to13odd))
-quantParams.4to8 <- chains.4to8 %>% summarise_all(funs(list(quantile(., probs=0.9))))
-quantParams.4to8 <- as.data.frame(t(quantParams.4to8))
-quantParams.9to13 <- chains.9to13 %>% summarise_all(funs(list(quantile(., probs=0.9))))
-quantParams.9to13 <- as.data.frame(t(quantParams.9to13))
+quantParams.sim20 <- chains.sim20 %>% summarise_all(funs(list(quantile(., probs=0.9)))) 
+quantParams.sim20 <- as.data.frame(t(quantParams.sim20))
+#quantParams.sim20wName <- as.data.frame(cbind(quantParams.sim20$V1,colnames(chains.sim20)))
 
-quantComb <- as.data.frame(cbind(quantParams, quantParams.4to13, quantParams.4to13evn, quantParams.4to13odd, 
-                                 quantParams.4to8, quantParams.9to13))
-colnames(quantComb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13")
-quantComb$Names <- colnames(chains)
+#quantParams.4to13 <- chains.4to13 %>% summarise_all(funs(list(quantile(., probs=0.9))))
+#quantParams.4to13 <- as.data.frame(t(quantParams.4to13))
+
+
+#quantComb <- as.data.frame(cbind(quantParams, quantParams.4to13, quantParams.4to13evn, quantParams.4to13odd, 
+#                                 quantParams.4to8, quantParams.9to13))
+#colnames(quantComb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13")
+#quantComb$Names <- colnames(chains)
 
 
 ## CALCULATE 10th PERCENTILE ON JAGS ESTIMATES
-quant10Params <- chains %>% summarise_all(funs(list(quantile(., probs=0.1)))) 
-quant10Params <- as.data.frame(t(quant10Params))
-quant10Params.4to13 <- chains.4to13 %>% summarise_all(funs(list(quantile(., probs=0.1))))
-quant10Params.4to13 <- as.data.frame(t(quant10Params.4to13))
-quant10Params.4to13evn <- chains.4to13evn %>% summarise_all(funs(list(quantile(., probs=0.1))))
-quant10Params.4to13evn <- as.data.frame(t(quant10Params.4to13evn))
-quant10Params.4to13odd <- chains.4to13odd %>% summarise_all(funs(list(quantile(., probs=0.1))))
-quant10Params.4to13odd <- as.data.frame(t(quant10Params.4to13odd))
-quant10Params.4to8 <- chains.4to8 %>% summarise_all(funs(list(quantile(., probs=0.1))))
-quant10Params.4to8 <- as.data.frame(t(quant10Params.4to8))
-quant10Params.9to13 <- chains.9to13 %>% summarise_all(funs(list(quantile(., probs=0.1))))
-quant10Params.9to13 <- as.data.frame(t(quant10Params.9to13))
+quant10Params.sim20 <- chains.sim20 %>% summarise_all(funs(list(quantile(., probs=0.1)))) 
+quant10Params.sim20 <- as.data.frame(t(quant10Params.sim20))
+#quant10Params.4to13 <- chains.4to13 %>% summarise_all(funs(list(quantile(., probs=0.1))))
+#quant10Params.4to13 <- as.data.frame(t(quant10Params.4to13))
 
-quant10Comb <- as.data.frame(cbind(quant10Params, quant10Params.4to13, quant10Params.4to13evn, quant10Params.4to13odd, 
-                                   quant10Params.4to8, quant10Params.9to13))
-colnames(quant10Comb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13")
-quant10Comb$Names <- colnames(chains)
+
+#quant10Comb <- as.data.frame(cbind(quant10Params, quant10Params.4to13, quant10Params.4to13evn, quant10Params.4to13odd, 
+#                                   quant10Params.4to8, quant10Params.9to13))
+#colnames(quant10Comb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13")
+#quant10Comb$Names <- colnames(chains)
 ## ----------------------------------------------------------------------------
 
 
 
 ## SUBSET OUTPUT TO JUST KEEP PARAMS OF INTEREST
-names.param <- colnames(chains)[55:85]
-names.param <- names.param[c(2:8,12:16,18:23,25:30)] #Remove intercept plots 
+names.param <- colnames(chains)[50:80]
+names.param <- names.param[c(2:8,12:16,18:23,25:30)] #Remove intercept and GrwthVar  
 names.paramTitles <- c("Grwth Size","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
                        "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Size",
                        "Surv Winter Precip","Surv Fall Temp","Surv Summer Temp","Surv Winter Temp",
@@ -321,69 +307,14 @@ names.paramTitlesOrd <- names.paramTitles[order(index)]
 
 
 
-## USE A GLMM FOR EACH VR AND COMPARE PARAM ESTIMATES TO JAGS MODELS ---------------
-## Add t+1 climate, sz, & tag into erbr data 
-dats <- dats %>% mutate(TagNew1=lead(TagNew), RosNew1=lead(RosNew), Surv1=lead(surv))  
-dats <- dats %>% mutate(PptFall1=lead(PptFall), PptWinter1=lead(PptWinter), PptSummer1=lead(PptSummer),
-                        TempFall1=lead(TempFall), TempWinter1=lead(TempWinter), TempSummer1=lead(TempSummer))
-
-dats <- dats[which(dats$TagNew == dats$TagNew1),]  #Remove lines with mis-matched individuals 
-
-## Log size in all models to match JAGs; this makes ending size a linear function of starting size
-
-## Growth
-glmm.grwth <- glmer.nb(RosNew1 ~ log(RosNew) + PptFall + PptWinter + PptSummer + 
-                           TempFall + TempWinter + TempSummer + (1|TransectNew), data=dats)
-
-## Survival  
-glmm.surv <- glmer(Surv1 ~ log(RosNew) + PptWinter + TempFall + (TempWinter) + 
-                       (TempSummer) + (1|TransectNew), family=binomial(link='logit'), data=dats)
-
-## Probability of reproduction
-glmm.reproYesNo <- glmer(InflYesNo ~ log(RosNew) + (PptFall) + (PptSummer) + (TempFall) + 
-                             (TempWinter) + (TempSummer) + (1|TransectNew), family=binomial(link=logit), data=dats)
-
-## Reproduction 
-## Modify inf data to only include reproductive plts (i.e. infs>0) in this model 
-dats$InflNewMod <- dats$InflNew
-dats$InflNewMod[dats$InflNew == 0] <- NA
-
-glmm.repro <- glmer.nb(InflNewMod ~ log(RosNew) + (PptFall) + (PptSummer) + (TempFall) + 
-                         (TempWinter) + (TempSummer) + (1|TransectNew), data=dats)
-
-
-## Extract parameter estimates and SEs from GLMMs
-paramsMM.grwth <- as.data.frame(cbind(as.data.frame(summary(glmm.grwth)$coefficients[2:nrow(summary(glmm.grwth)$coefficients),1:2]),
-                        c("Grwth Size","Grwth Fall Precip","Grwth Winter Precip","Grwth Summer Precip",
-                          "Grwth Fall Temp","Grwth Winter Temp","Grwth Summer Temp")))
-colnames(paramsMM.grwth) <- c("GLMM","SE","ParamTitle")
-paramsMM.surv <- as.data.frame(cbind(as.data.frame(summary(glmm.surv)$coefficients[2:nrow(summary(glmm.surv)$coefficients),1:2]),
-                                      c("Surv Size","Surv Winter Precip",
-                                        "Surv Fall Temp","Surv Winter Temp","Surv Summer Temp")))
-colnames(paramsMM.surv) <- c("GLMM","SE","ParamTitle")
-paramsMM.reproYesNo <- as.data.frame(cbind(as.data.frame(summary(glmm.reproYesNo)$coefficients[2:nrow(summary(glmm.reproYesNo)$coefficients),1:2]),
-                                     c("p(Repro) Size","p(Repro) Fall Precip","p(Repro) Summer Precip",
-                                       "p(Repro) Fall Temp","p(Repro) Winter Temp","p(Repro) Summer Temp")))
-colnames(paramsMM.reproYesNo) <- c("GLMM","SE","ParamTitle")
-paramsMM.repro <- as.data.frame(cbind(as.data.frame(summary(glmm.repro)$coefficients[2:nrow(summary(glmm.repro)$coefficients),1:2]),
-                                           c("Repro Size","Repro Fall Precip","Repro Summer Precip",
-                                             "Repro Fall Temp","Repro Winter Temp","Repro Summer Temp")))
-colnames(paramsMM.repro) <- c("GLMM","SE","ParamTitle")
-paramsMM <- rbind(paramsMM.grwth, paramsMM.surv, paramsMM.reproYesNo, paramsMM.repro)
-paramsMM$SE_upr <- paramsMM$GLMM + paramsMM$SE
-paramsMM$SE_lwr <- paramsMM$GLMM - paramsMM$SE
-## --------------------------------------------------------------
-
-
-
-
 ## Make dataframe of selected relevant values for plotting 
 medComb.sel <- NULL
 for (nn in 1:length(names.paramOrd)) {
-  medComb.sel <- rbind(medComb.sel, as.data.frame(medComb[which(medComb$Names == names.paramOrd[nn]),1:6]))
+  medComb.sel <- rbind(medComb.sel, as.data.frame(medParams.sim20wName[which(medParams.sim20wName$Name==names.paramOrd[nn]),1]))
 }
 
-## Combine JAGS and GLMM estimates
+
+## Combine JAGS estimates from real and sim data
 medComb.sel$ParamTitle <- names.paramTitlesOrd
 medComb.sel <- dplyr::left_join(medComb.sel, paramsMM, by="ParamTitle")
 medComb.sel <- medComb.sel %>% relocate(ParamTitle, .after=last_col())
