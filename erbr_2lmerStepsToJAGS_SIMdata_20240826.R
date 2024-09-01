@@ -208,40 +208,24 @@ saveRDS(jags.mod, "erbr_JAGSmodBest_SIM50yr_c3t5s10b5_noYRE_20240831.rds")
 
 
 ## LOOK AT MODEL OUTPUT ---------------------------------------------------------------------------
-#jags.modNYE <- jags.mod
-jags.mod <- readRDS("Results_data_ms_archive/erbr_JAGSmod_c3t10s30b10_noYRE_4to13even_210617.rds")
+jags.mod <- readRDS("erbr_JAGSmodBest_SIM20yr_c3t5s10b5_noYRE_20240830.rds")
 summary(jags.mod)
 plot(jags.mod)
 summ.mod <- summary(jags.mod)
 tail(summ.mod[,1:3], n=37)
 gelman.diag(jags.mod, confidence = 0.95, transform=FALSE)
 
+medParams <- readRDS("erbrMedParams_noYRE_20240803")
 
-## Compare median param estimates b/w models (e.g. with and without RE)
-#summ.modNYE <- summary(jags.modNYE)
 
-#summNYE <- tail(summ.modNYE, n=21)
-#summ <- tail(summ.mod, n=21)
-#prcnt_diff <- ((summ[,2]-summNYE[,2])/summ[,2])*100
 
 
 ## Calculate median and SD of param estimates
-#chains <- jags.mod$mcmc
-#chains <- bind_rows(lapply(chains, as.data.frame))
-#colMeds <- apply(chains,2,median)
-#colSDs <- apply(chains,2,sd)
-
-
-## Look at correlation b/w params 
-#chains.1 <- chains %>% dplyr::select(!contains(c("randomeffect", "precision")))
-#chains.1 <- chains.1 %>% dplyr::select(!c(deviance, resid.sum.sq))
-
-#cor.chains <- cor(chains.1)
-#corrplot(cor.chains, method="circle", type="lower")
+chains <- jags.mod$mcmc
+chains <- bind_rows(lapply(chains, as.data.frame))
+colMeds <- apply(chains,2,median)
+colSDs <- apply(chains,2,sd)
 ## -----------------------------------------------------------------------------------------------
-
-
-
 
 
 
