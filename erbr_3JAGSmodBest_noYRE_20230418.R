@@ -240,7 +240,7 @@ r.newplts ~ dgamma(0.01,0.01)
 #response# RosNew
 #residual# regression_residual
 #fitted# regression_fitted
-#data#  Ncases,Ngrowcases,goodrows,goodgrowrows,lagvals,TransectNew.num,RosNew,InflNew,InflYesNo,Survs,rows.w.sz,rows.wo.sz,Ndirectszcases,Nindirectszcases,numyears,numtrans,rows.w.inflors,Nrows.w.inflors,Year.num,newPltlines,yrtranscombo,newplt.yrtranscombo,newplts,PptFall,PptWinter,PptSummer,TempWinter,TempFall,TempSummer,rows.wo.sz.alive
+#data#  Ncases,Ngrowcases,goodrows,goodgrowrows,lagvals,TransectNew.num,RosNew,InflNew,InflYesNo,Survs,rows.w.sz,rows.wo.sz,Ndirectszcases,Nindirectszcases,numtrans,rows.w.inflors,Nrows.w.inflors,newPltlines,yrtranscombo,newplt.yrtranscombo,newplts,PptFall,PptWinter,PptSummer,TempWinter,TempFall,TempSummer,rows.wo.sz.alive
 
 
 
