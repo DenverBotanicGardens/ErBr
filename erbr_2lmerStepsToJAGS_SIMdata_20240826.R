@@ -257,13 +257,10 @@ colnames(medParams.sim20wName) <- c("Sim20", "Name")
 
 
 ## CALCULATE 90th PERCENTILE ON JAGS ESTIMATES ------------------
-quantParams.sim20 <- chains.sim20 %>% summarise_all(funs(list(quantile(., probs=0.9)))) #%>% pivot_longer()
-#quantParams.sim20 <- as_tibble(t(quantParams.sim20))
-#row.names(quant10Params.sim20) <- NULL
-#quantParams.sim20 <- as.data.frame(t(quantParams.sim20))
-#quantParams.sim20wName <- as.data.frame(cbind(quantParams.sim20,colnames(chains.sim20)))
-#colnames(quantParams.sim20wName) <- c("Sim20", "Name")
-                         
+quantParams.sim20 <- chains.sim20 %>% summarise_all(funs(quantile(., probs=0.9)))
+quantParams.sim20 <- as.data.frame(t(quantParams.sim20))
+quantParams.sim20wName <- as.data.frame(cbind(as.numeric(quantParams.sim20$V1),colnames(chains.sim20)))
+colnames(quantParams.sim20wName) <- c("Sim20", "Name")
 #quantParams.4to13 <- chains.4to13 %>% summarise_all(funs(list(quantile(., probs=0.9))))
 #quantParams.4to13 <- as.data.frame(t(quantParams.4to13))
 
@@ -322,7 +319,6 @@ for (uu in 1:length(names.paramOrd)) {
   quantComb.sel <- rbind(quantComb.sel, as.data.frame(quantParams.sim20wName[which(quantParams.sim20wName$Name==names.paramOrd[uu]),1]))
 }
 
-
 quant10Comb.sel <- NULL
 for (uu in 1:length(names.paramOrd)) {
   quant10Comb.sel <- rbind(quant10Comb.sel, as.data.frame(quant10Params.sim20wName[which(quant10Params.sim20wName$Name==names.paramOrd[uu]),1]))
@@ -335,26 +331,21 @@ for (nn in 1:length(names.paramOrd)) {
 
 
 
-## Combine JAGS estimates from real and sim data
-#medComb.sel$ParamTitle <- names.paramTitlesOrd
-#medComb.sel <- dplyr::left_join(medComb.sel, paramsMM, by="ParamTitle")
-#medComb.sel <- medComb.sel %>% relocate(ParamTitle, .after=last_col())
-
-
-
-
 
 
 
 ## Calculate the min and max values of error bars & set appropriate y-axis values for plotting 
 # Change structure to allow for row min and max calcs 
-quantComb.selMod <- cbind(as.numeric(quantComb.sel[,1]),as.numeric(quantComb.sel[,2]),
-                           as.numeric(quantComb.sel[,3]),as.numeric(quantComb.sel[,4]),
-                           as.numeric(quantComb.sel[,5]),as.numeric(quantComb.sel[,6]),
-                           as.numeric(quantComb.sel[,7]))
-quant.max <- rowMaxs(as.matrix(quantComb.selMod[,c(1:7)]))
-yMax <- quant.max + (quant.max*0.05)
+quantComb.sel <- as.numeric(as.character(quantComb.sel[,1]))
+#quantComb.selMod <- cbind(as.numeric(quantComb.sel[,1]),as.numeric(quantComb.sel[,2]),
+#                           as.numeric(quantComb.sel[,3]),as.numeric(quantComb.sel[,4]),
+#                           as.numeric(quantComb.sel[,5]),as.numeric(quantComb.sel[,6]),
+#                           as.numeric(quantComb.sel[,7]))
+#quant.max <- rowMaxs(as.matrix(quantComb.selMod[,c(1:7)]))
+yMax <- quantComb.sel + (quantComb.sel*0.1)
 
+
+quant10Comb.sel <- as.numeric(as.character(quant10Comb.sel[,1]))
 #quant10Comb.selMod <- cbind(as.numeric(quant10Comb.sel[,1]),as.numeric(quant10Comb.sel[,2]),
                            # as.numeric(quant10Comb.sel[,3]),as.numeric(quant10Comb.sel[,4]),
                           #  as.numeric(quant10Comb.sel[,5]),as.numeric(quant10Comb.sel[,6]),
@@ -363,11 +354,9 @@ yMax <- quant.max + (quant.max*0.05)
 
 #Since some min values are positive and some are negative, do separately
 #yMin <- c(quant10.min[1:4] - (quant10.min[1:4]*0.05), quant10.min[5:24] - (quant10.min[5:24]*-0.05))
-yMin <- c(quant10Comb.sel[1:5,] - (quant10Comb.sel[1:5,]*0.05), quant10Comb.sel[6:14,] - (quant10Comb.sel[6:14,]*-0.05),
-          quant10Comb.sel[15:17,] - (quant10Comb.sel[15:17,]*0.05), quant10Comb.sel[18:20,] - (quant10Comb.sel[18:20,]*-0.05),
-          quant10Comb.sel[21:24,] - (quant10Comb.sel[21:24,]*0.05))
-##** NEEDS TO BE NUMERIC 
-
+yMin <- c(quant10Comb.sel[1:5] - (quant10Comb.sel[1:5]*0.1), quant10Comb.sel[6:14] - (quant10Comb.sel[6:14]*-0.1),
+          quant10Comb.sel[15:17] - (quant10Comb.sel[15:17]*0.1), quant10Comb.sel[18:20] - (quant10Comb.sel[18:20]*-0.1),
+          quant10Comb.sel[21:24] - (quant10Comb.sel[21:24]*0.1))
 
 
 
@@ -390,12 +379,18 @@ pdf('20240402_ErBr_fig2.pdf', width=6.7, height=9)
 par(mfrow=c(7,4), mar=c(1.25,2,1.9,2))  #Plot so 4 VR models are in cols and upto 7 predictor vars are in rows
 #bottom, left, top, and right
 for (nn in 1:17) {
-  plot(c(1), medComb.sel[nn,1], col=colz, ylab=NA,
+  plot(c(1), as.numeric(as.character(medComb.sel[nn,1])), col=colz, ylab=NA,
        xaxt = "n", main=names.paramTitlesOrd[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
-       cex=1.2)
+       cex=1.2, ylim=c(yMin[nn],yMax[nn]))
   #abline(h=0, col="grey80")
   #abline(h=medParams.realDatTr$realData[medParams.realDatTr$Name=="grwth_RosCoef"], col="grey80", lty="dotted")
-  abline(h=medRealDat.sel[nn,1], col="grey80", lty="dotted")
+  abline(h=as.numeric(as.character(medRealDat.sel[nn,1])), col="grey80", lty="dotted")
+  arrows(1,as.numeric(as.character(medComb.sel[nn,1])),
+        1, quantComb.sel[nn],
+       lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
+  arrows(1, as.numeric(as.character(medComb.sel[nn,1])),
+        1, (quant10Comb.sel[nn]), 
+       lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
   #arrows(1:6,as.numeric(medComb.sel[nn,1:6]),
    #      1:6, as.numeric(as.matrix(quantComb.sel[nn,1:6])),
     #     lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
@@ -405,11 +400,17 @@ for (nn in 1:17) {
 }
 plot.new()
 for (nn in 18:20) {
-  plot(c(1), medComb.sel[nn,1], col=colz, ylab=NA, 
+  plot(c(1), as.numeric(as.character(medComb.sel[nn,1])), col=colz, ylab=NA, 
        xaxt = "n", main=names.paramTitlesOrd[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
        cex=1.2) #ylim=c(yMin[nn],yMax[nn])
   #abline(h=0, col="grey80")
-  abline(h=medRealDat.sel[nn,1], col="grey80", lty="dotted")
+  abline(h=as.numeric(as.character(medRealDat.sel[nn,1])), col="grey80", lty="dotted")
+  arrows(1,as.numeric(as.character(medComb.sel[nn,1])),
+         1, quantComb.sel[nn],
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
+  arrows(1, as.numeric(as.character(medComb.sel[nn,1])),
+         1, (quant10Comb.sel[nn]), 
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
   #arrows(1:7,as.numeric(medComb.sel[nn,1:7]),
    #      1:7, as.numeric(as.matrix(quantComb.sel[nn,1:7])),
     #     lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
@@ -419,11 +420,17 @@ for (nn in 18:20) {
 }
 plot.new()
 for (nn in 21:24) {
-  plot(c(1), medComb.sel[nn,1], col=colz, ylab=NA,
+  plot(c(1), as.numeric(as.character(medComb.sel[nn,1])), col=colz, ylab=NA,
        xaxt = "n", main=names.paramTitlesOrd[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
        cex=1.2)
   #abline(h=0, col="grey80")
-  abline(h=medRealDat.sel[nn,1], col="grey80", lty="dotted")
+  abline(h=as.numeric(as.character(medRealDat.sel[nn,1])), col="grey80", lty="dotted")
+  arrows(1,as.numeric(as.character(medComb.sel[nn,1])),
+         1, quantComb.sel[nn],
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
+  arrows(1, as.numeric(as.character(medComb.sel[nn,1])),
+         1, quant10Comb.sel[nn], 
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
   #arrows(1:7,as.numeric(medComb.sel[nn,1:7]),
    #      1:7, as.numeric(as.matrix(quantComb.sel[nn,1:7])),
     #     lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
@@ -442,134 +449,6 @@ legend("center", c("Full dataset","2004-2013","2004-2013 even yrs only","2004-20
 dev.off()
 ## -----------------------------------------------------------------
 
-
-
-
-
-## MAKE FIGURE SHOWING ESTIMATES FOR TRANSECT RANDOM EFFECTS FOR EACH MODEL AND DATASET
-## Use code to calculate medians and quntiles and GLMMs above 
-
-## SUBSET OUTPUT TO JUST KEEP PARAMS OF INTEREST (I.E. TRANSECT RANDOM EFFECT ESTIMATES)
-namesRE <- colnames(chains)[3:50]
-
-
-## Make dataframe of selected relevant values for plotting 
-medComb.selRE <- NULL
-for (nn in 1:length(namesRE)) {
-  medComb.selRE <- rbind(medComb.selRE, as.data.frame(medComb[which(medComb$Names==namesRE[nn]),1:6]))
-}
-
-## Combine JAGS and GLMM estimates
-#medComb.sel$ParamTitle <- names.paramTitlesOrd
-#medComb.sel <- dplyr::left_join(medComb.sel, paramsMM, by="ParamTitle")
-#medComb.sel <- medComb.sel %>% relocate(ParamTitle, .after=last_col())
-
-quantComb.selRE <- NULL
-for (uu in 1:length(namesRE)) {
-  quantComb.selRE <- rbind(quantComb.selRE, as.data.frame(quantComb[which(quantComb$Names==namesRE[uu]),1:6]))
-}
-#quantComb.selRe$GLMM_SEupr <- medComb.selRe$SE_upr
-
-quant10Comb.selRE <- NULL
-for (uu in 1:length(namesRE)) {
-  quant10Comb.selRE <- rbind(quant10Comb.selRE, as.data.frame(quant10Comb[which(quant10Comb$Names==namesRE[uu]),1:6]))
-}
-#quant10Comb.selRe$GLMM_SElwr <- medComb.selRe$SE_lwr
-## ---------------------------------------------
-
-
-
-## Calculate the min and max values of error bars & set appropriate y-axis values for plotting 
-# Change structure to allow for row min and max calcs 
-quantComb.selModRE <- cbind(as.numeric(quantComb.selRE[,1]),as.numeric(quantComb.selRE[,2]),
-                          as.numeric(quantComb.selRE[,3]),as.numeric(quantComb.selRE[,4]),
-                          as.numeric(quantComb.selRE[,5]),as.numeric(quantComb.selRE[,6]))#,
-                          #as.numeric(quantComb.selRE[,7]))
-quant.maxRE <- rowMaxs(as.matrix(quantComb.selModRE[,c(1:6)]))#7)]))
-yMaxRE <- quant.maxRE + (quant.maxRE*0.05)
-
-quant10Comb.selModRE <- cbind(as.numeric(quant10Comb.selRE[,1]),as.numeric(quant10Comb.selRE[,2]),
-                            as.numeric(quant10Comb.selRE[,3]),as.numeric(quant10Comb.selRE[,4]),
-                            as.numeric(quant10Comb.selRE[,5]),as.numeric(quant10Comb.selRE[,6]))#,
-                            #as.numeric(quant10Comb.selRE[,7]))
-quant10.minRE <- rowMins(as.matrix(quant10Comb.selModRE[,c(1:6)]))#7)]))
-#Since some min values are positive (all sz ests) and some are negative (all the rest), do separately
-yMinRE <- c(quant10.minRE[1:29] - (quant10.minRE[1:29]*-0.05), quant10.minRE[30] - (quant10.minRE[30]*0.05),
-          quant10.minRE[31:48] - (quant10.minRE[31:48]*-0.05)) 
-
-
-
-
-## Assign colors
-colz <- c("#d73027","#fc8d59","#91bfdb","#4575b4","#fdcb44","#fee090","grey60")
-
-
-
-## PLOT
-par(mfrow=c(4,3), mar=c(1.25,2,1.9,2))  
-#bottom, left, top, and right
-
-# Growth model
-for (nn in 1:12) {
-  plot(c(1:6), medComb.selRE[nn,1:6], col=colz, ylab=NA,
-       xaxt = "n", main=namesRE[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
-       ylim=c(yMinRE[nn],yMaxRE[nn]), cex=1.2)
-  abline(h=0, col="grey80")
-  arrows(1:6,as.numeric(medComb.selRE[nn,1:6]),
-         1:6, as.numeric(as.matrix(quantComb.selRE[nn,1:6])),
-         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
-  arrows(1:6, as.numeric(medComb.selRE[nn,1:6]),
-         1:6, as.numeric(as.matrix(quant10Comb.selRE[nn,1:6])), 
-         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
-}
-
-# Survival model
-for (nn in 13:24) {
-  plot(c(1:6), medComb.selRE[nn,1:6], col=colz, ylab=NA, 
-       xaxt = "n", main=namesRE[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
-       ylim=c(yMinRE[nn],yMaxRE[nn]), cex=1.2)
-  abline(h=0, col="grey80")
-  arrows(1:6,as.numeric(medComb.selRE[nn,1:6]),
-         1:6, as.numeric(as.matrix(quantComb.selRE[nn,1:6])),
-         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
-  arrows(1:6, as.numeric(medComb.selRE[nn,1:6]),
-         1:6, as.numeric(as.matrix(quant10Comb.selRE[nn,1:6])), 
-         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
-}
-
-# p(Repro) model
-for (nn in 25:36) {
-  plot(c(1:6), medComb.selRE[nn,1:6], col=colz, ylab=NA,
-       xaxt = "n", main=namesRE[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
-       ylim=c(yMinRE[nn],yMaxRE[nn]), cex=1.2)
-  abline(h=0, col="grey80")
-  arrows(1:6,as.numeric(medComb.selRE[nn,1:6]),
-         1:6, as.numeric(as.matrix(quantComb.selRE[nn,1:6])),
-         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
-  arrows(1:6, as.numeric(medComb.selRE[nn,1:6]),
-         1:6, as.numeric(as.matrix(quant10Comb.selRE[nn,1:6])), 
-         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
-}
-
-# Repro model
-par(mfrow=c(5,3))
-for (nn in 37:48) {
-  plot(c(1:6), medComb.selRE[nn,1:6], col=colz, ylab=NA,
-       xaxt = "n", main=namesRE[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
-       ylim=c(yMinRE[nn],yMaxRE[nn]), cex=1.2)
-  abline(h=0, col="grey80")
-  arrows(1:6,as.numeric(medComb.selRE[nn,1:6]),
-         1:6, as.numeric(as.matrix(quantComb.selRE[nn,1:6])),
-         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
-  arrows(1:6, as.numeric(medComb.selRE[nn,1:6]),
-         1:6, as.numeric(as.matrix(quant10Comb.selRE[nn,1:6])), 
-         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
-}
-plot.new()
-legend("center", c("Full dataset","2004-2013","2004-2013 even yrs only","2004-2013 odd yrs only",
-                   "2004-2008","2009-2013"), col=colz[1:6], pch=19, cex=1.7,
-       horiz=FALSE, bty="y",seg.len=1, xpd="NA")
-## -----------------------------------------------------------------
 
 
 
