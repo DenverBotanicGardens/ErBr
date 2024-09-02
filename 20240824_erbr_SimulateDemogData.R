@@ -163,13 +163,14 @@ params.numSdlg <- medParams$newplt_intercept
 
 
 ## Set number of desired years for particular simulation, e.g. 10, 20, 50
-num.yrs <- 51 #Desired number of years of data plus 1 
+num.yrs <- 11 #Desired number of years of data plus 1 
 
 
 #Matrices to hold sz & repro where rows are yrs and columns are plants
 mx.sz <- as.data.frame(matrix(NA, nrow=length(1:(num.yrs-1)), ncol=length(1:num.startPlts)))
 mx.reproInf <- as.data.frame(matrix(NA, nrow=length(1:(num.yrs-1)), ncol=length(1:num.startPlts)))
-mx.reproSdlg <- as.data.frame(matrix(NA, nrow=length(1:(num.yrs)), ncol=length(1:num.startPlts))) 
+mx.reproSdlg <- as.data.frame(matrix(NA, nrow=length(1:(num.yrs-1)), ncol=length(1:num.startPlts))) 
+#mx.reproSdlg <- as.data.frame(matrix(NA, nrow=length(1:(num.yrs)), ncol=length(1:num.startPlts))) 
 
 #One thing to note: you are never making a matrix for the vital rates, you are just getting each plt's own fate in each yr w the vital rate functions.
 
@@ -277,9 +278,6 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
               
               #* This should be a random from a neg binomial, as that is how it is fit. **** 
               #* So, you also need to pull out the fitted r.infls variable and fit this way
-              #From rnbinom manual: size=dispersionParam, prob=size/(size+mu)
-              #Then dispersionParam = (prob*mu) / (1-prob)
-              #r.inf <- (pred.reproYesNo*pred.repro) / (1 - pred.reproYesNo) 
               realzd.repro <- rnbinom(n=1, size=r.inf, mu=pred.repro)  
               if (realzd.repro < 1) {   #If num inf less than 1, change to 1 (min number of infs when reproducing)
                 realzd.repro <- 1
@@ -290,8 +288,6 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
               
               # Seedlings (negative binomial)
               pred.numSdlg <- exp(medParams$newplt_intercept + log(realzd.repro))  
-              #r.sdlg <- (realzd.reproYesNo*pred.numSdlg) / (1-realzd.reproYesNo)  
-              #r.sdlg <- (pred.reproYesNo*pred.numSdlg) / (1-pred.reproYesNo)     #Should pred.reproYesNo be used here rather than realzd?
               realzd.numSdlg <- rnbinom(n=1, size=r.sdlg, mu=pred.numSdlg)       
               
               #Enter seedling data into seedling matrix
@@ -305,6 +301,13 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
   } ##End year loop
   
 }   ##End starting number of plants loop
+
+
+## Remove final rows with NAs, that get added if death occurs in last yr
+mx.sz <- mx.sz[1:(num.yrs-1),] 
+mx.reproInf <- mx.reproInf[1:(num.yrs-1),] 
+mx.reproSdlg <- mx.reproSdlg[1:(num.yrs-1),] 
+
 
 ## ** Note that the starting sizes are not in the size output matrix. Does that seem right? 
 ## so year 1 is the 'realized' size and inflor number based on the starting size and climate. ** 
@@ -331,7 +334,7 @@ for (pp in 1:num.startPlts) {  #Loop over starting plants
 # Subset repro matrix to only contain cols (plts) with non-zero number of seedlings. Then loop thru that.
 #mx.sdlgYes <- mx.reproSdlg[1:(num.yrs-1),] %>% select_if(funs(sum(., na.rm=TRUE) > 0)) #Exclude final yr of data to match sz matrix
 mx.sdlgYes <- mx.reproSdlg %>% select_if(~ sum(., na.rm=TRUE) > 0)  #Try this if error re. funs above
-mx.sdlgYes <- mx.sdlgYes[1:(num.yrs-1),] #Remove final year of data to match size matrix
+#mx.sdlgYes <- mx.sdlgYes[1:(num.yrs-1),] #Remove final yr of data to match sz matrix
 
 sdlg <- 1            #set size to be 1 ros for seedlings
 
@@ -493,7 +496,7 @@ datComb$TagNew <- paste(datComb$TransectNew, tag.rep, sep='.') #Tag new included
 
 
 ## save as csv 
-write.csv(datComb, "20240831_SimData50yrs.csv", row.names=FALSE)
+write.csv(datComb, "20240901_SimData10yrs.csv", row.names=FALSE)
 
 
 

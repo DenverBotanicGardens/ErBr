@@ -10,7 +10,7 @@ graphics.off()
 
 
 ## SET WD -----------------------------------------------------------------------------------------
-setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
+#setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -23,7 +23,7 @@ library(tidyr)
 
 
 ## LOAD DATA --------------------------------------------------------------------------------------
-erbr <- read.csv("20240831_SimData50yrs.csv", header=TRUE)
+erbr <- read.csv("20240901_SimData10yrs.csv", header=TRUE)
 clim3seas <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
 ## ------------------------------------------------------------------------------------------------
 
@@ -170,7 +170,7 @@ erbr.1$InflYesNo[erbr.1$InflNew == 0] <- 0
 ## SAVE FORMATTED DATA ---------------------------------------------------------------
 date <- Sys.Date()                             #Enter date to be added to file name
 date <- str_replace_all(date, "-", "")
-name <- as.character("SimData50yrs")          #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+name <- as.character("SimData10yrs")          #Enter name of file, e.g. Tagclust, 4to13, simulated data...
 
 write.csv(erbr.1, file=paste(date, "_erbr_", name, "_Format4JAGS", ".csv", sep=""), row.names=FALSE)
 ## -----------------------------------------------------------------------------------
