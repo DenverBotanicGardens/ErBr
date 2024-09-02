@@ -1,0 +1,89 @@
+`.RNG.name` <- "base::Wichmann-Hill"
+`.RNG.state` <- 
+c(28422L,27879L,14006L)
+`grwth_PptFallCoef` <- 
+0.00555066
+`grwth_PptSummerCoef` <- 
+0.01715
+`grwth_PptWinterCoef` <- 
+-0.0225973
+`grwth_RosCoef` <- 
+0.877902
+`grwth_TempFallCoef` <- 
+-0.243314
+`grwth_TempSummerCoef` <- 
+0.122219
+`grwth_TempWinterCoef` <- 
+-1.20371
+`grwth_Transect_precision` <- 
+7.02513
+`grwth_Transect_randomeffect` <- 
+c(0.128646,0.125934,0.106055,0.140561,0.141164,0.133908,0.108376,0.167582,0.0949766,0.173682,0.133181,0.121469)
+`grwth_intercept` <- 
+0.841436
+`grwthvar_RosCoef` <- 
+2.84035
+`grwthvar_intercept` <- 
+2.84253
+`inflors_precision` <- 
+1
+`newplt_intercept` <- 
+-4.82436
+`r.infls` <- 
+2.85215
+`r.newplts` <- 
+3.78513
+`r_disp` <- 
+25
+`repro_PptFallCoef` <- 
+-0.0400195
+`repro_PptSummerCoef` <- 
+0.00507597
+`repro_RosCoef` <- 
+0.876987
+`repro_TempFallCoef` <- 
+-1.58101
+`repro_TempSummerCoef` <- 
+1.31973
+`repro_TempWinterCoef` <- 
+0.639529
+`repro_Transect_precision` <- 
+0.942014
+`repro_Transect_randomeffect` <- 
+c(0.466336,0.330683,0.208317,0.27945,0.404494,0.203911,0.414216,0.538123,0.420993,0.361361,0.514721,0.75438)
+`repro_intercept` <- 
+2.6243
+`reproyesno_PptFallCoef` <- 
+-0.0642339
+`reproyesno_PptSummerCoef` <- 
+0.0239581
+`reproyesno_RosCoef` <- 
+1.25795
+`reproyesno_TempFallCoef` <- 
+-2.03634
+`reproyesno_TempSummerCoef` <- 
+2.2276
+`reproyesno_TempWinterCoef` <- 
+0.412446
+`reproyesno_Transect_precision` <- 
+0.937688
+`reproyesno_Transect_randomeffect` <- 
+c(0.121337,0.146776,0.312233,0.517172,0.303902,0.0256825,0.0752205,-0.231898,-0.0877697,0.221435,0.190645,0.0785065)
+`reproyesno_intercept` <- 
+-8.66322
+`surv_PptWinterCoef` <- 
+0.0367591
+`surv_RosCoef` <- 
+0.698358
+`surv_TempFallCoef` <- 
+-0.304047
+`surv_TempSummerCoef` <- 
+0.468336
+`surv_TempWinterCoef` <- 
+0.304855
+`surv_Transect_precision` <- 
+0.770381
+`surv_Transect_randomeffect` <- 
+c(0.00791322,-1.07459,0.264345,0.394338,0.432457,-0.332347,0.0551934,-0.337944,-0.434469,-0.475846,0.334143,-0.598755)
+`surv_intercept` <- 
+-4.96945
