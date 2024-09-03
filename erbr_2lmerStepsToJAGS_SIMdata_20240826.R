@@ -201,7 +201,7 @@ jags.mod <- run.jags('erbr_3JAGSmodBest_noYRE_20230418.R', n.chains=3, data=dats
 saveRDS(jags.mod, "erbr_JAGSmodBest_SIM20yr_c3t10s30b10_noYRE_20240902.rds")
 ## ------------------------------------------------------------------------------------------------
 
-
+#started 9/2 AM
 
 
 
