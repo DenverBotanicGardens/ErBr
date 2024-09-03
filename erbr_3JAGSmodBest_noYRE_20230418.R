@@ -280,7 +280,6 @@ inits{
   "reproyesno_PptSummerCoef" <- 0.01  
   "reproyesno_Transect_precision" <- 0.01
  
- "repro_precision" <- 0.01 #*REMOVE*#
  "repro_intercept" <- 2
  "repro_RosCoef" <- 1
  "repro_PptFallCoef" <- 0.01
