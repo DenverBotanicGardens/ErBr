@@ -23,7 +23,7 @@ library(tidyr)
 
 
 ## LOAD DATA --------------------------------------------------------------------------------------
-erbr <- read.csv("20240904_SimData20yrsR2.csv", header=TRUE)
+erbr <- read.csv("20240904_erbr_SimDat20yrR3.csv", header=TRUE)
 clim3seas <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
 ## ------------------------------------------------------------------------------------------------
 
@@ -170,7 +170,7 @@ erbr.1$InflYesNo[erbr.1$InflNew == 0] <- 0
 ## SAVE FORMATTED DATA ---------------------------------------------------------------
 date <- Sys.Date()                             #Enter date to be added to file name
 date <- str_replace_all(date, "-", "")
-name <- as.character("SimDat20yrR2")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+name <- as.character("SimDat20yrR3")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
 
 write.csv(erbr.1, file=paste(date, "_erbr_", name, "_Format4JAGS", ".csv", sep=""), row.names=FALSE)
 ## -----------------------------------------------------------------------------------

@@ -498,9 +498,9 @@ datComb$TagNew <- paste(datComb$TransectNew, tag.rep, sep='.') #Tag new included
 ## save as csv 
 date <- Sys.Date()                             #Enter date to be added to file name
 date <- str_replace_all(date, "-", "")
-name <- as.character("SimDat20yrR2")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+name <- as.character("_erbr_SimDat20yrR3")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
 
-write.csv(erbr.1, file=paste(date, name, ".csv", sep=""), row.names=FALSE)
+write.csv(datComb, file=paste(date, name, ".csv", sep=""), row.names=FALSE)
 #write.csv(datComb, "20240904_SimData20yrsR2.csv", row.names=FALSE)
 
 
