@@ -11,7 +11,7 @@ rm(list=ls())
 
 
 ## SET WD -----------------------------------------------------------------------------------------
-setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
+#setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
 #setwd("C:/Users/Dan Doak/Desktop/Students/April/eriogonum models/manu fall2024")
 ## ------------------------------------------------------------------------------------------------
 
@@ -163,7 +163,7 @@ params.numSdlg <- medParams$newplt_intercept
 
 
 ## Set number of desired years for particular simulation, e.g. 10, 20, 50
-num.yrs <- 11 #Desired number of years of data plus 1 
+num.yrs <- 21 #Desired number of years of data plus 1 
 
 
 #Matrices to hold sz & repro where rows are yrs and columns are plants
@@ -496,7 +496,12 @@ datComb$TagNew <- paste(datComb$TransectNew, tag.rep, sep='.') #Tag new included
 
 
 ## save as csv 
-write.csv(datComb, "20240901_SimData10yrs.csv", row.names=FALSE)
+date <- Sys.Date()                             #Enter date to be added to file name
+date <- str_replace_all(date, "-", "")
+name <- as.character("SimDat20yrR2")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+
+write.csv(erbr.1, file=paste(date, name, ".csv", sep=""), row.names=FALSE)
+#write.csv(datComb, "20240904_SimData20yrsR2.csv", row.names=FALSE)
 
 
 
