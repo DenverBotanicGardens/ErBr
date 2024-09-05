@@ -516,12 +516,14 @@ write.csv(datComb, file=paste(date, name, ".csv", sep=""), row.names=FALSE)
 ##I think that one particular comment was how well the fitting worked with different life histories. Do get that, what I would do is 
 ##fit a model with, say, considerably lower survival and boosted fertility, or lower survival and higher growth, 
 ##and do a little ad hoc estimation of how much higher one rate had to be to get approximately lambda =1.
+
 ## For the different life histories, what I would do is this: first, fix each of the climate drivers at their mean values. 
 ##Then, with these fixed, do something like: a) reduce the intercept for the survival function so that effectively all survival rates are lowered 
 ##(we will have to plot the size dependent fns for survival to see what will generate something like a 50% reduction for medium sized plants). 
 ##b) then, make a loop where the intercept for the repro function is increased by increments over a range of values, 
 ##and the functions in the loop estimate all the vital rate functions (using the mean climate values) and makes a matrix and gets lambda. 
 ##This is all that is needed, so it is a simple blind search to get values that are somewhat close to correct.
+
 
 
 ##And I would think about not doing al 9 sets of runs (3 data amounts x 3 life histories). 
