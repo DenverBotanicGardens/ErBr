@@ -32,9 +32,15 @@ library(stringr)
 
 
 
+
+
+
+
 ## LOOP OVER DATASETS -----------------------------------------------------------------------------
+n.datset <- 10
 for (dd in 1:n.datset) {
 
+  old <- Sys.time() # get start time
 
 ## LOAD DATA --------------------------------------------------------------------------------------
 #dats <- read.csv("20240904_erbr_SimDat20yrR2_Format4JAGS.csv", header = TRUE)
@@ -211,6 +217,11 @@ saveRDS(summ.mod, file=paste(date, "_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDa
 
 
 }   #End dataset loop
+
+
+
+time.diff <- Sys.time() - old #calculate difference
+print(time.diff) #print in nice format
 ## ------------------------------------------------------------------------------------------------
 
 
