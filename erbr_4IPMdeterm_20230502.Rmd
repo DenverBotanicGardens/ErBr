@@ -588,6 +588,10 @@ names(mx.out.list) <- paste(as.character(paramYrTrans.comb$YEAR), as.character(p
 names(mx.out.list) <- paste(as.character(paramYrTrans.comb$PARAM), names(mx.out.list), sep="-")
 names(mx.out.list) <- paste("p", names(mx.out.list), sep="")
 
+## ** ## Check if first sz class is seedlings in the next year or not. **
+  ## Currently model assumes plt is always in the smallest subsequent sz class if you survive. ***
+## *****
+
 #date <- as.character(221129) 
 name <- as.character("P1k")
 saveRDS(mx.out.list, file=paste("erbrIPMmxList_noYRE", name, date, sep="_"))
