@@ -27,14 +27,19 @@ library(robustbase)
 library(resample)
 library(gplots)
 library(matrixStats)
+library(stringr)
 ## ------------------------------------------------------------------------------------------------
 
 
 
+## LOOP OVER DATASETS -----------------------------------------------------------------------------
+for (dd in 1:n.datset) {
+
 
 ## LOAD DATA --------------------------------------------------------------------------------------
-#dats <- read.csv("erbr_TagClust2022_20230408.csv", header = TRUE)
-dats <- read.csv("20240904_erbr_SimDat20yrR2_Format4JAGS.csv", header = TRUE)
+#dats <- read.csv("20240904_erbr_SimDat20yrR2_Format4JAGS.csv", header = TRUE)
+name <- as.character("SimDat20yrMiss.")
+dats <- read.csv(file=paste("20240906", "_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), header = TRUE)
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -194,10 +199,20 @@ newplt.yrtranscombo=100*newplt.trans+newplt.yr
 jags.mod <- run.jags('erbr_3JAGSmodBest_noYRE_20230418short.R', n.chains=3, data=dats, burnin=10000, thin=5, sample=10000, adapt=500, method='parallel')
 #jags.mod <- run.jags('erbr_3JAGSmodBest_noYRE_20230418.R', n.chains=3, data=dats, burnin=10000, thin=10, sample=30000, adapt=500, method='parallel')
 
-saveRDS(jags.mod, "erbr_JAGSmodBest_SIM20yrR2_c3t5s10b10_noYRE_20240904.rds")
+
+
+## Save output
+date <- Sys.Date()                                #Enter date to be added to file name
+date <- str_replace_all(date, "-", "")
+saveRDS(jags.mod, file=paste(date, "_erbr_JAGSmodBest_c3t5s10b10_noYRE_SimDat20yr.", dd, ".rds", sep=""))
+
+summ.mod <- summary(jags.mod)
+saveRDS(summ.mod, file=paste(date, "_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.", dd, ".rds", sep=""))
+
+
+}   #End dataset loop
 ## ------------------------------------------------------------------------------------------------
 
-#started 30k sampling 9/2 AM and was only a little over 1/2 way done by 9/4 AM on dbg0077
 
 
 

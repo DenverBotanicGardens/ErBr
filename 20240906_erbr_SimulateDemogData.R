@@ -37,7 +37,7 @@ library(stringr)
 
 ## Start data set loop here
 n.datset <- 10
-for (dd in 2:n.datset) {
+for (dd in 1:n.datset) {
 
 
   ## 1. First, for a set number of years (lets say 20), simulate climate variables for each year. 
