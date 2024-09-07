@@ -94,6 +94,8 @@ n.bin = length(binmids)
  medParams$surv_RosCoef=medParams$surv_RosCoef*0.9         #0.8
 # 
  medParams$repro_intercept=medParams$repro_intercept+2
+ medParams$reproyesno_intercept = medParams$reproyesno_intercept+2
+ medParams$reproyesno_RosCoef=medParams$reproyesno_RosCoef*1.2
 # #######################################################
 
 ####################################################################
@@ -104,8 +106,13 @@ n.bin = length(binmids)
 #medParams$surv_intercept=medParams$surv_intercept*1.3
 #medParams$surv_RosCoef=medParams$surv_RosCoef*0.5
 
-#medParams$repro_intercept=medParams$repro_intercept+6.4
+#medParams$repro_intercept=medParams$repro_intercept+5.5
+#medParams$reproyesno_intercept = medParams$reproyesno_intercept+2
+#medParams$reproyesno_RosCoef=medParams$reproyesno_RosCoef*1.2
 #######################################################
+
+ 
+
 
 
 ## Plug in median param vals, mean climate and starting plant size values into model formulas
@@ -182,6 +189,7 @@ n.bin = length(binmids)
           
           lam <- Re(eigen(mx)$values[1])              #Calculate lambda & store for each transect
           #mx.out.list[[length(mx.out.list) + 1]] <- mx
+          
           mx.hiGrwth <- mx
 
 #plot(binmids,pred.grwth)
@@ -204,6 +212,7 @@ n.datset <- 10
 for (dd in 1:n.datset) {
 
 
+  
   ## For a set number of years (e.g. 20), simulate climate variables for each year. Use the real data
   n.yrs <- 21 #Assign number of years (plus 1) to simulate climate data for 
   
@@ -294,19 +303,6 @@ for (dd in 1:n.datset) {
     
   
       for (yy in 2:(n.yrs-1)) {  #Loop over years
-        #In the loop across years for one plant you do this:
-        #In all cases, you'll want to make this a monte carlo: for e.g., you pick a random chance of surv from the prob of surv, choose 1 new sz from the distribution of possible new szs, etc. 
-        #And, store the number of new seedlings produced that are predicted to be seen in the new year.
-        #In this way, yr after yr, you get the data (sz, repro and surv) of each plt. So, populate a matrix w rows that are yrs, columns for each plt, that are the sz & repro & also 0 if the plt is dead.
-        
-        #In the first year, figure out probs of survival, growth, and reproduction for that year, given the fns for these vital rates, and the climate
-        #Based on sz & that yr's clim variables (which you choose already) get all the predicted vital rates using these fns (e.g., pred.grwth)
-        
-        #Then, use the random variate functions to get the realized values for that plt in that yr. 
-        #For e.g., you would get pred.surv and then use rbinom to get whether it lived (1) or died (0), based on the yr's clim & the plts sz. 
-        #Similarly you would use pred.grwth and pred.grwthVar with rnorm to get a predicted size for the plant. This is the 'monte carlo' part.
-        #Then, use these actual values to get the data for end of the yr: if surv=0, it is dead, but if not, it has the sz from rnorm. 
-        #And reproduction is determined by the vital rates governing repro.
     
         ## Survival (binomial) --
         pred.surv <- 1/(1+exp(-(medParams$surv_intercept + medParams$surv_RosCoef*log(sel.plt) + 
@@ -372,9 +368,6 @@ for (dd in 1:n.datset) {
               } else {
       
                 
-                #Both the number of inflors and number of seedlings are neg binomials. so, for these, you want to use the predicted mean numbers 
-                #(e.g., the number of inflors given a plants size, climate, etc: repro_amount) and the dispersion parameter (e.g., r.inflors) 
-                #to get the two parameters for a negbinomial and then use rnegbin to get a single value.
                 
                 ## Reproduction (negative binomial)
                 pred.repro <- exp(medParams$repro_intercept + medParams$repro_RosCoef*log(sel.plt) + 
@@ -592,29 +585,12 @@ for (dd in 1:n.datset) {
   ## Change missing years to NA
   datComb1$RosNew[datComb1$Year %in% (yrs.missing)] <- NA 
   datComb1$InflNew[datComb1$Year %in% (yrs.missing)] <- NA 
-  
-  #mx.szWyr[mx.szWyr$Year %in% (yrs.missing),] <- NA 
-  #mx.reproWyr[mx.reproWyr$Year %in% (yrs.missing),] <- NA 
-  ## Remove NA values from year columns
-  #mx.szWyr$Year <- 1:(n.yrs-1)
-  #mx.reproWyrAdCol$Year <- 1:(n.yrs-1)
-  #mx.szWyr$Clim_yr <- sim.clim$Clim_yr[(2:n.yrs)]
-  #mx.reproWyrAdCol$Clim_yr <- sim.clim$Clim_yr[(2:n.yrs)]
   ## -----------------------------------------------------------------------------------------------------
   
-  ## save as csv 
-  # date <- Sys.Date()                                       #Enter date to be added to file name
-  #  date <- str_replace_all(date, "-", "")
-  # name <- as.character("_erbr_SimDat20yr_Miss.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
-  
-  #  write.csv(datComb1, file=paste(date, name, dd, ".csv", sep=""), row.names=FALSE)
-  #write.csv(datComb, file=paste(date, name, ".csv", sep=""), row.names=FALSE)
-  #print(paste(date, name, dd, ".csv", sep=""))
   
   
   
-  
-  ## ADD erbr_1ReformatSIMdata_forJAGS SCRIPT -------------------------------------------------------
+  ## ADD CODE FROM erbr_1ReformatSIMdata_forJAGS SCRIPT -------------------------------------------------------
   
   
   ## LOAD PACKAGES AND FUNCTIONS --------------------------------------------------------------------
