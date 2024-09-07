@@ -346,6 +346,7 @@ dats <- dats[which(dats$TagNew == dats$TagNew1),]  #Remove lines with mis-matche
 
 ## Log size in all models to match JAGs; this makes ending size a linear function of starting size
 
+## *** SHOULD GRWTH AND SURV HAVE CLIM YR+1 ARE PREDICTORS?? No b/c RosNew1 and Surv1 used?***** 
 ## Growth
 glmm.grwth <- glmer.nb(RosNew1 ~ log(RosNew) + PptFall + PptWinter + PptSummer + 
                            TempFall + TempWinter + TempSummer + (1|TransectNew), data=dats)

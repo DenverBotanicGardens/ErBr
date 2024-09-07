@@ -232,7 +232,7 @@ for (dd in 1:n.datset) {
   ## Obtain stable stage structure
   popSz.start <- 181                 #Set starting pop sz as 2007 obs sz
   
-  SSD=eigen(mx.hiGrwth)$vectors[,1]
+  SSD=eigen(mx.hiGrwth)$vectors[,1]  #** USE MATRIX GENERATED ABOVE ##
   SSD=Re(SSD/sum(SSD))
   N.vecStart=popSz.start * SSD
   
