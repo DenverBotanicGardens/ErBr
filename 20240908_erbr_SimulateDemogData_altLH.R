@@ -58,7 +58,9 @@ N.vecStart=N.startNum * SSD
 
 # Specify min and max plt sz
 minsize <- 1
-maxsize <- (max(erbr$RosNew, na.rm=TRUE)) 
+#maxsize <- (max(erbr$RosNew, na.rm=TRUE)) 
+maxsize <- 300  #For Fast Growth LH datasets ******
+
 
 ## For median sz estimation
 ## new size density estimation for median size estimation
@@ -84,14 +86,15 @@ for(jj in 1:(length(vec.bin)-1)) {
 n.bin = length(binmids)
 
 
+
 ## ------------ Assign param values for intercepts & sz to generate alternative life histories -----------
 # ####################################################################
 # parameters for a fast growth, med survival, higher repro LH:
-  medParams$grwth_RosCoef = medParams$grwth_RosCoef*1.1  #1.1
-  medParams$grwth_intercept = 1.1   #1.1
+  medParams$grwth_RosCoef = medParams$grwth_RosCoef*1.1  
+  medParams$grwth_intercept = 1.1   
 # #
-  medParams$surv_intercept=medParams$surv_intercept*1.2     #1.2
-  medParams$surv_RosCoef=medParams$surv_RosCoef*0.8         #0.8
+  medParams$surv_intercept=medParams$surv_intercept*1.2     
+  medParams$surv_RosCoef=medParams$surv_RosCoef*0.8         
 # #
   medParams$repro_intercept=medParams$repro_intercept+2 
   medParams$reproyesno_intercept = medParams$reproyesno_intercept+2
@@ -100,15 +103,15 @@ n.bin = length(binmids)
 
 ####################################################################
 # parameters for a med growth, lower survival LH, high repro:
-medParams$grwth_RosCoef = medParams$grwth_RosCoef*1.025
-medParams$grwth_intercept = 1.025
+#medParams$grwth_RosCoef = medParams$grwth_RosCoef*1.025
+#medParams$grwth_intercept = 1.025
 
-medParams$surv_intercept=medParams$surv_intercept*1.3
-medParams$surv_RosCoef=medParams$surv_RosCoef*0.5
+#medParams$surv_intercept=medParams$surv_intercept*1.3
+#medParams$surv_RosCoef=medParams$surv_RosCoef*0.5
 
-medParams$repro_intercept=medParams$repro_intercept+5.5 #5.5
-medParams$reproyesno_intercept = medParams$reproyesno_intercept+2
-medParams$reproyesno_RosCoef=medParams$reproyesno_RosCoef*1.2
+#medParams$repro_intercept=medParams$repro_intercept+5.5 #5.5
+#medParams$reproyesno_intercept = medParams$reproyesno_intercept+2
+#medParams$reproyesno_RosCoef=medParams$reproyesno_RosCoef*1.2
 #######################################################
 
  
@@ -205,14 +208,25 @@ plot(binmids,SSD[2:51])
 ## -------------------------------------------------------------------------------------------------
 
 ## Save mx for future runs 
-saveRDS(mx, file=paste("20240908", "_erbrMatrix_medGrLH", ".rds", sep=""))
-mx.newLH <- readRDS("20240908_erbrMatrix_hiLH.rds") #Load mean matrix variable
+#saveRDS(mx, file=paste("20240908", "_erbrMatrix_medGrLH", ".rds", sep=""))
+#mx.newLH <- readRDS("20240908_erbrMatrix_hiLH.rds") #Load mean matrix variable
 #saveRDS(mx, file=paste("20240908", "_erbrMatrix_hiLH", ".rds", sep=""))
 #mx.newLH <- readRDS("20240908_erbrMatrix_hiLH.rds") #Load mean matrix variable
 
 mx.newLH <- mx       
-
+## -------------------------------------------------------------------------------------------------
           
+
+
+
+
+
+
+
+
+
+
+
 ## GENERATE SIMULATED DATA -------------------------------------------------------------------------         
 ## Start data set loop 
 n.datset <- 10
@@ -585,7 +599,7 @@ print(dd)
   ## save as csv 
   date <- Sys.Date()                                        #Enter date to be added to file name
   date <- str_replace_all(date, "-", "")
-  name <- as.character("_erbr_SimDat20yrNoMissMedGrLH.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+ # name <- as.character("_erbr_SimDat20yrNoMissMedGrLH.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
   
   write.csv(datComb, file=paste(date, name, dd, ".csv", sep=""), row.names=FALSE)
   print(paste(date, name, dd, ".csv", sep=""))
@@ -756,7 +770,7 @@ print(dd)
   ## SAVE FORMATTED DATA ---------------------------------------------------------------
   date <- Sys.Date()                                #Enter date to be added to file name
   date <- str_replace_all(date, "-", "")
-  name <- as.character("SimDat20yrMissMedGrLH.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+#  name <- as.character("SimDat20yrMissMedGrLH.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
   
   write.csv(erbr.1, file=paste(date, "_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), row.names=FALSE)
   print(paste(date, name, dd, ".Format4JAGS", ".csv", sep=""))

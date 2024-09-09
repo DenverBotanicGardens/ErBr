@@ -253,11 +253,11 @@ summ.mod10 <- readRDS("20240907_erbr_JAGSmodBest_c3t5s10b10_noYRE_SimDat20yr.10.
 ## Show median param ests of diff datasets as points and upper and lower 95% limits (from JAGS summary)
 
 ## SUBSET OUTPUT TO JUST KEEP PARAMS OF INTEREST
-#names.param <- colnames(as.matrix(summ.mod1$mcmc[1]))[26:41]
-#names.param <- names.param[c(2:8,12:16)] #Remove intercept and GrwthVar  
-#names.paramTitles <- c("Grwth Size","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
-#                       "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Size",
-#                       "Surv Winter Precip","Surv Fall Temp","Surv Summer Temp","Surv Winter Temp")
+names.param <- colnames(as.matrix(summ.mod1$mcmc[1]))[26:41]
+names.param <- names.param[c(2:8,12:16)] #Remove intercept and GrwthVar  
+names.paramTitles <- c("Grwth Size","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
+                       "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Size",
+                       "Surv Winter Precip","Surv Fall Temp","Surv Summer Temp","Surv Winter Temp")
 
 ## Re-order parameter names for plotting 
 #index<-c(1,5,3,7,11,9,13,2,14,6,4,8)
@@ -290,7 +290,7 @@ for (dd in 1:n.datset) {
   
   ## Log size in all models to match JAGs; this makes ending size a linear function of starting size
   
-  ## Growth
+  ## Growth ** REORDER PARAMS FOR FUTURE RUNS ***
   glmm.grwth <- glmer.nb(RosNew1 ~ log(RosNew) + PptFall + PptWinter + PptSummer + 
                            TempFall + TempWinter + TempSummer + (1|TransectNew), data=noMiss)
   
@@ -329,6 +329,14 @@ paramsMM.surv$ParamTitle <- c("Surv Size","Surv Winter Precip",
                               "Surv Fall Temp","Surv Winter Temp","Surv Summer Temp")
 seMM.surv$ParamTitle <- c("Surv Size","Surv Winter Precip",
                               "Surv Fall Temp","Surv Winter Temp","Surv Summer Temp")
+
+## Re-order parameter names for plotting 
+paramsMM.grwthOrd <- paramsMM.grwth[match(names.paramTitles[1:7], paramsMM.grwth$ParamTitle),]
+seMM.grwthOrd <- seMM.grwth[match(names.paramTitles[1:7], seMM.grwth$ParamTitle),]
+paramsMM.survOrd <- paramsMM.surv[match(names.paramTitles[8:12], paramsMM.surv$ParamTitle),]
+seMM.survOrd <- seMM.surv[match(names.paramTitles[8:12], seMM.surv$ParamTitle),]
+
+
 #rbind(paramsMM.grwth, paramsMM.surv)
 saveRDS(paramsMM.grwth, file=paste("20240908", "_erbr_paramMMgrwth_SimDat20yr", ".rds", sep=""))
 saveRDS(seMM.grwth, file=paste("20240908", "_erbr_seMMgrwth_SimDat20yr", ".rds", sep=""))
@@ -368,46 +376,117 @@ medParams.10 <- summ.mod10$summaries[c(27:33,37:41),2]
 #     ylim=c(0.5,1), xlim=c(0.5,1))
 #abline(a=0, b=1)
 
-par(mfrow=c(2,2), mar=c(1.25,2,1.9,2))  
+par(mfrow=c(5,2), mar=c(3.9,1.7,2.3,1.5))  #bottom, left, top and right 
+par(pty="s")
 
-plot(as.numeric(paramsMM.grwth[1,1:10]), 
+# Grwth Sz
+plot(as.numeric(paramsMM.grwthOrd[1,1:10]), 
      c(as.numeric(medParams.1[1]),as.numeric(medParams.2[1]),
        as.numeric(medParams.3[1]),as.numeric(medParams.4[1]),
        as.numeric(medParams.5[1]),as.numeric(medParams.6[1]),
        as.numeric(medParams.7[1]),as.numeric(medParams.8[1]),
        as.numeric(medParams.9[1]),as.numeric(medParams.10[1])),
-     ylim=c(0.5,1), xlim=c(0.5,1), xlab="GLMM parameter estimate", 
-     ylab="JAGS parameter estimate", main="Growth Size", pch=19)
+     ylim=c(0.5,1), xlim=c(0.5,1), xlab="GLMM estimate", 
+     ylab="JAGS estimate", main=paramsMM.grwthOrd[1,11], pch=19)
 abline(a=0, b=1)
 
-plot(as.numeric(paramsMM.grwth[2,1:10]), 
-     c(as.numeric(medParams.1[2]),as.numeric(medParams.2[2]),
-       as.numeric(medParams.3[2]),as.numeric(medParams.4[2]),
-       as.numeric(medParams.5[2]),as.numeric(medParams.6[2]),
-       as.numeric(medParams.7[2]),as.numeric(medParams.8[2]),
-       as.numeric(medParams.9[2]),as.numeric(medParams.10[2])),
-     ylim=c(0,0.2), xlim=c(0,0.2), xlab="GLMM parameter estimate", 
-     ylab="JAGS parameter estimate", main="Growth Fall Temp", pch=19)
-abline(a=0, b=1)
-
-plot(as.numeric(paramsMM.surv[1,1:10]), 
+# Surv Sz
+plot(as.numeric(paramsMM.survOrd[1,1:10]), 
      c(as.numeric(medParams.1[8]),as.numeric(medParams.2[8]),
        as.numeric(medParams.3[8]),as.numeric(medParams.4[8]),
        as.numeric(medParams.5[8]),as.numeric(medParams.6[8]),
        as.numeric(medParams.7[8]),as.numeric(medParams.8[8]),
        as.numeric(medParams.9[8]),as.numeric(medParams.10[8])),
-     ylim=c(0.2,0.8), xlim=c(0.2,0.8), xlab="GLMM parameter estimate", 
-     ylab="JAGS parameter estimate", main="Surv Size", pch=19)
+     ylim=c(0.2,0.8), xlim=c(0.2,0.8), xlab="GLMM estimate", 
+     ylab="JAGS estimate", main=paramsMM.survOrd[1,11], pch=19)
 abline(a=0, b=1)
 
-plot(as.numeric(paramsMM.surv[2,1:10]), 
+# Grwth Fall Temp
+plot(as.numeric(paramsMM.grwthOrd[2,1:10]), 
+     c(as.numeric(medParams.1[2]),as.numeric(medParams.2[2]),
+       as.numeric(medParams.3[2]),as.numeric(medParams.4[2]),
+       as.numeric(medParams.5[2]),as.numeric(medParams.6[2]),
+       as.numeric(medParams.7[2]),as.numeric(medParams.8[2]),
+       as.numeric(medParams.9[2]),as.numeric(medParams.10[2])),
+     ylim=c(-0.2,0.3), xlim=c(-0.2,0.3), xlab="GLMM estimate", 
+     ylab="JAGS estimate", main=paramsMM.grwthOrd[2,11], pch=19)
+abline(a=0, b=1)
+
+# Surv Fall Temp
+plot(as.numeric(paramsMM.survOrd[3,1:10]), 
+     c(as.numeric(medParams.1[10]),as.numeric(medParams.2[10]),
+       as.numeric(medParams.3[10]),as.numeric(medParams.4[10]),
+       as.numeric(medParams.5[10]),as.numeric(medParams.6[10]),
+       as.numeric(medParams.7[10]),as.numeric(medParams.8[10]),
+       as.numeric(medParams.9[10]),as.numeric(medParams.10[10])),
+     ylim=c(-1,1), xlim=c(-1,1), xlab="GLMM estimate", 
+     ylab="JAGS estimate", main=paramsMM.survOrd[3,11], pch=19)
+abline(a=0, b=1)
+
+# Grwth Summer Temp
+plot(as.numeric(paramsMM.grwthOrd[3,1:10]), 
+     c(as.numeric(medParams.1[3]),as.numeric(medParams.2[3]),
+       as.numeric(medParams.3[3]),as.numeric(medParams.4[3]),
+       as.numeric(medParams.5[3]),as.numeric(medParams.6[3]),
+       as.numeric(medParams.7[3]),as.numeric(medParams.8[3]),
+       as.numeric(medParams.9[3]),as.numeric(medParams.10[3])),
+     ylim=c(-0.2,0.3), xlim=c(-0.2,0.3), xlab="GLMM estimate", 
+     ylab="JAGS estimate", main=paramsMM.grwthOrd[3,11], pch=19)
+abline(a=0, b=1)
+
+# Surv Summer Temp
+plot(as.numeric(paramsMM.survOrd[4,1:10]), 
+     c(as.numeric(medParams.1[11]),as.numeric(medParams.2[11]),
+       as.numeric(medParams.3[11]),as.numeric(medParams.4[11]),
+       as.numeric(medParams.5[11]),as.numeric(medParams.6[11]),
+       as.numeric(medParams.7[11]),as.numeric(medParams.8[11]),
+       as.numeric(medParams.9[11]),as.numeric(medParams.10[11])),
+     ylim=c(-0.4,0.9), xlim=c(-0.4,0.9), xlab="GLMM estimate", 
+     ylab="JAGS estimate", main=paramsMM.survOrd[4,11], pch=19)
+abline(a=0, b=1)
+
+# Grwth Winter Temp
+plot(as.numeric(paramsMM.grwthOrd[4,1:10]), 
+     c(as.numeric(medParams.1[4]),as.numeric(medParams.2[4]),
+       as.numeric(medParams.3[4]),as.numeric(medParams.4[4]),
+       as.numeric(medParams.5[4]),as.numeric(medParams.6[4]),
+       as.numeric(medParams.7[4]),as.numeric(medParams.8[4]),
+       as.numeric(medParams.9[4]),as.numeric(medParams.10[4])),
+     ylim=c(-0.2,0.3), xlim=c(-0.2,0.3), xlab="GLMM estimate", 
+     ylab="JAGS estimate", main=paramsMM.grwthOrd[4,11], pch=19)
+abline(a=0, b=1)
+
+# Surv Winter Temp
+plot(as.numeric(paramsMM.survOrd[5,1:10]), 
+     c(as.numeric(medParams.1[12]),as.numeric(medParams.2[12]),
+       as.numeric(medParams.3[12]),as.numeric(medParams.4[12]),
+       as.numeric(medParams.5[12]),as.numeric(medParams.6[12]),
+       as.numeric(medParams.7[12]),as.numeric(medParams.8[12]),
+       as.numeric(medParams.9[12]),as.numeric(medParams.10[12])),
+     ylim=c(-0.4,0.7), xlim=c(-0.4,0.7), xlab="GLMM estimate", 
+     ylab="JAGS estimate", main=paramsMM.survOrd[5,11], pch=19)
+abline(a=0, b=1)
+
+# Grwth Winter Precip
+plot(as.numeric(paramsMM.grwthOrd[7,1:10]), 
+     c(as.numeric(medParams.1[7]),as.numeric(medParams.2[7]),
+       as.numeric(medParams.3[7]),as.numeric(medParams.4[7]),
+       as.numeric(medParams.5[7]),as.numeric(medParams.6[7]),
+       as.numeric(medParams.7[7]),as.numeric(medParams.8[7]),
+       as.numeric(medParams.9[7]),as.numeric(medParams.10[7])),
+     ylim=c(-0.01,0.02), xlim=c(-0.01,0.02), xlab="GLMM estimate", 
+     ylab="JAGS estimate", main=paramsMM.grwthOrd[7,11], pch=19)
+abline(a=0, b=1)
+
+# Surv Winter Precip
+plot(as.numeric(paramsMM.survOrd[2,1:10]), 
      c(as.numeric(medParams.1[9]),as.numeric(medParams.2[9]),
        as.numeric(medParams.3[9]),as.numeric(medParams.4[9]),
        as.numeric(medParams.5[9]),as.numeric(medParams.6[9]),
        as.numeric(medParams.7[9]),as.numeric(medParams.8[9]),
        as.numeric(medParams.9[9]),as.numeric(medParams.10[9])),
-     ylim=c(-0.01,0.05), xlim=c(-0.01,0.05), xlab="GLMM parameter estimate", 
-     ylab="JAGS parameter estimate", main="Surv Winter Precip", pch=19)
+     ylim=c(-0.015,0.05), xlim=c(-0.015,0.05), xlab="GLMM estimate", 
+     ylab="JAGS estimate", main=paramsMM.survOrd[2,11], pch=19)
 abline(a=0, b=1)
 
 
