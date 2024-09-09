@@ -40,7 +40,7 @@ library(stringr)
 n.datset <- 10
 for (dd in 1:n.datset) {
 
-  #old <- Sys.time() # get start time
+  old <- Sys.time() # get start time
 
 ## LOAD DATA --------------------------------------------------------------------------------------
 #dats <- read.csv("20240904_erbr_SimDat20yrR2_Format4JAGS.csv", header = TRUE)
@@ -48,15 +48,14 @@ for (dd in 1:n.datset) {
 #dats <- read.csv(file=paste("20240906", "_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), header=TRUE)
 
 ## For GLMM with no-missing data
-name <- as.character("SimDat20yrNoMiss.")
-dats <- read.csv(file=paste("20240907","_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), header=TRUE)
+name <- as.character("SimDat20yrMissMedGrLH.")
+dats <- read.csv(file=paste("20240908","_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), header=TRUE)
 ## ------------------------------------------------------------------------------------------------
 
 
 
 ## SET WD (WHERE JAGS SCRIPT IS LOCATED) ----------------------------------------------------------
 #setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
-#setwd("~/ErBr")
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -71,8 +70,6 @@ dats <- rename(dats, PptFall=Tot_fall_ppt, PptWinter=Tot_winter_ppt, PptSummer=T
 
 ## COUNT PLANT OBERVATION YEARS FOR EACH DATASET --------------------------------------------------
 sum(dats$surv, na.rm=TRUE) #Full dataset
-#consec <- dats[dats$Year<2014,]
-#sum(consec$surv, na.rm=TRUE) #Consecutive dataset
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -199,26 +196,24 @@ newplt.yrtranscombo=100*newplt.trans+newplt.yr
 ## ------------------------------------------------------------------------------------------------
 
 
-saveRDS(dats, file=paste("20240907", "_erbr_SimDat20yrNoMiss.", dd,".4GLM", ".rds", sep=""))
+#saveRDS(dats, file=paste("20240907", "_erbr_SimDat20yrNoMiss.", dd,".4GLM", ".rds", sep=""))
 
 
 
 
 ## RUN ASSOCIATED JAGS MODEL ----------------------------------------------------------------------
-#jags.mod <- run.jags('erbr_JAGSmodComplx_noYRE_210827.R', n.chains=3, data=dats, burnin=10000, thin=10, sample=30000, adapt=500, method='parallel')
-
-#jags.mod <- run.jags('erbr_3JAGSmodBest_noYRE_20230418short.R', n.chains=3, data=dats, burnin=10000, thin=5, sample=10000, adapt=500, method='parallel')
+jags.mod <- run.jags('erbr_3JAGSmodBest_noYRE_20230418short.R', n.chains=3, data=dats, burnin=10000, thin=5, sample=10000, adapt=500, method='parallel')
 #jags.mod <- run.jags('erbr_3JAGSmodBest_noYRE_20230418.R', n.chains=3, data=dats, burnin=10000, thin=10, sample=30000, adapt=500, method='parallel')
 
 
 
 ## Save output
-#date <- Sys.Date()                                #Enter date to be added to file name
-#date <- str_replace_all(date, "-", "")
+date <- Sys.Date()                                #Enter date to be added to file name
+date <- str_replace_all(date, "-", "")
 #saveRDS(jags.mod, file=paste(date, "_erbr_JAGSmodBest_c3t5s10b10_noYRE_SimDat20yr.", dd, ".rds", sep=""))
 
-#summ.mod <- summary(jags.mod)
-#saveRDS(summ.mod, file=paste(date, "_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.", dd, ".rds", sep=""))
+summ.mod <- summary(jags.mod)
+saveRDS(summ.mod, file=paste(date, "_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yrMedGrLH.", dd, ".rds", sep=""))
 
 
 }   #End dataset loop
@@ -235,18 +230,10 @@ print(time.diff) #print in nice format
 
 ## LOAD MODEL SUMMARY OUTPUT -------------------------------------------------
 #jags.mod <- readRDS("erbr_JAGSmodBest_SIM20yr_c3t5s10b5_noYRE_20240830.rds")
-#jags.mod <- readRDS("erbr_JAGSmodBest_SIM50yr_c3t5s10b5_noYRE_20240831.rds")
 #summary(jags.mod)
 #plot(jags.mod)
 #summ.mod <- summary(jags.mod)
-#tail(summ.mod[,1:3], n=37)
 #gelman.diag(jags.mod, confidence = 0.95, transform=FALSE)
-
-## Make chains variable
-#chains <- jags.mod$mcmc
-#chains <- bind_rows(lapply(chains, as.data.frame))
-#colMeds <- apply(chains,2,median)
-#colSDs <- apply(chains,2,sd)
 
 summ.mod1 <- readRDS("20240906_erbr_JAGSmodBest_c3t5s10b10_noYRE_SimDat20yr.1.rds")
 summ.mod2 <- readRDS("20240906_erbr_JAGSmodBest_c3t5s10b10_noYRE_SimDat20yr.2.rds")
@@ -328,12 +315,13 @@ colnames(medComb) <- c("rep1", "rep2", "Name")
 
 
 
-plot(paramsMM.grwth$GLMM[1], as.numeric(as.character(medComb$rep1[1])))
-abline(a=0, b=1)
+#plot(paramsMM.grwth$GLMM[1], as.numeric(as.character(medComb$rep1[1])))
+#abline(a=0, b=1)
 
 
 
-
+###############################################################
+### *** OLD CODE .. UPDATE FOR NEW PLOTTING PLAN ------- ****
 
 
 

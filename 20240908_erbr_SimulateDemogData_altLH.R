@@ -205,8 +205,10 @@ plot(binmids,SSD[2:51])
 ## -------------------------------------------------------------------------------------------------
 
 ## Save mx for future runs 
-saveRDS(mx, file=paste("20240908", "_erbrMatrix_hiLH", ".rds", sep=""))
+saveRDS(mx, file=paste("20240908", "_erbrMatrix_medGrLH", ".rds", sep=""))
 mx.newLH <- readRDS("20240908_erbrMatrix_hiLH.rds") #Load mean matrix variable
+#saveRDS(mx, file=paste("20240908", "_erbrMatrix_hiLH", ".rds", sep=""))
+#mx.newLH <- readRDS("20240908_erbrMatrix_hiLH.rds") #Load mean matrix variable
 
 mx.newLH <- mx       
 
@@ -583,7 +585,7 @@ print(dd)
   ## save as csv 
   date <- Sys.Date()                                        #Enter date to be added to file name
   date <- str_replace_all(date, "-", "")
-  name <- as.character("_erbr_SimDat20yrNoMissHiGrLH.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+  name <- as.character("_erbr_SimDat20yrNoMissMedGrLH.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
   
   write.csv(datComb, file=paste(date, name, dd, ".csv", sep=""), row.names=FALSE)
   print(paste(date, name, dd, ".csv", sep=""))
@@ -754,7 +756,7 @@ print(dd)
   ## SAVE FORMATTED DATA ---------------------------------------------------------------
   date <- Sys.Date()                                #Enter date to be added to file name
   date <- str_replace_all(date, "-", "")
-  name <- as.character("SimDat20yrMissHiGrLH.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+  name <- as.character("SimDat20yrMissMedGrLH.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
   
   write.csv(erbr.1, file=paste(date, "_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), row.names=FALSE)
   print(paste(date, name, dd, ".Format4JAGS", ".csv", sep=""))
