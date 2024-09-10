@@ -253,14 +253,14 @@ mx.newLH <- mx
 
 ## GENERATE SIMULATED DATA -------------------------------------------------------------------------         
 ## Start data set loop 
-name <- as.character("SimDat20yrHiGrLH.") # For naming saved files below
+name <- as.character("SimDat50yrHiGrLH.") # For naming saved files below
 n.datset <- 10
 for (dd in 1:n.datset) {
 
 print(dd)
   
   ## For a set number of years (e.g. 20), simulate climate variables for each year. Use the real data
-  n.yrs <- 21 #Assign number of years (plus 1) to simulate climate data for 
+  n.yrs <- 51 #Assign number of years (plus 1) to simulate climate data for 
   
   #Create empty variable to hold simulated climate data
   column.names <- colnames(clim32yr)
