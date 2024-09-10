@@ -55,12 +55,13 @@ N.startNum <- 181                 #Set starting pop sz as 2007 obs sz
 SSD=eigen(mx.mean)$vectors[,1]
 SSD=Re(SSD/sum(SSD))
 N.vecStart=N.startNum * SSD
+## ------------------------
 
+
+## ** FOR MED GRWTH --------------------
 # Specify min and max plt sz
 minsize <- 1
 maxsize <- (max(erbr$RosNew, na.rm=TRUE)) 
-#maxsize <- 300  #For Fast Growth LH datasets ******
-
 
 ## For median sz estimation
 ## new size density estimation for median size estimation
@@ -84,6 +85,29 @@ for(jj in 1:(length(vec.bin)-1)) {
   }
 
 n.bin = length(binmids)
+## -------------------
+
+
+
+## FOR FAST GRWTH WITH HI MX SZ *** ------------------
+minsize <- 1
+maxsize <- 300  #For Fast Growth LH datasets ******
+
+bin.num <- 50  #Define number of bins 
+
+## Improved method of finding median size/ bin mids (code from Dan)
+vec.bin = c(minsize, minsize+1:bin.num*(maxsize-minsize)*(1/bin.num)) 
+## Do this block to make medians the focal estimated size for each category
+binmids = rep(NA, length(vec.bin)-1)
+
+for (bb in 1:length(vec.bin)-1) {
+    bounds <- c(vec.bin[bb], vec.bin[bb+1])
+    binmids[bb] <- median(bounds)
+}
+
+n.bin = length(binmids)
+## -------------------------------------------------------------------------------------------------------
+
 
 
 
@@ -209,9 +233,9 @@ plot(binmids,SSD[2:51])
 
 ## Save mx for future runs 
 #saveRDS(mx, file=paste("20240908", "_erbrMatrix_medGrLH", ".rds", sep=""))
-mx.newLH <- readRDS("20240908_erbrMatrix_medGrLH.rds") #Load mean matrix variable
-#saveRDS(mx, file=paste("20240908", "_erbrMatrix_hiLH", ".rds", sep=""))
-#mx.newLH <- readRDS("20240908_erbrMatrix_hiLH.rds") #Load mean matrix variable
+#mx.newLH <- readRDS("20240908_erbrMatrix_medGrLH.rds") #Load mean matrix variable
+saveRDS(mx, file=paste("20240910", "_erbrMatrix_hiGrLH", ".rds", sep=""))
+mx.newLH <- readRDS("20240910_erbrMatrix_hiGrLH.rds") #Load mean clim matrix variable
 
 mx.newLH <- mx       
 ## -------------------------------------------------------------------------------------------------
@@ -229,14 +253,14 @@ mx.newLH <- mx
 
 ## GENERATE SIMULATED DATA -------------------------------------------------------------------------         
 ## Start data set loop 
-name <- as.character("SimDat50yrMedGrLH.") # For naming saved files below
+name <- as.character("SimDat20yrHiGrLH.") # For naming saved files below
 n.datset <- 10
 for (dd in 1:n.datset) {
 
 print(dd)
   
   ## For a set number of years (e.g. 20), simulate climate variables for each year. Use the real data
-  n.yrs <- 51 #Assign number of years (plus 1) to simulate climate data for 
+  n.yrs <- 21 #Assign number of years (plus 1) to simulate climate data for 
   
   #Create empty variable to hold simulated climate data
   column.names <- colnames(clim32yr)
@@ -267,31 +291,58 @@ print(dd)
   SSD=Re(SSD/sum(SSD))
   N.vecStart=popSz.start * SSD
   
+  ## FOR MED GRWTH ----------------
   # Specify min and max plt sz
-  minsize <- 1
-  maxsize <- (max(erbr$RosNew, na.rm=TRUE)) 
+  #minsize <- 1
+  #maxsize <- (max(erbr$RosNew, na.rm=TRUE)) 
   
   ## For median sz estimation
   ##new size density estimation for median size estimation
-  pdfsz=density(erbr$RosNew, n=1024, cut=0, na.rm=TRUE) 
-  pdfsz2=cbind(pdfsz$x,pdfsz$y)
+  #pdfsz=density(erbr$RosNew, n=1024, cut=0, na.rm=TRUE) 
+  #pdfsz2=cbind(pdfsz$x,pdfsz$y)
   ## This is a set of smoothed values that can then be used w weightedMedian in the matrixStats package to get a 'good' median for each class
   
-  n.bin <- 50  #Define number of bins 
+  #n.bin <- 50  #Define number of bins 
     
   ## Improved method of finding median size/ bin mids (code from Dan)
-  vec.bin = c(minsize, minsize+1:n.bin*(maxsize-minsize)*(1/n.bin)) 
+  #vec.bin = c(minsize, minsize+1:n.bin*(maxsize-minsize)*(1/n.bin)) 
+  ## Do this block to make medians the focal estimated size for each category
+  #binmids = rep(NA, length(vec.bin)-1)
+  
+  #for(jj in 1:(length(vec.bin)-1)) {
+  ## Set limits for subset according to bin breaks
+#      bounds <- c(vec.bin[jj], vec.bin[jj+1])
+  ## Subset data according to bounds
+#      subsetszs <- pdfsz2[which(pdfsz2[,1] >= bounds[1] & pdfsz2[,1] < bounds[2]),]
+ #     binmids[jj] <- weightedMedian(subsetszs[,1],subsetszs[,2])
+#    }
+  ## ------------------
+  
+  
+  
+  
+  ## FOR FAST GRWTH WITH HI MX SZ *** ------------------
+  minsize <- 1
+  maxsize <- 300  #For Fast Growth LH datasets ******
+  
+  bin.num <- 50  #Define number of bins 
+  
+  ## Improved method of finding median size/ bin mids (code from Dan)
+  vec.bin = c(minsize, minsize+1:bin.num*(maxsize-minsize)*(1/bin.num)) 
   ## Do this block to make medians the focal estimated size for each category
   binmids = rep(NA, length(vec.bin)-1)
   
-  for(jj in 1:(length(vec.bin)-1)) {
-  ## Set limits for subset according to bin breaks
-      bounds <- c(vec.bin[jj], vec.bin[jj+1])
-  ## Subset data according to bounds
-      subsetszs <- pdfsz2[which(pdfsz2[,1] >= bounds[1] & pdfsz2[,1] < bounds[2]),]
-      binmids[jj] <- weightedMedian(subsetszs[,1],subsetszs[,2])
-    }
+  for (bb in 1:length(vec.bin)-1) {
+    bounds <- c(vec.bin[bb], vec.bin[bb+1])
+    binmids[bb] <- median(bounds)
+  }
   
+  n.bin = length(binmids)
+  ## -------------------------------------------------------------------------------------------------------
+  
+  
+  
+
   binmids <- c(1, binmids)  
     
   ## Select starting sizes of plants for simulated data using SSD and median sz classes
@@ -596,7 +647,8 @@ print(dd)
   datComb$TagNew <- paste(datComb$TransectNew, tag.rep, sep='.') #Tag new included site and transect; same format as real data
   
   
-## --------------------------------------------------------------------------------------------
+  
+## SAVE NON MISSING DATA SETS   --------------------------------------------------------------------------
   ## save as csv 
   date <- Sys.Date()                                        #Enter date to be added to file name
   date <- str_replace_all(date, "-", "")

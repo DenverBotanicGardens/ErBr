@@ -28,6 +28,7 @@ library(resample)
 library(gplots)
 library(matrixStats)
 library(stringr)
+library(plotrix)
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -391,6 +392,8 @@ up95.7 <- summ.mod7[c(27:33,37:41),3]
 up95.8 <- summ.mod8[c(27:33,37:41),3]
 up95.9 <- summ.mod9[c(27:33,37:41),3]
 up95.10 <- summ.mod10[c(27:33,37:41),3]
+
+## COMBINE *****
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -446,6 +449,10 @@ arrows(c(as.numeric(paramsMM.grwthOrd[1,1:10])),
             as.numeric(low95.9[1]),as.numeric(low95.10[1])),
        lwd=1.25, angle=90, code=3, length=0)
 
+##points(mean_PCs$PC1score[5], mean_PCs$PC2score[5], col=cols[3], pch=symbs[3], cex=2.5) #post_non_d
+## Add standard error bars 
+##plotCI(x=mean_PCs$PC1score[1], y=mean_PCs$PC2score[1], uiw=PC1_SE[1,2],err="x", col=cols, add=T)
+##plotCI(x=mean_PCs$PC1score[1], y=mean_PCs$PC2score[1], uiw=PC2_SE[1,2],err="y", col=cols, add=T)
 
 # Surv Sz
 plot(as.numeric(paramsMM.survOrd[1,1:10]), 
