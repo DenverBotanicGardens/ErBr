@@ -58,8 +58,8 @@ N.vecStart=N.startNum * SSD
 
 # Specify min and max plt sz
 minsize <- 1
-#maxsize <- (max(erbr$RosNew, na.rm=TRUE)) 
-maxsize <- 300  #For Fast Growth LH datasets ******
+maxsize <- (max(erbr$RosNew, na.rm=TRUE)) 
+#maxsize <- 300  #For Fast Growth LH datasets ******
 
 
 ## For median sz estimation
@@ -103,15 +103,15 @@ n.bin = length(binmids)
 
 ####################################################################
 # parameters for a med growth, lower survival LH, high repro:
-#medParams$grwth_RosCoef = medParams$grwth_RosCoef*1.025
-#medParams$grwth_intercept = 1.025
+medParams$grwth_RosCoef = medParams$grwth_RosCoef*1.025
+medParams$grwth_intercept = 1.025
 
-#medParams$surv_intercept=medParams$surv_intercept*1.3
-#medParams$surv_RosCoef=medParams$surv_RosCoef*0.5
+medParams$surv_intercept=medParams$surv_intercept*1.3
+medParams$surv_RosCoef=medParams$surv_RosCoef*0.5
 
-#medParams$repro_intercept=medParams$repro_intercept+5.5 #5.5
-#medParams$reproyesno_intercept = medParams$reproyesno_intercept+2
-#medParams$reproyesno_RosCoef=medParams$reproyesno_RosCoef*1.2
+medParams$repro_intercept=medParams$repro_intercept+5.5 #5.5
+medParams$reproyesno_intercept = medParams$reproyesno_intercept+2
+medParams$reproyesno_RosCoef=medParams$reproyesno_RosCoef*1.2
 #######################################################
 
  
@@ -209,7 +209,7 @@ plot(binmids,SSD[2:51])
 
 ## Save mx for future runs 
 #saveRDS(mx, file=paste("20240908", "_erbrMatrix_medGrLH", ".rds", sep=""))
-#mx.newLH <- readRDS("20240908_erbrMatrix_hiLH.rds") #Load mean matrix variable
+mx.newLH <- readRDS("20240908_erbrMatrix_medGrLH.rds") #Load mean matrix variable
 #saveRDS(mx, file=paste("20240908", "_erbrMatrix_hiLH", ".rds", sep=""))
 #mx.newLH <- readRDS("20240908_erbrMatrix_hiLH.rds") #Load mean matrix variable
 
@@ -229,13 +229,14 @@ mx.newLH <- mx
 
 ## GENERATE SIMULATED DATA -------------------------------------------------------------------------         
 ## Start data set loop 
+name <- as.character("SimDat50yrMedGrLH.") # For naming saved files below
 n.datset <- 10
 for (dd in 1:n.datset) {
 
 print(dd)
   
   ## For a set number of years (e.g. 20), simulate climate variables for each year. Use the real data
-  n.yrs <- 21 #Assign number of years (plus 1) to simulate climate data for 
+  n.yrs <- 51 #Assign number of years (plus 1) to simulate climate data for 
   
   #Create empty variable to hold simulated climate data
   column.names <- colnames(clim32yr)
@@ -595,15 +596,17 @@ print(dd)
   datComb$TagNew <- paste(datComb$TransectNew, tag.rep, sep='.') #Tag new included site and transect; same format as real data
   
   
-
+## --------------------------------------------------------------------------------------------
   ## save as csv 
   date <- Sys.Date()                                        #Enter date to be added to file name
   date <- str_replace_all(date, "-", "")
- # name <- as.character("_erbr_SimDat20yrNoMissMedGrLH.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+ # name <- as.character("SimDat20yrNoMissMedGrLH.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
   
-  write.csv(datComb, file=paste(date, name, dd, ".csv", sep=""), row.names=FALSE)
+  write.csv(datComb, file=paste(date, "_erbr_", name, "NoMiss.", dd, ".csv", sep=""), row.names=FALSE)
   print(paste(date, name, dd, ".csv", sep=""))
   ## -----------------------------------------------------------------------------------------------------
+  
+  
   
   
   
@@ -772,7 +775,7 @@ print(dd)
   date <- str_replace_all(date, "-", "")
 #  name <- as.character("SimDat20yrMissMedGrLH.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
   
-  write.csv(erbr.1, file=paste(date, "_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), row.names=FALSE)
+  write.csv(erbr.1, file=paste(date, "_erbr_", name, "Miss.", dd, ".Format4JAGS", ".csv", sep=""), row.names=FALSE)
   print(paste(date, name, dd, ".Format4JAGS", ".csv", sep=""))
   ## -----------------------------------------------------------------------------------
   
