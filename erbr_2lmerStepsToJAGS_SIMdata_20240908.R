@@ -50,8 +50,8 @@ for (dd in 1:n.datset) {
 
 
 ## ** ASSIGN NAME VARIABLE FOR DESIRED DATASETS **
-date <- as.character("20240909")
-name <- as.character("SimDat50yrMiss.")
+date <- as.character("20240910")
+name <- as.character("SimDat20yrHiGrLH.Miss.")
 dats <- read.csv(file=paste(date,"_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), header=TRUE)
 ## ------------------------------------------------------------------------------------------------
 
