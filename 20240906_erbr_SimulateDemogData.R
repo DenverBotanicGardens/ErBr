@@ -34,6 +34,8 @@ library(stringr)
 ## ------------------------------------------------------------------------------------------------
 
 
+## Make name variables for saving files
+#name <- as.character("_erbr_SimDat20yrNoMiss.")
 
 ## Start data set loop here
 n.datset <- 10
@@ -42,7 +44,7 @@ for (dd in 1:n.datset) {
 
   ## 1. First, for a set number of years (lets say 20), simulate climate variables for each year. 
   ## Use the real data from the study to choose sets of annual data values for the set of climate variables.
-  n.yrs <- 21 #Assign number of years (plus 1) to simulate climate data for 
+  n.yrs <- 51 #Assign number of years (plus 1) to simulate climate data for 
   
   #Create empty variable to hold simulated climate data
   column.names <- colnames(clim32yr)
@@ -445,14 +447,15 @@ for (dd in 1:n.datset) {
   datComb$TagNew <- paste(datComb$TransectNew, tag.rep, sep='.') #Tag new included site and transect; same format as real data
   
   
-
+  
+## SAVE DATSETS WITH NO MISSING DATA ----------
   ## save as csv 
   date <- Sys.Date()                             #Enter date to be added to file name
   date <- str_replace_all(date, "-", "")
-  name <- as.character("_erbr_SimDat20yrNoMiss.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+  name <- as.character("_erbr_SimDat50yrNoMiss.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
 
   write.csv(datComb, file=paste(date, name, dd, ".csv", sep=""), row.names=FALSE)
-  #print(paste(date, name, dd, ".csv", sep=""))
+  print(paste(date, name, dd, ".csv", sep=""))
   ## -----------------------------------------------------------------------------------------------------
   
   
@@ -638,7 +641,8 @@ for (dd in 1:n.datset) {
   ## SAVE FORMATTED DATA ---------------------------------------------------------------
   date <- Sys.Date()                             #Enter date to be added to file name
   date <- str_replace_all(date, "-", "")
-  name <- as.character("SimDat20yrMiss.")        #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+  #type <- "Miss"
+  name <- as.character("SimDat50yrMiss.")        #Enter name of file, e.g. Tagclust, 4to13, simulated data...
   
   write.csv(erbr.1, file=paste(date, "_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), row.names=FALSE)
   ## -----------------------------------------------------------------------------------
