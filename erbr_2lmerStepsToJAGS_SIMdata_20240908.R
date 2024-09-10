@@ -237,16 +237,16 @@ print(time.diff) #print in nice format
 #summ.mod <- summary(jags.mod)
 #gelman.diag(jags.mod, confidence = 0.95, transform=FALSE)
 
-summ.mod1 <- readRDS("20240906_erbr_JAGSmodBest_c3t5s10b10_noYRE_SimDat20yr.1.rds")
-summ.mod2 <- readRDS("20240906_erbr_JAGSmodBest_c3t5s10b10_noYRE_SimDat20yr.2.rds")
-summ.mod3 <- readRDS("20240906_erbr_JAGSmodBest_c3t5s10b10_noYRE_SimDat20yr.3.rds")
-summ.mod4 <- readRDS("20240906_erbr_JAGSmodBest_c3t5s10b10_noYRE_SimDat20yr.4.rds")
-summ.mod5 <- readRDS("20240906_erbr_JAGSmodBest_c3t5s10b10_noYRE_SimDat20yr.5.rds")
-summ.mod6 <- readRDS("20240907_erbr_JAGSmodBest_c3t5s10b10_noYRE_SimDat20yr.6.rds")
-summ.mod7 <- readRDS("20240907_erbr_JAGSmodBest_c3t5s10b10_noYRE_SimDat20yr.7.rds")
-summ.mod8 <- readRDS("20240907_erbr_JAGSmodBest_c3t5s10b10_noYRE_SimDat20yr.8.rds")
-summ.mod9 <- readRDS("20240907_erbr_JAGSmodBest_c3t5s10b10_noYRE_SimDat20yr.9.rds")
-summ.mod10 <- readRDS("20240907_erbr_JAGSmodBest_c3t5s10b10_noYRE_SimDat20yr.10.rds")
+summ.mod1 <- readRDS("20240906_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.1.rds")
+summ.mod2 <- readRDS("20240906_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.2.rds")
+summ.mod3 <- readRDS("20240906_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.3.rds")
+summ.mod4 <- readRDS("20240906_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.4.rds")
+summ.mod5 <- readRDS("20240906_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.5.rds")
+summ.mod6 <- readRDS("20240907_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.6.rds")
+summ.mod7 <- readRDS("20240907_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.7.rds")
+summ.mod8 <- readRDS("20240907_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.8.rds")
+summ.mod9 <- readRDS("20240907_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.9.rds")
+summ.mod10 <- readRDS("20240907_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.10.rds")
 ## -----------------------------------------------------------------------------------------------
 
 
@@ -255,7 +255,8 @@ summ.mod10 <- readRDS("20240907_erbr_JAGSmodBest_c3t5s10b10_noYRE_SimDat20yr.10.
 ## Show median param ests of diff datasets as points and upper and lower 95% limits (from JAGS summary)
 
 ## SUBSET OUTPUT TO JUST KEEP PARAMS OF INTEREST
-names.param <- colnames(as.matrix(summ.mod1$mcmc[1]))[26:41]
+#names.param <- colnames(as.matrix(summ.mod1$mcmc[1]))[26:41]
+names.param <- rownames(summ.mod1)[26:41]
 names.param <- names.param[c(2:8,12:16)] #Remove intercept and GrwthVar  
 names.paramTitles <- c("Grwth Size","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
                        "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Size",
@@ -332,6 +333,13 @@ paramsMM.surv$ParamTitle <- c("Surv Size","Surv Winter Precip",
 seMM.surv$ParamTitle <- c("Surv Size","Surv Winter Precip",
                               "Surv Fall Temp","Surv Winter Temp","Surv Summer Temp")
 
+
+## Load save glmm results
+paramsMM.grwth <- readRDS(file=paste("20240908_erbr_paramMMgrwth_SimDat20yr",".rds", sep=""))
+seMM.grwth <- readRDS(file=paste("20240908_erbr_seMMgrwth_SimDat20yr",".rds", sep=""))
+paramsMM.surv <- readRDS(file=paste("20240908_erbr_paramMMsurv_SimDat20yr",".rds", sep=""))
+seMM.surv <- readRDS(file=paste("20240908_erbr_seMMsurv_SimDat20yr",".rds", sep=""))
+
 ## Re-order parameter names for plotting 
 paramsMM.grwthOrd <- paramsMM.grwth[match(names.paramTitles[1:7], paramsMM.grwth$ParamTitle),]
 seMM.grwthOrd <- seMM.grwth[match(names.paramTitles[1:7], seMM.grwth$ParamTitle),]
@@ -350,17 +358,39 @@ saveRDS(seMM.surv, file=paste("20240908", "_erbr_seMMsurv_SimDat20yr", ".rds", s
 
 
 ## COMBINE MEDIAN PARAMETER VALUES ---------------------------------------------------------------------------
-summ.mod1$summaries
-medParams.1 <- summ.mod1$summaries[c(27:33,37:41),2]
-medParams.2 <- summ.mod2$summaries[c(27:33,37:41),2]
-medParams.3 <- summ.mod3$summaries[c(27:33,37:41),2]
-medParams.4 <- summ.mod4$summaries[c(27:33,37:41),2]
-medParams.5 <- summ.mod5$summaries[c(27:33,37:41),2]
-medParams.6 <- summ.mod6$summaries[c(27:33,37:41),2]
-medParams.7 <- summ.mod7$summaries[c(27:33,37:41),2]
-medParams.8 <- summ.mod8$summaries[c(27:33,37:41),2]
-medParams.9 <- summ.mod9$summaries[c(27:33,37:41),2]
-medParams.10 <- summ.mod10$summaries[c(27:33,37:41),2]
+#summ.mod1$summaries
+medParams.1 <- summ.mod1[c(27:33,37:41),2]
+medParams.2 <- summ.mod2[c(27:33,37:41),2]
+medParams.3 <- summ.mod3[c(27:33,37:41),2]
+medParams.4 <- summ.mod4[c(27:33,37:41),2]
+medParams.5 <- summ.mod5[c(27:33,37:41),2]
+medParams.6 <- summ.mod6[c(27:33,37:41),2]
+medParams.7 <- summ.mod7[c(27:33,37:41),2]
+medParams.8 <- summ.mod8[c(27:33,37:41),2]
+medParams.9 <- summ.mod9[c(27:33,37:41),2]
+medParams.10 <- summ.mod10[c(27:33,37:41),2]
+
+low95.1 <- summ.mod1[c(27:33,37:41),1]
+low95.2 <- summ.mod2[c(27:33,37:41),1]
+low95.3 <- summ.mod3[c(27:33,37:41),1]
+low95.4 <- summ.mod4[c(27:33,37:41),1]
+low95.5 <- summ.mod5[c(27:33,37:41),1]
+low95.6 <- summ.mod6[c(27:33,37:41),1]
+low95.7 <- summ.mod7[c(27:33,37:41),1]
+low95.8 <- summ.mod8[c(27:33,37:41),1]
+low95.9 <- summ.mod9[c(27:33,37:41),1]
+low95.10 <- summ.mod10[c(27:33,37:41),1]
+
+up95.1 <- summ.mod1[c(27:33,37:41),3]
+up95.2 <- summ.mod2[c(27:33,37:41),3]
+up95.3 <- summ.mod3[c(27:33,37:41),3]
+up95.4 <- summ.mod4[c(27:33,37:41),3]
+up95.5 <- summ.mod5[c(27:33,37:41),3]
+up95.6 <- summ.mod6[c(27:33,37:41),3]
+up95.7 <- summ.mod7[c(27:33,37:41),3]
+up95.8 <- summ.mod8[c(27:33,37:41),3]
+up95.9 <- summ.mod9[c(27:33,37:41),3]
+up95.10 <- summ.mod10[c(27:33,37:41),3]
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -372,9 +402,10 @@ medParams.10 <- summ.mod10$summaries[c(27:33,37:41),2]
 #plot(as.numeric(paramsMM.grwth[1,c(1,4)]), c(as.numeric(medParams.1[1]),as.numeric(medParams.2[1])),
 #     ylim=c(0.5,1), xlim=c(0.5,1))
 #abline(a=0, b=1)
-
-par(mfrow=c(5,2), mar=c(3.9,1.7,2.3,1.5))  #bottom, left, top and right 
+#c(5,2)
+par(mfrow=c(1,1), mar=c(3.9,1.7,2.3,1.5))  #bottom, left, top and right 
 par(pty="s")
+#, pch=19
 
 # Grwth Sz
 plot(as.numeric(paramsMM.grwthOrd[1,1:10]), 
@@ -383,9 +414,38 @@ plot(as.numeric(paramsMM.grwthOrd[1,1:10]),
        as.numeric(medParams.5[1]),as.numeric(medParams.6[1]),
        as.numeric(medParams.7[1]),as.numeric(medParams.8[1]),
        as.numeric(medParams.9[1]),as.numeric(medParams.10[1])),
-     ylim=c(0.5,1), xlim=c(0.5,1), xlab="GLMM estimate", 
-     ylab="JAGS estimate", main=paramsMM.grwthOrd[1,11], pch=19)
+     ylim=c(0.5,0.9), xlim=c(0.5,0.9), xlab="GLMM estimate", 
+     ylab="JAGS estimate", main=paramsMM.grwthOrd[1,11])
 abline(a=0, b=1)
+arrows(c(as.numeric(paramsMM.grwthOrd[1,1:10])),
+       c(as.numeric(medParams.1[1]),as.numeric(medParams.2[1]),
+         as.numeric(medParams.3[1]),as.numeric(medParams.4[1]),
+         as.numeric(medParams.5[1]),as.numeric(medParams.6[1]),
+         as.numeric(medParams.7[1]),as.numeric(medParams.8[1]),
+         as.numeric(medParams.9[1]),as.numeric(medParams.10[1])),
+       (c(as.numeric(paramsMM.grwthOrd[1,1:10])) + c(as.numeric(seMM.grwthOrd[1,1:10]))),
+      lwd = 1.25, angle = 90, code = 3, length=0)
+arrows(c(as.numeric(paramsMM.grwthOrd[1,1:10])),
+       c(as.numeric(medParams.1[1]),as.numeric(medParams.2[1]),
+         as.numeric(medParams.3[1]),as.numeric(medParams.4[1]),
+         as.numeric(medParams.5[1]),as.numeric(medParams.6[1]),
+         as.numeric(medParams.7[1]),as.numeric(medParams.8[1]),
+         as.numeric(medParams.9[1]),as.numeric(medParams.10[1])),
+       (c(as.numeric(paramsMM.grwthOrd[1,1:10])) - c(as.numeric(seMM.grwthOrd[1,1:10]))),
+       lwd = 1.25, angle = 90, code = 3, length=0)
+arrows(c(as.numeric(paramsMM.grwthOrd[1,1:10])),
+       c(as.numeric(medParams.1[1]),as.numeric(medParams.2[1]),
+         as.numeric(medParams.3[1]),as.numeric(medParams.4[1]),
+         as.numeric(medParams.5[1]),as.numeric(medParams.6[1]),
+         as.numeric(medParams.7[1]),as.numeric(medParams.8[1]),
+         as.numeric(medParams.9[1]),as.numeric(medParams.10[1])),
+          c(as.numeric(low95.1[1]),as.numeric(low95.2[1]),
+            as.numeric(low95.3[1]),as.numeric(low95.4[1]),
+            as.numeric(low95.5[1]),as.numeric(low95.6[1]),
+            as.numeric(low95.7[1]),as.numeric(low95.8[1]),
+            as.numeric(low95.9[1]),as.numeric(low95.10[1])),
+       lwd=1.25, angle=90, code=3, length=0)
+
 
 # Surv Sz
 plot(as.numeric(paramsMM.survOrd[1,1:10]), 
