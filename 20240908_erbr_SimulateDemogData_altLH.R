@@ -652,7 +652,7 @@ print(dd)
   ## save as csv 
   date <- Sys.Date()                                        #Enter date to be added to file name
   date <- str_replace_all(date, "-", "")
- # name <- as.character("SimDat20yrNoMissMedGrLH.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+ # name <- as.character("SimDat20yrHiGrLH.NoMissMedGrLH.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
   
   write.csv(datComb, file=paste(date, "_erbr_", name, "NoMiss.", dd, ".csv", sep=""), row.names=FALSE)
   print(paste(date, name, dd, ".csv", sep=""))
@@ -675,6 +675,32 @@ print(dd)
   datComb1$InflNew[datComb1$Year %in% (yrs.missing)] <- NA 
   ## -----------------------------------------------------------------------------------------------------
   
+  
+  
+  rm(list=ls())
+  
+  ## Start data set loop here
+  name <- as.character("SimDat50yrHiGrLH.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+  n.datset <- 10
+  for (dd in 1:n.datset) {
+    
+  
+  
+  ## LOAD DATA --------------------------------------------------------------------------------------
+  clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
+  
+  ## LOAD NO MISSING DATA TO PROCESS WITH THE FOLLOWING 
+  #datComb1 <- read.csv("20240910_erbr_SimDat20yrHiGrLH.NoMiss.1.csv", header = TRUE)
+  #datComb1 <- read.csv("20240910_erbr_SimDat20yrHiGrLH.NoMiss.2.csv", header = TRUE)
+  #datComb1 <- read.csv("20240910_erbr_SimDat20yrHiGrLH.NoMiss.3.csv", header = TRUE)
+  datComb1 <- read.csv(file=paste("20240910_erbr_SimDat50yrHiGrLH.NoMiss.", dd, ".csv", sep=""), header = TRUE)
+  #datComb1 <- read.csv("20240910_erbr_SimDat20yrHiGrLH.NoMiss.5.csv", header = TRUE)
+  #datComb1 <- read.csv("20240910_erbr_SimDat20yrHiGrLH.NoMiss.6.csv", header = TRUE)
+  #datComb1 <- read.csv("20240910_erbr_SimDat20yrHiGrLH.NoMiss.7.csv", header = TRUE)
+  #datComb1 <- read.csv("20240910_erbr_SimDat20yrHiGrLH.NoMiss.8.csv", header = TRUE)
+  #datComb1 <- read.csv("20240910_erbr_SimDat20yrHiGrLH.NoMiss.9.csv", header = TRUE)
+  #datComb1 <- read.csv("20240910_erbr_SimDat20yrHiGrLH.NoMiss.10.csv", header = TRUE)
+  ## -----------------------------------------------------------------------------------------------
   
   
   
@@ -825,12 +851,11 @@ print(dd)
   ## SAVE FORMATTED DATA ---------------------------------------------------------------
   date <- Sys.Date()                                #Enter date to be added to file name
   date <- str_replace_all(date, "-", "")
-#  name <- as.character("SimDat20yrMissMedGrLH.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
   
-  write.csv(erbr.1, file=paste(date, "_erbr_", name, "Miss.", dd, ".Format4JAGS", ".csv", sep=""), row.names=FALSE)
-  print(paste(date, name, dd, ".Format4JAGS", ".csv", sep=""))
+  write.csv(erbr.1, file=paste(date, "_erbr_", name, "NoMiss.", dd, ".Format4JAGS", ".csv", sep=""), row.names=FALSE)
+  #print(paste(date, name, dd, ".Format4JAGS", ".csv", sep=""))
   ## -----------------------------------------------------------------------------------
-  
+
   
   
 }  ##End dataset loop
