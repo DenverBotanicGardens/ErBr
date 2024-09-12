@@ -40,18 +40,17 @@ old <- Sys.time() # get start time
 
 ## LOOP OVER DATASETS -----------------------------------------------------------------------------
 n.datset <- 10
-for (dd in 7:n.datset) {
+for (dd in 1:n.datset) {
 
 
 ## LOAD DATA --------------------------------------------------------------------------------------
 #dats <- read.csv("20240904_erbr_SimDat20yrR2_Format4JAGS.csv", header = TRUE)
-#name <- as.character("SimDat20yrMiss.")
 #dats <- read.csv(file=paste("20240906", "_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), header=TRUE)
 
 
 ## ** ASSIGN NAME VARIABLE FOR DESIRED DATASETS **
-date <- as.character("20240910")
-name <- as.character("SimDat50yrHiGrLH.Miss.")
+date <- as.character("20240911")
+name <- as.character("SimDat50yrHiGrLH.NoMiss.")
 dats <- read.csv(file=paste(date,"_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), header=TRUE)
 ## ------------------------------------------------------------------------------------------------
 
@@ -199,8 +198,10 @@ newplt.yrtranscombo=100*newplt.trans+newplt.yr
 ## ------------------------------------------------------------------------------------------------
 
 ## For GLM non-missing datasets 
-#saveRDS(dats, file=paste("20240907", "_erbr_SimDat20yrNoMiss.", dd,".4GLM", ".rds", sep=""))
-
+#date <- as.character("20240911")
+#name <- as.character("SimDat20yrNoMissMedGrLH.NoMiss.")
+#saveRDS(dats, file=paste("20240911", "_erbr_", name, dd,".4GLM", ".rds", sep=""))
+#}
 
 
 
