@@ -677,10 +677,13 @@ print(dd)
   
   
   
+  
+  ## ------------------
   rm(list=ls())
   
   ## Start data set loop here
-  name <- as.character("SimDat50yrHiGrLH.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+  name <- as.character("SimDat20yrNoMissMedGrLH.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+  
   n.datset <- 10
   for (dd in 1:n.datset) {
     
@@ -693,7 +696,7 @@ print(dd)
   #datComb1 <- read.csv("20240910_erbr_SimDat20yrHiGrLH.NoMiss.1.csv", header = TRUE)
   #datComb1 <- read.csv("20240910_erbr_SimDat20yrHiGrLH.NoMiss.2.csv", header = TRUE)
   #datComb1 <- read.csv("20240910_erbr_SimDat20yrHiGrLH.NoMiss.3.csv", header = TRUE)
-  datComb1 <- read.csv(file=paste("20240910_erbr_SimDat50yrHiGrLH.NoMiss.", dd, ".csv", sep=""), header = TRUE)
+  datComb1 <- read.csv(file=paste("20240908_erbr_", name, dd, ".csv", sep=""), header = TRUE)
   #datComb1 <- read.csv("20240910_erbr_SimDat20yrHiGrLH.NoMiss.5.csv", header = TRUE)
   #datComb1 <- read.csv("20240910_erbr_SimDat20yrHiGrLH.NoMiss.6.csv", header = TRUE)
   #datComb1 <- read.csv("20240910_erbr_SimDat20yrHiGrLH.NoMiss.7.csv", header = TRUE)
