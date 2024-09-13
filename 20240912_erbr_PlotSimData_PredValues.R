@@ -167,7 +167,7 @@ binmids <- c(1, binmids)
 ## OBTAIN TRUE VALUES FOR ADDING TO PLOTS
 # re-format data from previous JAGS runs of real data
 medParams.realDatTr <- as.data.frame(t(medParams.realDat))
-medParams.realDatTr <- as.data.frame(cbind(medParams.realDatTr$`colMedians(as.matrix(chains))`,colnames(medParams.realDat)))
+medParams.realDatTr <- as.data.frame(cbind(as.numeric(medParams.realDatTr$`colMedians(as.matrix(chains))`),colnames(medParams.realDat)))
 colnames(medParams.realDatTr) <- c("realData", "Name")
 
 medParams.realDatTr <- medParams.realDatTr[55:70,]
@@ -176,7 +176,9 @@ medParams.realDatTr$ParamTitle <- c("Grwth Intercept","Grwth Size","Grwth Fall T
                                     "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Intercept","Surv Size",
                                     "Surv Winter Precip","Surv Fall Temp","Surv Summer Temp","Surv Winter Temp")
 medParams.realDatGrwth <- medParams.realDatTr[1:8,]
+medParams.realDatGrwth$realData <- as.numeric(as.character(medParams.realDatGrwth$realData))
 medParams.realDatSurv <- medParams.realDatTr[9:14,]
+medParams.realDatSurv$realData <- as.numeric(as.character(medParams.realDatSurv$realData))
 ## ------------------------------------------------------------------------------------------
 
 
@@ -232,68 +234,114 @@ medComb.surv <- as.data.frame(cbind(medParams.1[9:14], medParams.2[9:14],medPara
 
 
 ## OBTAIN VITAL RATE PREDICTIONS ----------------------------------------------
+## Plug in median param vals, annual climate and selected size predictor values 
+## Exclude random transect effects here 
 
-## Plug in median param vals, mean climate and selected size predictor values for sz classes/ loop into model formulas
-## Exclude random transect effects here (alternatively, could try mean values)
+## Make matrix to hold output data
+## Want lambda estimate for each parameter set, year, and transect 
+#column.names <- c("PARAM","YEAR","TRANSECT","LAMBDA")
+#lam.out.template <- as.data.frame(matrix(NA, nrow=num.year*num.transect*params, ncol=length(column.names)))
+#colnames(lam.out.template) <- column.names
+#lam.out.template$TRANSECT <- rep(unique(erbr$TransectNew))
+#lam.out.template$YEAR <- rep(sort(unique(erbr$Year)), each=num.transect)
+#lam.out.template$YEAR <- rep(sort(clim32yr$Year[1:(nrow(clim32yr)-1)]), each=num.transect)
+#lam.out.template$PARAM <- rep(1:params, each=(nrow(lam.out.template)/params))
+#lam.out.param <- NULL      #Variable to store final lambda outputs
+
+column.names <- c("DATASET","REP","CLIM YR","PLT SZ","SurvRate_JAGS","SurvRate_GLMM","SurvRate_GLMM","GrwthRate_JAGS","GrwthRate_GLMM","GrwthRate_True")
+output <- as.data.frame(matrix(NA,nrow=(10*20*51), ncol=length(column.names)))
+colnames(output) <- column.names
 
 
+#template.yr <- subset(template.param, YEAR==list.year[yy])  #Subset output template based on yr in yr loop
+#temp.vrs.yr <- subset(temp.vrs.param, YEAR==list.year[yy])
+#vrs.trans <- NULL
 
-## Rep/ dataset
-rr <- 1
+#for (tt in 1:num.transect) {
+#  temp.vrs.trans <- subset(temp.vrs.yr, TRANSECT==list.transect[tt])  #Subset vital rate output template based on transect
+  
 
-## Select climate years for given rep
-climYrs.sel <- climYrs[climYrs$Rep==rr,]
-#assign("climYrs", unique(simDat1$ClimYr)
+for (rr in 1:n.datset) {  #Dataset rep loop
+#rr <- 1
 
-
-## Climate year 
-yy <- 1
-#clim.sel <- climYrs.sel
-
-## All sizes
-
-## Growth (neg binom)
-## JAGS
-pred.grwthJAGS <- exp(medComb.grwth[1,rr] + medComb.grwth[2,rr]*log(binmids) 
-                  + medComb.grwth[3,rr]*climYrs.sel$Mean_fall_temp[yy]
-                  + medComb.grwth[4,rr]*climYrs.sel$Mean_summer_temp[yy]
-                  + medComb.grwth[5,rr]*climYrs.sel$Mean_winter_temp[yy]
-                  + medComb.grwth[6,rr]*climYrs.sel$Tot_fall_ppt[yy]
-                  + medComb.grwth[7,rr]*climYrs.sel$Tot_summer_ppt[yy]
-                  + medComb.grwth[8,rr]*climYrs.sel$Tot_winter_ppt[yy])
-
-## GLMM
-pred.grwthGLM <- exp(paramsMM.grwth[1,rr] + paramsMM.grwth[2,rr]*log(binmids) 
-                  + paramsMM.grwth[3,rr]*climYrs.sel$Mean_fall_temp[yy]
-                  + paramsMM.grwth[4,rr]*climYrs.sel$Mean_summer_temp[yy]
-                  + paramsMM.grwth[5,rr]*climYrs.sel$Mean_winter_temp[yy]
-                  + paramsMM.grwth[6,rr]*climYrs.sel$Tot_fall_ppt[yy]
-                  + paramsMM.grwth[7,rr]*climYrs.sel$Tot_summer_ppt[yy]
-                  + paramsMM.grwth[8,rr]*climYrs.sel$Tot_winter_ppt[yy])
-
-## True params
-pred.grwthTrue <- exp(medParams.realDatGrwth[1] + medParams.realDatGrwth[2]*log(binmids) 
-                      + medParams.realDatGrwth[3]*climYrs.sel$Mean_fall_temp[yy]
-                      + medParams.realDatGrwth[4]*climYrs.sel$Mean_summer_temp[yy]
-                      + medParams.realDatGrwth[5]*climYrs.sel$Mean_winter_temp[yy]
-                      + medParams.realDatGrwth[6]*climYrs.sel$Tot_fall_ppt[yy]
-                      + medParams.realDatGrwth[7]*climYrs.sel$Tot_summer_ppt[yy]
-                      + medParams.realDatGrwth[8]*climYrs.sel$Tot_winter_ppt[yy])
-
-pred.grwthJAGS <-
-pred.grwthGLM <-
-pred.grwthTrue <- 
+  ## Select climate years for given rep
+  climYrs.sel <- climYrs[climYrs$Rep==rr,]
+  #assign("climYrs", unique(simDat1$ClimYr)
   
   
-## Survival (binom)  
-#pred.surv <- 1/(1+exp(-(medParams$surv_intercept + medParams$surv_RosCoef*in.data$RosNew + 
-#                          medParams$surv_PptWinterCoef*clim["Tot_winter_ppt"] + 
-#                          medParams$surv_TempWinterCoef*clim["Mean_winter_temp"] +
-#                          medParams$surv_TempSummerCoef*clim["Mean_summer_temp"] + 
-#                         medParams$surv_TempFallCoef*clim["Mean_fall_temp"])))
-
-
-
+  for (yy in 1:nrow(climYrs.sel))
+  ## Climate year 
+  yy <- 1
+  #clim.sel <- climYrs.sel
+  
+  ## All sizes
+  
+  ## Growth (neg binom)
+  ## JAGS
+  pred.grwthJAGS <- exp(medComb.grwth[1,rr] + medComb.grwth[2,rr]*log(binmids) 
+                    + medComb.grwth[3,rr]*climYrs.sel$Mean_fall_temp[yy]
+                    + medComb.grwth[4,rr]*climYrs.sel$Mean_summer_temp[yy]
+                    + medComb.grwth[5,rr]*climYrs.sel$Mean_winter_temp[yy]
+                    + medComb.grwth[6,rr]*climYrs.sel$Tot_fall_ppt[yy]
+                    + medComb.grwth[7,rr]*climYrs.sel$Tot_summer_ppt[yy]
+                    + medComb.grwth[8,rr]*climYrs.sel$Tot_winter_ppt[yy])
+  
+  ## GLMM
+  pred.grwthGLM <- exp(paramsMM.grwth[1,rr] + paramsMM.grwth[2,rr]*log(binmids) 
+                    + paramsMM.grwth[3,rr]*climYrs.sel$Mean_fall_temp[yy]
+                    + paramsMM.grwth[4,rr]*climYrs.sel$Mean_summer_temp[yy]
+                    + paramsMM.grwth[5,rr]*climYrs.sel$Mean_winter_temp[yy]
+                    + paramsMM.grwth[6,rr]*climYrs.sel$Tot_fall_ppt[yy]
+                    + paramsMM.grwth[7,rr]*climYrs.sel$Tot_summer_ppt[yy]
+                    + paramsMM.grwth[8,rr]*climYrs.sel$Tot_winter_ppt[yy])
+  
+  ## True params
+  pred.grwthTrue <- exp(medParams.realDatGrwth$realData[1] + medParams.realDatGrwth$realData[2]*log(binmids) 
+                        + medParams.realDatGrwth$realData[3]*climYrs.sel$Mean_fall_temp[yy]
+                        + medParams.realDatGrwth$realData[4]*climYrs.sel$Mean_summer_temp[yy]
+                        + medParams.realDatGrwth$realData[5]*climYrs.sel$Mean_winter_temp[yy]
+                        + medParams.realDatGrwth$realData[6]*climYrs.sel$Tot_fall_ppt[yy]
+                        + medParams.realDatGrwth$realData[7]*climYrs.sel$Tot_summer_ppt[yy]
+                        + medParams.realDatGrwth$realData[8]*climYrs.sel$Tot_winter_ppt[yy])
+  
+  
+  ## Survival (binom)
+  ## JAGS
+  pred.survJAGS <- 1/(1+exp(-(medComb.surv[1,rr] + medComb.surv[2,rr]*log(binmids) + 
+                            medComb.surv[3,rr]*climYrs.sel$Tot_winter_ppt[yy] + 
+                            medComb.surv[4,rr]*climYrs.sel$Mean_fall_temp[yy] +
+                            medComb.surv[5,rr]*climYrs.sel$Mean_summer_temp[yy] +
+                            medComb.surv[6,rr]*climYrs.sel$Mean_winter_temp[yy])))
+  
+  ## GLMM
+  pred.survGLMM <- 1/(1+exp(-(paramsMM.surv[1,rr] + paramsMM.surv[2,rr]*log(binmids) + 
+                                paramsMM.surv[3,rr]*climYrs.sel$Tot_winter_ppt[yy] + 
+                                paramsMM.surv[4,rr]*climYrs.sel$Mean_fall_temp[yy] +
+                                paramsMM.surv[5,rr]*climYrs.sel$Mean_summer_temp[yy] +
+                                paramsMM.surv[6,rr]*climYrs.sel$Mean_winter_temp[yy])))
+  
+  ## True params
+  pred.survTrue <- 1/(1+exp(-(medParams.realDatSurv$realData[1] + medParams.realDatSurv$realData[2]*log(binmids) + 
+                                medParams.realDatSurv$realData[3]*climYrs.sel$Tot_winter_ppt[yy] + 
+                                medParams.realDatSurv$realData[4]*climYrs.sel$Mean_fall_temp[yy] +
+                                medParams.realDatSurv$realData[5]*climYrs.sel$Mean_summer_temp[yy] +
+                                medParams.realDatSurv$realData[6]*climYrs.sel$Mean_winter_temp[yy])))
+  
+  
+  output$REP <- rep(rr, )
+  output$GrwthRate_JAGS[1:51] <- pred.grwthJAGS 
+  output$GrwthRate_GLMM <- pred.grwthGLM 
+  output$GrwthRate_True <- pred.grwthTrue 
+  
+  output$SurvRate_JAGS <- pred.survJAGS 
+  output$SurvRate_GLMM <- pred.survGLM 
+  output$SurvRate_True <- pred.survTrue 
+  
+  } ## End year loop
+    
+    
+} ## End dataset replicates loop
+  
 
 
 
