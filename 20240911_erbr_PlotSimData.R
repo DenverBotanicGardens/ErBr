@@ -177,7 +177,7 @@ mnComb.surv <- as.data.frame(cbind(mnParams.1[8:12], mnParams.2[8:12],mnParams.3
 date <- as.character("20240911")
 #name
 #name <- str_replace_all(name, ".", "")
-name <- "SimDat20yrNoMissMedGrLH."
+name <- "SimDat20yrHiGrLH."
 
 #modList.grwth <- NULL        #List variable to store all models
 #modList.surv <- NULL        #List variable to store all models
@@ -269,7 +269,8 @@ seMM.surv$ParamTitle <- names.paramTitles[9:14]
 
 ## Save GLMM param and se results 
 date <- as.character("20240912")
-name <- "SimDat20yrMedGr"
+name
+name <- "SimDat20yrHiGr"
 saveRDS(paramsMM.grwth, file=paste(date, "_erbr_paramMMgrwthWint_", name, ".rds", sep=""))
 saveRDS(seMM.grwth, file=paste(date, "_erbr_seMMgrwthWint_", name, ".rds", sep=""))
 saveRDS(paramsMM.surv, file=paste(date, "_erbr_paramMMsurvWint_", name, ".rds", sep=""))
@@ -282,10 +283,10 @@ saveRDS(seMM.surv, file=paste(date, "_erbr_seMMsurvWint_", name, ".rds", sep="")
 
 #name <- "SimDat20yrMedGrLH."
 ## Load saved GLMM results
-paramsMM.grwthOrd <- readRDS(file=paste("20240911_erbr_paramMMgrwthOrd_", name, ".rds", sep=""))
-seMM.grwthOrd <- readRDS(file=paste("20240911_erbr_seMMgrwthOrd_", name,".rds", sep=""))
-paramsMM.survOrd <- readRDS(file=paste("20240911_erbr_paramMMsurvOrd_", name, ".rds", sep=""))
-seMM.survOrd <- readRDS(file=paste("20240911_erbr_seMMsurvOrd_", name, ".rds", sep=""))
+#paramsMM.grwthOrd <- readRDS(file=paste("20240911_erbr_paramMMgrwthOrd_", name, ".rds", sep=""))
+#seMM.grwthOrd <- readRDS(file=paste("20240911_erbr_seMMgrwthOrd_", name,".rds", sep=""))
+#paramsMM.survOrd <- readRDS(file=paste("20240911_erbr_paramMMsurvOrd_", name, ".rds", sep=""))
+#seMM.survOrd <- readRDS(file=paste("20240911_erbr_seMMsurvOrd_", name, ".rds", sep=""))
 ## ------------------------------------------------------------------------------------------------------------
 
 
