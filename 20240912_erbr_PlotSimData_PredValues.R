@@ -238,36 +238,23 @@ medComb.surv <- as.data.frame(cbind(medParams.1[9:14], medParams.2[9:14],medPara
 ## Exclude random transect effects here 
 
 ## Make matrix to hold output data
-## Want lambda estimate for each parameter set, year, and transect 
-#column.names <- c("PARAM","YEAR","TRANSECT","LAMBDA")
-#lam.out.template <- as.data.frame(matrix(NA, nrow=num.year*num.transect*params, ncol=length(column.names)))
-#colnames(lam.out.template) <- column.names
-#lam.out.template$TRANSECT <- rep(unique(erbr$TransectNew))
-#lam.out.template$YEAR <- rep(sort(unique(erbr$Year)), each=num.transect)
-#lam.out.template$YEAR <- rep(sort(clim32yr$Year[1:(nrow(clim32yr)-1)]), each=num.transect)
-#lam.out.template$PARAM <- rep(1:params, each=(nrow(lam.out.template)/params))
-#lam.out.param <- NULL      #Variable to store final lambda outputs
-
 column.names <- c("DATASET","REP","CLIM YR","PLT SZ","SurvRate_JAGS","SurvRate_GLMM","SurvRate_GLMM","GrwthRate_JAGS","GrwthRate_GLMM","GrwthRate_True")
-output <- as.data.frame(matrix(NA,nrow=(10*20*51), ncol=length(column.names)))
+#output <- as.data.frame(matrix(NA,nrow=(10*20*51), ncol=length(column.names)))
 colnames(output) <- column.names
+output$DATASET <- rep(name, nrow(output))
+#output$REP <- 
 
-
-#template.yr <- subset(template.param, YEAR==list.year[yy])  #Subset output template based on yr in yr loop
-#temp.vrs.yr <- subset(temp.vrs.param, YEAR==list.year[yy])
-#vrs.trans <- NULL
-
-#for (tt in 1:num.transect) {
-#  temp.vrs.trans <- subset(temp.vrs.yr, TRANSECT==list.transect[tt])  #Subset vital rate output template based on transect
-  
+## ** make list of climate yr lengths for each yr, number of rows for each rep is therefore num yrs*51 ***
 
 for (rr in 1:n.datset) {  #Dataset rep loop
 #rr <- 1
-
   ## Select climate years for given rep
   climYrs.sel <- climYrs[climYrs$Rep==rr,]
   #assign("climYrs", unique(simDat1$ClimYr)
   
+  #output$REP <- rep(rr, nrow(climYrs.sel))
+  #output.rep <- subset(output, REP==rr) #Subset output dataframe by dataset replicate
+
   
   for (yy in 1:nrow(climYrs.sel))
   ## Climate year 
