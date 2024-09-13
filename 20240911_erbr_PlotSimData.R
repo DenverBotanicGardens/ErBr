@@ -25,7 +25,7 @@ library(plotrix)
 
 ## ASSIGN NAME VARIABLE FOR DESIRED DATASETS 
 #date <- as.character("20240911")
-name <- as.character("SimDat20yr")
+name <- as.character("SimDat20yr.")
 #dats <- read.csv(file=paste(date,"_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), header=TRUE)
 ## ------------------------------------------------------------------------------------------------
 
@@ -43,7 +43,7 @@ summ.mod8 <- readRDS("20240910_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat50yrM
 summ.mod9 <- readRDS("20240910_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat50yrMiss.9.rds")
 summ.mod10 <- readRDS("20240910_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat50yrMiss.10.rds")
 
-date <- as.character("20240910")
+date <- as.character("20240906")
 name
 summ.mod1 <- readRDS(file=paste(date,"_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_", name, "1.rds", sep=""))
 summ.mod2 <- readRDS(file=paste(date,"_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_", name, "2.rds", sep=""))
@@ -65,10 +65,10 @@ summ.mod10 <- readRDS(file=paste(date,"_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_",
 
 ## SUBSET OUTPUT TO JUST KEEP PARAMS OF INTEREST
 #names.param <- colnames(as.matrix(summ.mod1$mcmc[1]))[26:41]
-names.param <- rownames(summ.mod1)[26:41]
-names.param <- names.param[c(2:8,12:16)] #Remove intercept and GrwthVar  
-names.paramTitles <- c("Grwth Size","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
-                       "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Size",
+#names.param <- rownames(summ.mod1)[26:41]
+#names.param <- names.param[c(2:8,12:16)] #Remove intercept and GrwthVar  
+names.paramTitles <- c("Grwth Intercept","Grwth Size","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
+                       "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Intercept","Surv Size",
                        "Surv Winter Precip","Surv Fall Temp","Surv Summer Temp","Surv Winter Temp")
 
 ## Re-order parameter names for plotting 
@@ -175,9 +175,12 @@ mnComb.surv <- as.data.frame(cbind(mnParams.1[8:12], mnParams.2[8:12],mnParams.3
 ## OBTAIN GLMM ESTIMATES -------------------------------------------------------------------------
 ## Loop over datasets 
 date <- as.character("20240911")
-name
+#name
+#name <- str_replace_all(name, ".", "")
+name <- "SimDat20yrNoMissMedGrLH."
 
-
+#modList.grwth <- NULL        #List variable to store all models
+#modList.surv <- NULL        #List variable to store all models
 paramsMM.grwth <- NULL
 seMM.grwth <- NULL
 paramsMM.surv <- NULL
@@ -193,20 +196,29 @@ for (dd in 1:n.datset) {
   
   noMiss <- noMiss[which(noMiss$TagNew == noMiss$TagNew1),]  #Remove lines with mis-matched individuals 
   
-  ## Log size in all models to match JAGs; this makes ending size a linear function of starting size
+  ## Log size in all models to match JAGS; this makes ending size a linear function of starting size
   
-  ## Growth ** REORDER PARAMS FOR FUTURE RUNS ***
-  glmm.grwth <- glmer.nb(RosNew1 ~ log(RosNew) + PptFall + PptWinter + PptSummer + 
-                           TempFall + TempWinter + TempSummer + (1|TransectNew), data=noMiss)
+  ## Growth (param order is same as for JAGS output)
+  glmm.grwth <- glmer.nb(RosNew1 ~ log(RosNew) + TempFall + TempSummer + TempWinter + 
+                           PptFall + PptSummer + PptWinter + (1|TransectNew), data=noMiss)
   
-  ## Survival  
-  glmm.surv <- glmer(Surv1 ~ log(RosNew) + PptWinter + TempFall + (TempWinter) + 
-                       (TempSummer) + (1|TransectNew), family=binomial(link='logit'), data=noMiss)
+  #glmm.grwth <- glmer.nb(RosNew1 ~ log(RosNew) + PptFall + PptWinter + PptSummer + 
+  #                         TempFall + TempWinter + TempSummer + (1|TransectNew), data=noMiss)
+  
+  ## Survival  (param order is same as for JAGS output)
+  glmm.surv <- glmer(Surv1 ~ log(RosNew) + PptWinter + TempFall + TempSummer + 
+                       TempWinter + (1|TransectNew), family=binomial(link='logit'), data=noMiss)
+  #glmm.surv <- glmer(Surv1 ~ log(RosNew) + PptWinter + TempFall + (TempWinter) + 
+  #                     (TempSummer) + (1|TransectNew), family=binomial(link='logit'), data=noMiss)
+  
+  ## Save model object in list
+  #modList.grwth[[length(modList.grwth) + 1]] <- glmm.grwth
+  #modList.surv[[length(modList.surv) + 1]] <- glmm.surv
   
   
-  ## Extract parameter estimates and SEs from GLMMs
-  paramsMM.grwthTmp <- as.data.frame(summary(glmm.grwth)$coefficients[2:nrow(summary(glmm.grwth)$coefficients),1])
-  seMM.grwthTmp <- as.data.frame(summary(glmm.grwth)$coefficients[2:nrow(summary(glmm.grwth)$coefficients),2])
+  ## Extract parameter estimates, including intercept, and SEs from GLMMs
+  paramsMM.grwthTmp <- as.data.frame(summary(glmm.grwth)$coefficients[1:nrow(summary(glmm.grwth)$coefficients),1])
+  seMM.grwthTmp <- as.data.frame(summary(glmm.grwth)$coefficients[1:nrow(summary(glmm.grwth)$coefficients),2])
   
   colnames(paramsMM.grwthTmp) <- paste("GLMM.",dd,sep="")
   colnames(seMM.grwthTmp) <- paste("SE.",dd,sep="")#),"ParamTitle")
@@ -215,10 +227,9 @@ for (dd in 1:n.datset) {
   seMM.grwth <- as.data.frame(c(seMM.grwth, seMM.grwthTmp))
   
   
-  paramsMM.survTmp <- as.data.frame(summary(glmm.surv)$coefficients[2:nrow(summary(glmm.surv)$coefficients),1])#,
-  seMM.survTmp <- as.data.frame(summary(glmm.surv)$coefficients[2:nrow(summary(glmm.surv)$coefficients),2])#,
-  #c("Surv Size","Surv Winter Precip",
-  # "Surv Fall Temp","Surv Winter Temp","Surv Summer Temp"))
+  paramsMM.survTmp <- as.data.frame(summary(glmm.surv)$coefficients[1:nrow(summary(glmm.surv)$coefficients),1])
+  seMM.survTmp <- as.data.frame(summary(glmm.surv)$coefficients[1:nrow(summary(glmm.surv)$coefficients),2])
+  
   colnames(paramsMM.survTmp) <- paste("GLMM.",dd,sep="")
   colnames(seMM.survTmp) <- paste("SE.",dd,sep="")
   paramsMM.surv <- as.data.frame(c(paramsMM.surv, paramsMM.survTmp))
@@ -226,14 +237,21 @@ for (dd in 1:n.datset) {
   
 }
 
-paramsMM.grwth$ParamTitle <- c("Grwth Size","Grwth Fall Precip","Grwth Winter Precip","Grwth Summer Precip",
-                               "Grwth Fall Temp","Grwth Winter Temp","Grwth Summer Temp")
-seMM.grwth$ParamTitle <- c("Grwth Size","Grwth Fall Precip","Grwth Winter Precip","Grwth Summer Precip",
-                           "Grwth Fall Temp","Grwth Winter Temp","Grwth Summer Temp")
-paramsMM.surv$ParamTitle <- c("Surv Size","Surv Winter Precip",
-                              "Surv Fall Temp","Surv Winter Temp","Surv Summer Temp")
-seMM.surv$ParamTitle <- c("Surv Size","Surv Winter Precip",
-                          "Surv Fall Temp","Surv Winter Temp","Surv Summer Temp")
+paramsMM.grwthTmp
+paramsMM.grwth$ParamTitle <- names.paramTitles[1:8]
+seMM.grwth$ParamTitle <- names.paramTitles[1:8]
+paramsMM.survTmp
+paramsMM.surv$ParamTitle <- names.paramTitles[9:14]
+seMM.surv$ParamTitle <- names.paramTitles[9:14]
+
+#paramsMM.grwth$ParamTitle <- c("Grwth Intercept","Grwth Size","Grwth Fall Precip","Grwth Winter Precip","Grwth Summer Precip",
+#                               "Grwth Fall Temp","Grwth Winter Temp","Grwth Summer Temp")
+#seMM.grwth$ParamTitle <- c("Grwth Intercept","Grwth Size","Grwth Fall Precip","Grwth Winter Precip","Grwth Summer Precip",
+#                           "Grwth Fall Temp","Grwth Winter Temp","Grwth Summer Temp")
+#paramsMM.surv$ParamTitle <- c("Surv Size","Surv Winter Precip",
+#                              "Surv Fall Temp","Surv Winter Temp","Surv Summer Temp")
+#seMM.surv$ParamTitle <- c("Surv Size","Surv Winter Precip",
+#                          "Surv Fall Temp","Surv Winter Temp","Surv Summer Temp")
 
 
 ## Load saved GLMM results
@@ -243,22 +261,23 @@ seMM.surv$ParamTitle <- c("Surv Size","Surv Winter Precip",
 #seMM.surv <- readRDS(file=paste("20240908_erbr_seMMsurv_SimDat20yr",".rds", sep=""))
 
 ## Re-order parameter names for plotting 
-paramsMM.grwthOrd <- paramsMM.grwth[match(names.paramTitles[1:7], paramsMM.grwth$ParamTitle),]
-seMM.grwthOrd <- seMM.grwth[match(names.paramTitles[1:7], seMM.grwth$ParamTitle),]
-paramsMM.survOrd <- paramsMM.surv[match(names.paramTitles[8:12], paramsMM.surv$ParamTitle),]
-seMM.survOrd <- seMM.surv[match(names.paramTitles[8:12], seMM.surv$ParamTitle),]
+#paramsMM.grwthOrd <- paramsMM.grwth[match(names.paramTitles[1:7], paramsMM.grwth$ParamTitle),]
+#seMM.grwthOrd <- seMM.grwth[match(names.paramTitles[1:7], seMM.grwth$ParamTitle),]
+#paramsMM.survOrd <- paramsMM.surv[match(names.paramTitles[8:12], paramsMM.surv$ParamTitle),]
+#seMM.survOrd <- seMM.surv[match(names.paramTitles[8:12], seMM.surv$ParamTitle),]
+
 
 ## Save GLMM param and se results 
 date <- as.character("20240912")
-name
-saveRDS(paramsMM.grwthOrd, file=paste(date, "_erbr_paramMMgrwthOrd_", name, ".rds", sep=""))
-saveRDS(seMM.grwthOrd, file=paste(date, "_erbr_seMMgrwthOrd_", name, ".rds", sep=""))
-saveRDS(paramsMM.survOrd, file=paste(date, "_erbr_paramMMsurvOrd_", name, ".rds", sep=""))
-saveRDS(seMM.survOrd, file=paste(date, "_erbr_seMMsurvOrd_", name, ".rds", sep=""))
+name <- "SimDat20yrMedGr"
+saveRDS(paramsMM.grwth, file=paste(date, "_erbr_paramMMgrwthWint_", name, ".rds", sep=""))
+saveRDS(seMM.grwth, file=paste(date, "_erbr_seMMgrwthWint_", name, ".rds", sep=""))
+saveRDS(paramsMM.surv, file=paste(date, "_erbr_paramMMsurvWint_", name, ".rds", sep=""))
+saveRDS(seMM.surv, file=paste(date, "_erbr_seMMsurvWint_", name, ".rds", sep=""))
 
 ## Save GLMM model objects
-saveRDS(glmm.grwth, file=paste(date, "_erbr_GLMMgrwth_", name, ".rds", sep=""))
-saveRDS(glmm.surv, file=paste(date, "_erbr_GLMMsurv_", name, ".rds", sep=""))
+#saveRDS(glmm.grwth, file=paste(date, "_erbr_GLMMgrwth_", name, ".rds", sep=""))
+#saveRDS(glmm.surv, file=paste(date, "_erbr_GLMMsurv_", name, ".rds", sep=""))
 
 
 #name <- "SimDat20yrMedGrLH."
@@ -268,6 +287,8 @@ seMM.grwthOrd <- readRDS(file=paste("20240911_erbr_seMMgrwthOrd_", name,".rds", 
 paramsMM.survOrd <- readRDS(file=paste("20240911_erbr_paramMMsurvOrd_", name, ".rds", sep=""))
 seMM.survOrd <- readRDS(file=paste("20240911_erbr_seMMsurvOrd_", name, ".rds", sep=""))
 ## ------------------------------------------------------------------------------------------------------------
+
+
 
 
 

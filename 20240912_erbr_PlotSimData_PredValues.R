@@ -27,68 +27,138 @@ library(plotrix)
 
 ## ASSIGN NAME VARIABLE FOR DESIRED DATASETS 
 #date <- as.character("20240911")
-name <- as.character("SimDat50yr")
-#dats <- read.csv(file=paste(date,"_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), header=TRUE)
+#name <- as.character("SimDat20yr")
 ## ------------------------------------------------------------------------------------------------
 
 
 
-## LOAD FILES -------------------------------------------------
+
+
+## LOAD FILES -------------------------------------------------------------------------------------
 clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
 
 date <- "20240912"
-name <- "SimDat50yr"
-paramMMgrwth <- readRDS(file=paste(date, "_erbr_paramMMgrwth_", name, ".rds", sep=""))
-paramMMsurv <- readRDS(file=paste(date, "_erbr_paramMMsurv_", name, ".rds", sep=""))
-glmm.grwth <- readRDS(file=paste(date, "_erbr_GLMMgrwth_", name, ".rds", sep=""))
-glmm.surv <- readRDS(file=paste(date, "_erbr_GLMMsurv_", name, ".rds", sep=""))
+name <- "SimDat20yr"
+paramMMgrwth <- readRDS(file=paste(date, "_erbr_paramMMgrwthWint_", name, ".rds", sep=""))
+paramMMsurv <- readRDS(file=paste(date, "_erbr_paramMMsurvWint_", name, ".rds", sep=""))
+#glmm.grwth <- readRDS(file=paste(date, "_erbr_GLMMgrwth_", name, ".rds", sep=""))
+#glmm.surv <- readRDS(file=paste(date, "_erbr_GLMMsurv_", name, ".rds", sep=""))
 
 
 #summ.mod1 <- readRDS("20240906_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.1.rds")
-#summ.mod1 <- readRDS("20240910_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat50yrMiss.1.rds")
-#summ.mod2 <- readRDS("20240910_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat50yrMiss.2.rds")
-#summ.mod3 <- readRDS("20240910_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat50yrMiss.3.rds")
-#summ.mod4 <- readRDS("20240910_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat50yrMiss.4.rds")
-#summ.mod5 <- readRDS("20240910_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat50yrMiss.5.rds")
-#summ.mod6 <- readRDS("20240910_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat50yrMiss.6.rds")
-#summ.mod7 <- readRDS("20240910_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat50yrMiss.7.rds")
-#summ.mod8 <- readRDS("20240910_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat50yrMiss.8.rds")
-#summ.mod9 <- readRDS("20240910_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat50yrMiss.9.rds")
-summ.mod10 <- readRDS("20240910_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat50yrMiss.10.rds")
-## --------------------------------
+summ.mod1 <- readRDS("20240906_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.1.rds")
+summ.mod2 <- readRDS("20240906_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.2.rds")
+summ.mod3 <- readRDS("20240906_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.3.rds")
+summ.mod4 <- readRDS("20240906_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.4.rds")
+summ.mod5 <- readRDS("20240906_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.5.rds")
+summ.mod6 <- readRDS("20240907_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.6.rds")
+summ.mod7 <- readRDS("20240907_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.7.rds")
+summ.mod8 <- readRDS("20240907_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.8.rds")
+summ.mod9 <- readRDS("20240907_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.9.rds")
+summ.mod10 <- readRDS("20240907_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.10.rds")
 
-
-
-## GeT CLIMATE VARIABLES ----------
-#n.yrs <- 51 #Assign number of years (plus 1) to simulate climate data for 
-
-#Create empty variable to hold simulated climate data
-#column.names <- colnames(clim32yr)
-#sim.clim <- as.data.frame(matrix(NA, nrow=length(1:n.yrs), ncol=length(column.names)))
-#colnames(sim.clim) <- column.names
-#sim.clim$Year <- 1:n.yrs
-
-#List of random numbers that corresponds to a set of climate values 
-#rel.yrs <- 2002:2021 #Select relevant subset of yrs (this matches what was used for stoch lam to keep Methods consistent) 
-#climYrs.rel <- clim32yr[clim32yr$Year>=2002 & clim32yr$Year<=2021,]
-#randVals.yr <- sample(1:nrow(climYrs.rel), size=n.yrs, prob=NULL, replace=TRUE)
-
-#for (cc in 1:length(1:n.yrs)) {
-#  sim.clim[cc,2:7] <- climYrs.rel[randVals.yr[cc],2:7] 
-#  sim.clim$Clim_yr[cc] <- climYrs.rel[randVals.yr[cc],1]
-#}
-
-## Example climate yrs 
-SimDat <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/20240907_erbr_SimDat20yrNoMiss.1.Format4JAGS.csv", header=TRUE)
-SimDat$ClimYr[1:20]
-clim <- clim32yr[clim32yr$Year==2015,]
-## ----------------------------------------------------------------------------
+simDat1 <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/20240907_erbr_SimDat20yrNoMiss.1.Format4JAGS.csv", header=TRUE)
+simDat2 <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/20240907_erbr_SimDat20yrNoMiss.2.Format4JAGS.csv", header=TRUE)
+simDat3 <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/20240907_erbr_SimDat20yrNoMiss.3.Format4JAGS.csv", header=TRUE)
+simDat4 <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/20240907_erbr_SimDat20yrNoMiss.4.Format4JAGS.csv", header=TRUE)
+simDat5 <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/20240907_erbr_SimDat20yrNoMiss.5.Format4JAGS.csv", header=TRUE)
+simDat6 <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/20240907_erbr_SimDat20yrNoMiss.6.Format4JAGS.csv", header=TRUE)
+simDat7 <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/20240907_erbr_SimDat20yrNoMiss.7.Format4JAGS.csv", header=TRUE)
+simDat8 <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/20240907_erbr_SimDat20yrNoMiss.8.Format4JAGS.csv", header=TRUE)
+simDat9 <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/20240907_erbr_SimDat20yrNoMiss.9.Format4JAGS.csv", header=TRUE)
+simDat10 <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/20240907_erbr_SimDat20yrNoMiss.10.Format4JAGS.csv", header=TRUE)
+## -----------------------------------------------------------------------------------------------
 
 
 
 
 
-## Get Median param values from JAGS run ---
+## GET CLIMATE VARIABLES ------------------------------------------------------------------------
+#n.yrs <- 20 #Dataset length 
+climYrs1 <- clim32yr[clim32yr$Year %in% unique(simDat1$ClimYr),]
+climYrs2 <- clim32yr[clim32yr$Year %in% unique(simDat2$ClimYr),]
+climYrs3 <- clim32yr[clim32yr$Year %in% unique(simDat3$ClimYr),]
+climYrs4 <- clim32yr[clim32yr$Year %in% unique(simDat4$ClimYr),]
+climYrs5 <- clim32yr[clim32yr$Year %in% unique(simDat5$ClimYr),]
+climYrs6 <- clim32yr[clim32yr$Year %in% unique(simDat6$ClimYr),]
+climYrs7 <- clim32yr[clim32yr$Year %in% unique(simDat7$ClimYr),]
+climYrs8 <- clim32yr[clim32yr$Year %in% unique(simDat8$ClimYr),]
+climYrs9 <- clim32yr[clim32yr$Year %in% unique(simDat9$ClimYr),]
+climYrs10 <- clim32yr[clim32yr$Year %in% unique(simDat10$ClimYr),]
+## ---------------------------------------------------------------------------------------------
+
+
+
+
+## GET RANGE IF PLANT SIZES FOR MAKING PREDICTIONS ---------------------------------------------
+## Initialize variable with size input data for predictions
+#in.data <- as.data.frame(binmids) 
+#in.data <- 1:151
+#colnames(in.data) <- "RosNew"
+#$RosNew)
+
+#popSz.start <- 181                 #Set starting pop sz as 2007 obs sz
+
+#SSD=eigen(mx.mean)$vectors[,1]
+#SSD=Re(SSD/sum(SSD))
+#N.vecStart=popSz.start * SSD
+
+
+# Specify min and max plt sz
+minsize <- 1
+maxsize <- (max(erbr$RosNew, na.rm=TRUE)) 
+
+## For median sz estimation
+## From Dan's bistorts to guppies code 
+##new size density estimation for median size estimation
+pdfsz=density(erbr$RosNew, n=1024, cut=0, na.rm=TRUE) 
+pdfsz2=cbind(pdfsz$x,pdfsz$y)
+## This is a set of smoothed values that can then be used w weightedMedian in the matrixStats package to get a 'good' median for each class
+
+n.bin <- 50  #Define number of bins 
+
+## Improved method of finding median size/ bin mids (code from Dan)
+vec.bin = c(minsize, minsize+1:n.bin*(maxsize-minsize)*(1/n.bin)) 
+## Do this block to make medians the focal estimated size for each category
+binmids = rep(NA, length(vec.bin)-1)
+
+for(jj in 1:(length(vec.bin)-1)) {
+  ## Set limits for subset according to bin breaks
+  bounds <- c(vec.bin[jj], vec.bin[jj+1])
+  ## Subset data according to bounds
+  subsetszs <- pdfsz2[which(pdfsz2[,1] >= bounds[1] & pdfsz2[,1] < bounds[2]),]
+  binmids[jj] <- weightedMedian(subsetszs[,1],subsetszs[,2])
+}
+
+binmids <- c(1, binmids)  
+## ------------------------------------------------------------------------------------------
+
+
+
+
+## --------------------------------------------------------------------------------------------
+## OBTAIN TRUE VALUES FOR ADDING TO PLOTS
+# Load data from previous JAGS runs of real data
+medParams.realDat <- readRDS("erbrMedParams_noYRE_20240803")
+medParams.realDatTr <- as.data.frame(t(medParams.realDat))
+medParams.realDatTr <- as.data.frame(cbind(medParams.realDatTr$`colMedians(as.matrix(chains))`,colnames(medParams.realDat)))
+colnames(medParams.realDatTr) <- c("realData", "Name")
+
+#names.param <- rownames(summ.mod1)[26:41]
+medParams.realDatTr <- medParams.realDatTr[55:70,]
+medParams.realDatTr <- medParams.realDatTr[c(2:8,12:16),] #Remove intercept and GrwthVar  
+medParams.realDatTr$ParamTitle <- c("Grwth Size","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
+                                    "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Size",
+                                    "Surv Winter Precip","Surv Fall Temp","Surv Summer Temp","Surv Winter Temp")
+medParams.realDatGrwth <- medParams.realDatTr[1:7,]
+medParams.realDatSurv <- medParams.realDatTr[8:12,]
+## ------------------------------------------------------------------------------------------
+
+
+
+
+
+## Get Median param values from JAGS run ----------------------------------------------------
 names.param <- rownames(summ.mod1)[c(26:33,36:41)]
 names.paramTitles <- c("Grwth Intercept","Grwth Size","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
                        "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Intercept","Surv Size",
@@ -108,23 +178,23 @@ medParams.10 <- summ.mod10[c(26:33,36:41),2]
 medComb.grwth <- as.data.frame(cbind(medParams.1[1:8], medParams.2[1:8],medParams.3[1:8],
                                      medParams.4[1:8],medParams.5[1:8],medParams.6[1:8],
                                      medParams.7[1:8],medParams.8[1:8],medParams.9[1:8],medParams.10[1:8]))
-## --------------------------------------
+## --------------------------------------------------------------------------------------
 
 
 
 
-## Get GLMM param values -------------
+## Get GLMM param values ----------------------------------------------------------------
 #paramsMM.grwthTmp <- as.data.frame(summary(glmm.grwth)$coefficients[1:nrow(summary(glmm.grwth)$coefficients),1])
 #colnames(paramsMM.grwthTemp) <- paste("GLMM.",dd,sep="")
 #paramsMM.grwth <- as.data.frame(c(paramsMM.grwth, paramsMM.grwthTmp))
 
-paramsMM.grwth <- as.data.frame(summary(glmm.grwth)$coefficients[1:nrow(summary(glmm.grwth)$coefficients),1])
-colnames(paramsMM.grwth) <- paste("GLMM.",1,sep="")
-paramsMM.grwth$ParamTitle <- c("Grwth Intercept","Grwth Size","Grwth Fall Precip","Grwth Winter Precip","Grwth Summer Precip",
-                               "Grwth Fall Temp","Grwth Winter Temp","Grwth Summer Temp")
+#paramsMM.grwth <- as.data.frame(summary(glmm.grwth)$coefficients[1:nrow(summary(glmm.grwth)$coefficients),1])
+#colnames(paramsMM.grwth) <- paste("GLMM.",1,sep="")
+#paramsMM.grwth$ParamTitle <- c("Grwth Intercept","Grwth Size","Grwth Fall Precip","Grwth Winter Precip","Grwth Summer Precip",
+#                               "Grwth Fall Temp","Grwth Winter Temp","Grwth Summer Temp")
 
-paramsMM.grwthOrd <- paramsMM.grwth[match(names.paramTitles[1:8], paramsMM.grwth$ParamTitle),]
-paramsMM.survOrd <- paramsMM.surv[match(names.paramTitles[8:12], paramsMM.surv$ParamTitle),]
+#paramsMM.grwthOrd <- paramsMM.grwth[match(names.paramTitles[1:8], paramsMM.grwth$ParamTitle),]
+#paramsMM.survOrd <- paramsMM.surv[match(names.paramTitles[8:12], paramsMM.surv$ParamTitle),]
 ## --------------------------------------
 
 
@@ -132,12 +202,6 @@ paramsMM.survOrd <- paramsMM.surv[match(names.paramTitles[8:12], paramsMM.surv$P
 
 
 ## OBTAIN VITAL RATE PREDICTIONS ----------------------------------------------
-
-## Initialize variable with size input data for predictions
-#in.data <- as.data.frame(binmids) 
-in.data <- 1:151
-#colnames(in.data) <- "RosNew"
-#$RosNew)
 
 ## Plug in median param vals, mean climate and selected size predictor values for sz classes/ loop into model formulas
 ## Exclude random transect effects here (alternatively, could try mean values)
