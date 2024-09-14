@@ -167,9 +167,7 @@ for (dd in 1:n.datset) {
     
   
       for (yy in 2:(n.yrs-1)) {  #Loop over years
-        ## ** Consider making the time loop start in yr 2, so that yr 1 is the starting values 
-        ## ** This will make it easier to do this below, although you can also just loop over parent plts & yrs, as I think I am doing **
-      
+
         #In the loop across years for one plant you do this:
         #In all cases, you'll want to make this a monte carlo: for e.g., you pick a random chance of surv from the prob of surv, choose 1 new sz from the distribution of possible new szs, etc. 
         #And, store the number of new seedlings produced that are predicted to be seen in the new year.

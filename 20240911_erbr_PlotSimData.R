@@ -374,30 +374,30 @@ for (nn in 1:nrow(paramsMM.grwthOrd)) {
 
 
 ## Plot MEAN Growth with 95% quantiles 
-par(mfrow=c(3,3), mar=c(3.9,2,2.3,1.5))  #bottom, left, top and right 
-par(pty="s")
+#par(mfrow=c(3,3), mar=c(3.9,2,2.3,1.5))  #bottom, left, top and right 
+#par(pty="s")
 
-for (nn in 1:nrow(paramsMM.grwthOrd)) {
+#for (nn in 1:nrow(paramsMM.grwthOrd)) {
   
-  maxLim <- max(c((as.numeric(paramsMM.grwthOrd[nn,1:10]) + as.numeric(seMM.grwthOrd[nn,1:10])),
-                  as.numeric(upComb.grwth[nn,1:10]))) 
-  minLim <- min(c((as.numeric(paramsMM.grwthOrd[nn,1:10]) - as.numeric(seMM.grwthOrd[nn,1:10])),
-                  as.numeric(lowComb.grwth[nn,1:10]))) 
+#  maxLim <- max(c((as.numeric(paramsMM.grwthOrd[nn,1:10]) + as.numeric(seMM.grwthOrd[nn,1:10])),
+#                  as.numeric(upComb.grwth[nn,1:10]))) 
+#  minLim <- min(c((as.numeric(paramsMM.grwthOrd[nn,1:10]) - as.numeric(seMM.grwthOrd[nn,1:10])),
+#                  as.numeric(lowComb.grwth[nn,1:10]))) 
   
-  plot(as.numeric(paramsMM.grwthOrd[nn,1:10]), as.numeric(mnComb.grwth[nn,1:10]),
-       ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="GLMM estimate", 
-       ylab="JAGS estimate", main=paramsMM.grwthOrd[nn,11], pch=19)
-  abline(a=0, b=1)
-  plotCI(x=as.numeric(paramsMM.grwthOrd[nn,1:10]), y=as.numeric(mnComb.grwth[nn,1:10]), 
-         uiw=as.numeric(seMM.grwthOrd[nn,1:10]), err="x", add=T, sfrac=0)
-  plotCI(x=as.numeric(paramsMM.grwthOrd[nn,1:10]), y=as.numeric(mnComb.grwth[nn,1:10]), 
-         liw=as.numeric(mnComb.grwth[nn,1:10])-as.numeric(lowComb.grwth[nn,1:10]),
-         uiw=as.numeric(upComb.grwth[nn,1:10])-as.numeric(mnComb.grwth[nn,1:10]), 
-         err="y", add=T, sfrac=0)
-  points(as.numeric(as.character(medParams.realDatGrwth$realData[nn])), 
-         as.numeric(as.character(medParams.realDatGrwth$realData[nn])), pch=8,
-         cex=1.75, col="red")
-}
+#  plot(as.numeric(paramsMM.grwthOrd[nn,1:10]), as.numeric(mnComb.grwth[nn,1:10]),
+#       ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="GLMM estimate", 
+#       ylab="JAGS estimate", main=paramsMM.grwthOrd[nn,11], pch=19)
+#  abline(a=0, b=1)
+#  plotCI(x=as.numeric(paramsMM.grwthOrd[nn,1:10]), y=as.numeric(mnComb.grwth[nn,1:10]), 
+#         uiw=as.numeric(seMM.grwthOrd[nn,1:10]), err="x", add=T, sfrac=0)
+#  plotCI(x=as.numeric(paramsMM.grwthOrd[nn,1:10]), y=as.numeric(mnComb.grwth[nn,1:10]), 
+#         liw=as.numeric(mnComb.grwth[nn,1:10])-as.numeric(lowComb.grwth[nn,1:10]),
+#         uiw=as.numeric(upComb.grwth[nn,1:10])-as.numeric(mnComb.grwth[nn,1:10]), 
+#         err="y", add=T, sfrac=0)
+#  points(as.numeric(as.character(medParams.realDatGrwth$realData[nn])), 
+#         as.numeric(as.character(medParams.realDatGrwth$realData[nn])), pch=8,
+#         cex=1.75, col="red")
+#}
 
 
 
