@@ -25,7 +25,7 @@ library(plotrix)
 
 ## ASSIGN NAME VARIABLE FOR DESIRED DATASETS 
 #date <- as.character("20240911")
-name <- as.character("SimDat20yr.")
+#name <- as.character("SimDat20yr.")
 #dats <- read.csv(file=paste(date,"_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), header=TRUE)
 ## ------------------------------------------------------------------------------------------------
 
@@ -177,7 +177,7 @@ mnComb.surv <- as.data.frame(cbind(mnParams.1[8:12], mnParams.2[8:12],mnParams.3
 date <- as.character("20240911")
 #name
 #name <- str_replace_all(name, ".", "")
-name <- "SimDat20yrHiGrLH."
+name <- "SimDat50yr"
 
 #modList.grwth <- NULL        #List variable to store all models
 #modList.surv <- NULL        #List variable to store all models
@@ -248,10 +248,6 @@ seMM.surv$ParamTitle <- names.paramTitles[9:14]
 #                               "Grwth Fall Temp","Grwth Winter Temp","Grwth Summer Temp")
 #seMM.grwth$ParamTitle <- c("Grwth Intercept","Grwth Size","Grwth Fall Precip","Grwth Winter Precip","Grwth Summer Precip",
 #                           "Grwth Fall Temp","Grwth Winter Temp","Grwth Summer Temp")
-#paramsMM.surv$ParamTitle <- c("Surv Size","Surv Winter Precip",
-#                              "Surv Fall Temp","Surv Winter Temp","Surv Summer Temp")
-#seMM.surv$ParamTitle <- c("Surv Size","Surv Winter Precip",
-#                          "Surv Fall Temp","Surv Winter Temp","Surv Summer Temp")
 
 
 ## Load saved GLMM results
@@ -262,15 +258,13 @@ seMM.surv$ParamTitle <- names.paramTitles[9:14]
 
 ## Re-order parameter names for plotting 
 #paramsMM.grwthOrd <- paramsMM.grwth[match(names.paramTitles[1:7], paramsMM.grwth$ParamTitle),]
-#seMM.grwthOrd <- seMM.grwth[match(names.paramTitles[1:7], seMM.grwth$ParamTitle),]
 #paramsMM.survOrd <- paramsMM.surv[match(names.paramTitles[8:12], paramsMM.surv$ParamTitle),]
-#seMM.survOrd <- seMM.surv[match(names.paramTitles[8:12], seMM.surv$ParamTitle),]
 
 
 ## Save GLMM param and se results 
-date <- as.character("20240912")
+date <- as.character("20240913")
 name
-name <- "SimDat20yrHiGr"
+#name <- "SimDat50yr"
 saveRDS(paramsMM.grwth, file=paste(date, "_erbr_paramMMgrwthWint_", name, ".rds", sep=""))
 saveRDS(seMM.grwth, file=paste(date, "_erbr_seMMgrwthWint_", name, ".rds", sep=""))
 saveRDS(paramsMM.surv, file=paste(date, "_erbr_paramMMsurvWint_", name, ".rds", sep=""))
