@@ -233,34 +233,25 @@ medComb.surv <- as.data.frame(cbind(medParams.1[9:14], medParams.2[9:14],medPara
 
 
 
+
+
 ## OBTAIN VITAL RATE PREDICTIONS ----------------------------------------------
 ## Plug in median param vals, annual climate and selected size predictor values 
 ## Exclude random transect effects here 
 
 ## Make matrix to hold output data
-column.names <- c("DATASET","REP","CLIM YR","PLT SZ","SurvRate_JAGS","SurvRate_GLMM","SurvRate_GLMM","GrwthRate_JAGS","GrwthRate_GLMM","GrwthRate_True")
+column.names <- c("DATASET","REP","CLIM_YR","PLT_SZ","SurvRate_JAGS","SurvRate_GLMM","SurvRate_True","GrwthRate_JAGS","GrwthRate_GLMM","GrwthRate_True")
 #output <- as.data.frame(matrix(NA,nrow=(10*20*51), ncol=length(column.names)))
-colnames(output) <- column.names
-output$DATASET <- rep(name, nrow(output))
-#output$REP <- 
-
-## ** make list of climate yr lengths for each yr, number of rows for each rep is therefore num yrs*51 ***
+output <- NULL
+n.datset <- 10
 
 for (rr in 1:n.datset) {  #Dataset rep loop
-#rr <- 1
   ## Select climate years for given rep
   climYrs.sel <- climYrs[climYrs$Rep==rr,]
   #assign("climYrs", unique(simDat1$ClimYr)
+  output.rep <- NULL
   
-  #output$REP <- rep(rr, nrow(climYrs.sel))
-  #output.rep <- subset(output, REP==rr) #Subset output dataframe by dataset replicate
-
-  
-  for (yy in 1:nrow(climYrs.sel))
-  ## Climate year 
-  yy <- 1
-  #clim.sel <- climYrs.sel
-  
+  for (yy in 1:nrow(climYrs.sel))  { #Year loop
   ## All sizes
   
   ## Growth (neg binom)
@@ -274,7 +265,7 @@ for (rr in 1:n.datset) {  #Dataset rep loop
                     + medComb.grwth[8,rr]*climYrs.sel$Tot_winter_ppt[yy])
   
   ## GLMM
-  pred.grwthGLM <- exp(paramsMM.grwth[1,rr] + paramsMM.grwth[2,rr]*log(binmids) 
+  pred.grwthGLMM <- exp(paramsMM.grwth[1,rr] + paramsMM.grwth[2,rr]*log(binmids) 
                     + paramsMM.grwth[3,rr]*climYrs.sel$Mean_fall_temp[yy]
                     + paramsMM.grwth[4,rr]*climYrs.sel$Mean_summer_temp[yy]
                     + paramsMM.grwth[5,rr]*climYrs.sel$Mean_winter_temp[yy]
@@ -314,21 +305,36 @@ for (rr in 1:n.datset) {  #Dataset rep loop
                                 medParams.realDatSurv$realData[5]*climYrs.sel$Mean_summer_temp[yy] +
                                 medParams.realDatSurv$realData[6]*climYrs.sel$Mean_winter_temp[yy])))
   
+  output.yr <- as.data.frame(matrix(NA,nrow=(length(binmids)), ncol=length(column.names)))
+  colnames(output.yr) <- column.names
+  output.yr$REP <- rr#rep(rr, nrow(climYrs.sel))
+  output.yr$CLIM_YR <- climYrs.sel$Year[yy]
+  output.yr$PLT_SZ <- binmids
   
-  output$REP <- rep(rr, )
-  output$GrwthRate_JAGS[1:51] <- pred.grwthJAGS 
-  output$GrwthRate_GLMM <- pred.grwthGLM 
-  output$GrwthRate_True <- pred.grwthTrue 
+  output.yr$GrwthRate_JAGS <- pred.grwthJAGS 
+  output.yr$GrwthRate_GLMM <- pred.grwthGLM 
+  output.yr$GrwthRate_True <- pred.grwthTrue 
   
-  output$SurvRate_JAGS <- pred.survJAGS 
-  output$SurvRate_GLMM <- pred.survGLM 
-  output$SurvRate_True <- pred.survTrue 
+  output.yr$SurvRate_JAGS <- pred.survJAGS 
+  output.yr$SurvRate_GLMM <- pred.survGLMM 
+  output.yr$SurvRate_True <- pred.survTrue 
+  
+  output.rep <- rbind(output.rep, output.yr)
   
   } ## End year loop
-    
-    
+  
+  output <- rbind(output, output.rep)
+
 } ## End dataset replicates loop
   
+output$DATASET <- name
+
+## Save output 
+write.csv(output, file="20240913_erbrSimDat20yrObsLH_predVals.csv", row.names=FALSE)
+#file=paste(date, name, dd, ".csv", sep=""), row.names=FALSE)
+
+
+
 
 
 
@@ -336,6 +342,12 @@ for (rr in 1:n.datset) {  #Dataset rep loop
 par(mfrow=c(1,1), mar=c(3.9,1.7,2.3,1.5))  #bottom, left, top and right 
 #par(pty="s")
 
-plot(pred.grwthGLM, pred.grwth)
-plot(in.data, pred.grwth)
-points(in.data, pred.grwthGLM, col="red")
+plot(pred.grwthGLMM, pred.grwthJAGS)
+plot(binmids, pred.grwthJAGS)
+     points(binmids, pred.grwthGLMM, col="red")
+     points(binmids, pred.grwthTrue, col="blue")
+     
+plot(binmids, pred.survJAGS)
+     points(binmids, pred.survGLMM, col="red")
+     points(binmids, pred.survTrue, col="blue")
+     
