@@ -459,9 +459,9 @@ for (dd in 1:n.datset) {
   
   
   
-  
-  
-  
+  ## *******************************************************************
+  datComb <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/20240906_erbr_SimDat20yrNoMiss.1.csv", header = TRUE)
+  n.yrs<-21
   ## MODIFY OUTPUT TO CONTAIN MISSING YEARS OF DATA ------------------------------------------------------ 
   ## Get the records for each individual, but then if a year is one of the missing data years, set that years data to NA 
   datComb1 <- datComb
@@ -514,13 +514,13 @@ for (dd in 1:n.datset) {
   
   ## MODIFY FORM OF DATA ----------------------------------------------------------------------------
   ## Change zeros in Rosettes & Infls to NAs in RosNew & InflNew columns to indicate dead
-  datComb1$RosNew[datComb1$RosNew==0] <- NA
-  datComb1[datComb1$RosNew==0 & !is.na(datComb1$RosNew),] #Confirm that no RosNew=0
-  datComb1$InflNew[datComb1$InflNew==0] <- NA
-  datComb1$InflNew[is.na(datComb1$RosNew) & !is.na(datComb1$InflNew)] #Confirm
-  datComb1$InflNew[is.na(datComb1$RosNew)] <- NA
-  ## Change Infl to zero from NA if Rosettes has data 
-  datComb1$InflNew[datComb1$RosNew>0 & !is.na(datComb1$RosNew) & is.na(datComb1$InflNew)] <- 0
+  #datComb1$RosNew[datComb1$RosNew==0] <- NA ** DONT DO THIS HERE!!!***
+  #datComb1[datComb1$RosNew==0 & !is.na(datComb1$RosNew),] #Confirm that no RosNew=0
+  #datComb1$InflNew[datComb1$InflNew==0] <- NA
+  #datComb1$InflNew[is.na(datComb1$RosNew) & !is.na(datComb1$InflNew)] #Confirm
+  #datComb1$InflNew[is.na(datComb1$RosNew)] <- NA
+  ## Change Infl to zero from NA if Rosettes has data *Remove this as first yr is NA for repro**
+  #datComb1$InflNew[datComb1$RosNew>0 & !is.na(datComb1$RosNew) & is.na(datComb1$InflNew)] <- 0
   ## ------------------------------------------------------------------------------------------------
   
   
@@ -566,7 +566,7 @@ for (dd in 1:n.datset) {
       dats$surv[maxgoodlines+1] <- 0  #Change survival to zero for 1st year dead
     }
   }
-  
+  ## *** HERE?? ** FIX FOR MISSING DATA TO NOT LOOSE YEAR OF DEATH IF OCCURS IN MISSING YR?? ** 
   dats <- dats[dats$save==1,]        #Remove NA rows that are not in middle of the data
   dats$surv[dats$RosNew>0] <- 1      #Change survival/ alive to 1 if plant is non-zero size
   
@@ -587,7 +587,7 @@ for (dd in 1:n.datset) {
         pastyrs <- dds$Year[1:(yy-1)]
         goodpastyrs <- pastyrs[is.na(dds$RosNew[1:(yy-1)])==FALSE]
         if (is.na(dds$RosNew[yy])==FALSE) {
-          dds$lagsrtsz[yy] <- min(dds$Year[yy] - goodpastyrs)    #MEDL: when there have been no good past years, returns Inf
+          dds$lagsrtsz[yy] <- min(dds$Year[yy] - goodpastyrs)    
           dds$lagforsurv[yy] <- min(dds$Year[yy] - goodpastyrs)  #lagforsurv has the same values as lagsrtsz for non-death years
           if(is.infinite(dds$lagforsurv[[yy]])) print(tt)
         }
