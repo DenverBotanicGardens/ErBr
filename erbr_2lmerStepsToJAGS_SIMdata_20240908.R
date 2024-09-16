@@ -16,19 +16,19 @@ graphics.off()
 
 
 ## LOAD PACKAGES AND FUNCTIONS --------------------------------------------------------------------
-#library(lme4)
-#library(ggplot2)
+library(lme4)
+library(ggplot2)
 library(rjags)
 library(runjags)
 library(dplyr)
 library(coda)
-#library(corrplot)
+library(corrplot)
 library(robustbase)
 library(resample)
-#library(gplots)
+library(gplots)
 library(matrixStats)
 library(stringr)
-#library(plotrix)
+library(plotrix)
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -48,7 +48,7 @@ for (dd in 1:n.datset) {
 #dats <- read.csv(file=paste("20240906", "_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), header=TRUE)
 
 
-## ** ASSIGN NAME VARIABLE FOR DESIRED DATASETS **
+## Assing name variable and load desired datasets
 date <- as.character("20240911")
 name <- as.character("SimDat50yrHiGrLH.NoMiss.")
 dats <- read.csv(file=paste(date,"_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), header=TRUE)
@@ -197,11 +197,16 @@ newPltlines <- length(dats.newPlts$TransectNew.num)
 newplt.yrtranscombo=100*newplt.trans+newplt.yr 
 ## ------------------------------------------------------------------------------------------------
 
-## For GLM non-missing datasets 
+
+
+
+## FOR GLM NON-MISSING DATASETS: SAVE & DON'T RUN RUN.JAGS, USE IN GLMMS IN PLOTTING CODE INSTEAD-  
 #date <- as.character("20240911")
 #name <- as.character("SimDat20yrNoMissMedGrLH.NoMiss.")
 #saveRDS(dats, file=paste("20240911", "_erbr_", name, dd,".4GLM", ".rds", sep=""))
 #}
+## ----------------------------------------------------------------------------------------------
+
 
 
 

@@ -591,9 +591,7 @@ print(dd)
         }    ## End new seedlings loop
     }        ## End parent plant loop
 
-  ##Reproduction of new seedlings/ plants is not included here 
-  ##We followed seedlings resulting from original plants but not subsequent seedlings that may have been 'born'
-
+  
   ## Remove final rows with NAs, that get added if death occurs in last yr
   mx.sz <- mx.sz[1:(n.yrs-1),] 
   

@@ -34,8 +34,7 @@ library(stringr)
 ## ------------------------------------------------------------------------------------------------
 
 
-## Make name variables for saving files
-#name <- as.character("_erbr_SimDat20yrNoMiss.")
+
 
 ## Start data set loop here
 n.datset <- 10
@@ -168,19 +167,19 @@ for (dd in 1:n.datset) {
   
       for (yy in 2:(n.yrs-1)) {  #Loop over years
 
-        #In the loop across years for one plant you do this:
-        #In all cases, you'll want to make this a monte carlo: for e.g., you pick a random chance of surv from the prob of surv, choose 1 new sz from the distribution of possible new szs, etc. 
-        #And, store the number of new seedlings produced that are predicted to be seen in the new year.
-        #In this way, yr after yr, you get the data (sz, repro and surv) of each plt. So, populate a matrix w rows that are yrs, columns for each plt, that are the sz & repro & also 0 if the plt is dead.
+        #In the loop across years for one plant:
+        #pick a random chance of surv from the prob of surv, choose 1 new sz from the distribution of possible new szs, etc. 
+        #And store the number of new seedlings produced that are predicted to be seen in the new year
+        #In this way, yr after yr, we get the data (sz, repro and surv) of each plt. 
+        #populate a matrix w rows that are yrs, columns for each plt, that are the sz & repro & also 0 if the plt is dead.
         
         #In the first year, figure out probs of survival, growth, and reproduction for that year, given the fns for these vital rates, and the climate
-        #Based on sz & that yr's clim variables (which you choose already) get all the predicted vital rates using these fns (e.g., pred.grwth)
+        #Based on sz & that yr's clim variables (chosen above) get all the predicted vital rates using these fns 
         
         #Then, use the random variate functions to get the realized values for that plt in that yr. 
-        #For e.g., you would get pred.surv and then use rbinom to get whether it lived (1) or died (0), based on the yr's clim & the plts sz. 
-        #Similarly you would use pred.grwth and pred.grwthVar with rnorm to get a predicted size for the plant. This is the 'monte carlo' part.
-        #Then, use these actual values to get the data for end of the yr: if surv=0, it is dead, but if not, it has the sz from rnorm. 
-        #And reproduction is determined by the vital rates governing repro.
+         
+        #Then, use the actual (realized) values to get data for end of the yr: if surv is not zero, it has the sz from rnorm
+        #and reproduction is determined by the vital rates governing repro.
     
         ## Survival (binomial) --
         pred.surv <- 1/(1+exp(-(medParams$surv_intercept + medParams$surv_RosCoef*log(sel.plt) + 
@@ -306,14 +305,12 @@ for (dd in 1:n.datset) {
 
 
 
-  ## 4. After doing this, go back to the number of new plants in each year: for these, do the same approach as with the starting plts, but starting in the yr they are 'born'
+  ## 4. Go back to the number of new plants in each year: for these, do the same approach as with the starting plts, but starting in the yr they are 'born'
   ## and then simulate them going forward. Use NA for the sz in the years before they are 'born'
   
   # Subset repro matrix to only contain cols (plts) with non-zero number of seedlings. Then loop thru that.
-  #mx.sdlgYes <- mx.reproSdlg[1:(n.yrs-1),] %>% select_if(funs(sum(., na.rm=TRUE) > 0)) #Exclude final yr of data to match sz matrix
   mx.sdlgYes <- mx.reproSdlg %>% select_if(~ sum(., na.rm=TRUE) > 0)  #Try this if error re. funs above
-  #mx.sdlgYes <- mx.sdlgYes[1:(n.yrs-1),] #Remove final yr of data to match sz matrix
-  
+
   sdlg <- 1            #set size to be 1 ros for seedlings
   
 
@@ -411,14 +408,14 @@ for (dd in 1:n.datset) {
   
   
   
-  ## Modify output to match format of raw data so can be appropriately modified for use with JAGs code **
+  ## Modify output to match format of raw data so can be appropriately modified for use with JAGS code
   ## 'Year' column can be e.g. 1-20 
   ## 'Clim_yr' column is e.g. 2004-2022
-  ## 'Transect' column should be entered as 'TransectNew' where individuals are assigned to E.1-E.7 and W.1-W.5
-  ## 'TagNew' column should be added where indivs have a unique tag ID that is E.### or W.###
+  ## 'TransectNew' is where individuals are assigned to E.1-E.7 or W.1-W.5
+  ## 'TagNew' column is where indivs have a unique tag ID that is E.### or W.###
   ## Therefore columns to have: 'Year', 'TransectNew', 'TagNew', 'RosNew', 'InflNew'
-  ## Change output from above so there are rows for all individuals across all year (rows are years and plants)
   
+  ## Change output from above so there are rows for all individuals across all year (rows are years and plants)
   ## Combine all plants into 1 column, where all years for a given plt appear sequentially
   datComb <- NULL
   
@@ -443,18 +440,25 @@ for (dd in 1:n.datset) {
   tag <- c(1:num.plt)
   tag.rep <- rep(tag, each=(n.yrs-1), replace=FALSE)
   datComb$TagNew <- paste(datComb$TransectNew, tag.rep, sep='.') #Tag new included site and transect; same format as real data
+## --------------------------------------------------------------
   
   
   
-## SAVE DATSETS WITH NO MISSING DATA ----------
+  
+  
+  
+## SAVE DATASETS WITH NO MISSING DATA -------------------------------------------------------------------
   ## save as csv 
   date <- Sys.Date()                             #Enter date to be added to file name
   date <- str_replace_all(date, "-", "")
-  name <- as.character("_erbr_SimDat50yrNoMiss.")           #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+  name <- as.character("_erbr_SimDat50yrNoMiss.")           #Enter name of file
 
   write.csv(datComb, file=paste(date, name, dd, ".csv", sep=""), row.names=FALSE)
   print(paste(date, name, dd, ".csv", sep=""))
-  ## -----------------------------------------------------------------------------------------------------
+## -----------------------------------------------------------------------------------------------------
+  
+  
+  
   
   
   
@@ -474,12 +478,13 @@ for (dd in 1:n.datset) {
   
   
   
+  ## OPTION: FOR NO-MISSING DATA. RUN THIS WITH NO-MISS FILES SAVED ABOVE AFTER RUNNING MISSING DATA
  # rm(list=ls())
   
   ## LOAD DATA --------------------------------------------------------------------------------------
   #clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
   
-  ## LOAD NO MISSING DATA TO PROCESS WITH THE FOLLOWING 
+  ## LOAD NO MISSING DATA TO PROCESS WITH THE FOLLOWING FORMATTING CODE
   #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.1.csv", header = TRUE)
   #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.2.csv", header = TRUE)
   #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.3.csv", header = TRUE)
@@ -490,9 +495,13 @@ for (dd in 1:n.datset) {
   #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.8.csv", header = TRUE)
   #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.9.csv", header = TRUE)
   #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.10.csv", header = TRUE)
+  ## ------------------------------------------------------------------------------------------------
+  
+  
+  
+  
   
   ## ADD erbr_1ReformatSIMdata_forJAGS SCRIPT -------------------------------------------------------
-  
   
   ## LOAD PACKAGES AND FUNCTIONS --------------------------------------------------------------------
   library(dplyr)
@@ -640,7 +649,7 @@ for (dd in 1:n.datset) {
   date <- Sys.Date()                             #Enter date to be added to file name
   date <- str_replace_all(date, "-", "")
   #type <- "Miss"
-  name <- as.character("SimDat50yrMiss.")        #Enter name of file, e.g. Tagclust, 4to13, simulated data...
+  name <- as.character("SimDat50yrMiss.")        #Enter name of file
   
   write.csv(erbr.1, file=paste(date, "_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), row.names=FALSE)
   ## -----------------------------------------------------------------------------------
@@ -648,15 +657,5 @@ for (dd in 1:n.datset) {
   
   
 }  ##End dataset loop
-
-
-
-## FOR NO MISSING DATASETS, DONE MANUALLY 
-#write.csv(erbr.1, file=paste(date, "_erbr_", "SimDat20yrNoMiss.10", ".Format4JAGS", ".csv", sep=""), row.names=FALSE)
-
-
-
-
-
 
   
