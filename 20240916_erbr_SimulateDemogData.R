@@ -38,12 +38,12 @@ library(stringr)
 
 ## Start data set loop here
 n.datset <- 10
-for (dd in 2:n.datset) {
+for (dd in 1:n.datset) {
 
 
   ## 1. First, for a set number of years (lets say 20), simulate climate variables for each year. 
   ## Use the real data from the study to choose sets of annual data values for the set of climate variables.
-  n.yrs <- 21 #Assign number of years (plus 1) to simulate climate data for 
+  n.yrs <- 41 #Assign number of years (plus 1) to simulate climate data for 
   
   #Create empty variable to hold simulated climate data
   column.names <- colnames(clim32yr)
@@ -445,15 +445,15 @@ for (dd in 2:n.datset) {
   
   
  
-## SAVE DATASETS WITH NO MISSING DATA -------------------------------------------------------------------
+  ## SAVE DATASETS WITH NO MISSING DATA -------------------------------------------------------------------
   ## save as csv 
-  date <- Sys.Date()                             #Enter date to be added to file name
+  date <- Sys.Date()                                               #Enter date to be added to file name
   date <- str_replace_all(date, "-", "")
-  name <- as.character("_erbr_SimDat20yrNoMiss.srvCor.")           #Enter name of file
+  name <- as.character("_erbr_SimDat40yrNoMiss.srvCor.")           #Enter name of file
 
   write.csv(datComb, file=paste(date, name, dd, ".csv", sep=""), row.names=FALSE)
   print(paste(date, name, dd, ".csv", sep=""))
-## -----------------------------------------------------------------------------------------------------
+  ## -----------------------------------------------------------------------------------------------------
   
   
   
@@ -475,18 +475,18 @@ for (dd in 2:n.datset) {
   
   
   ## OPTION: FOR NO-MISSING DATA. RUN THIS WITH NO-MISS FILES SAVED ABOVE AFTER RUNNING MISSING DATA
- #rm(list=ls())
+ rm(list=ls())
   
   ## LOAD DATA --------------------------------------------------------------------------------------
-  #clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
+  clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
   
   ## Start data set loop here
-  #n.datset <- 10
-  #for (dd in 2:n.datset) {
+  n.datset <- 10
+  for (dd in 1:n.datset) {
   
   
   ## LOAD NO MISSING DATA TO PROCESS WITH THE FOLLOWING FORMATTING CODE
-   # datComb1 <- read.csv(file=paste("20240916_erbr_SimDat20yrNoMiss.srvCor.",dd,".csv",sep=""), header = TRUE)
+    datComb1 <- read.csv(file=paste("20240917_erbr_SimDat40yrNoMiss.srvCor.",dd,".csv",sep=""), header = TRUE)
   #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.1.csv", header = TRUE)
   #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.2.csv", header = TRUE)
   #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.3.csv", header = TRUE)
@@ -674,7 +674,7 @@ for (dd in 2:n.datset) {
   date <- Sys.Date()                             #Enter date to be added to file name
   date <- str_replace_all(date, "-", "")
   #type <- "Miss"
-  name <- as.character("_erbr_SimDat20yrMiss.srvCor.")        #Enter name of file
+  name <- as.character("_erbr_SimDat40yrNoMiss.srvCor.")        #Enter name of file
   
   write.csv(erbr.1, file=paste(date, name, dd, ".4JAGS", ".csv", sep=""), row.names=FALSE)
   ## -----------------------------------------------------------------------------------
