@@ -19,8 +19,8 @@ rm(list=ls())
 
 ## LOAD DATA --------------------------------------------------------------------------------------
 clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
-erbr <- read.csv("erbr_TagClust2022_20230408.csv", header=TRUE)
-erbr$Year <- as.factor(erbr$Year)
+#erbr <- read.csv("erbr_TagClust2022_20230408.csv", header=TRUE)
+#erbr$Year <- as.factor(erbr$Year)
 JAGSmodSumm_realDat <- readRDS("erbr_JAGSmodBestSUMM_c3t10s10b5_noYRE_20240829.rds")
 mx.mean <- readRDS("erbrMeanMatrix_noYRE_P1k_20240715") #Load mean matrix variable
 medParams <- readRDS("erbrMedParams_noYRE_20240803")    #Load median parameters variable 
