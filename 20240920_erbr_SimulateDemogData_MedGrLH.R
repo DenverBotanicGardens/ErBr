@@ -220,14 +220,14 @@ mx.newLH <- readRDS("20240920_erbrMatrix_medGrLH.rds") #Load mean clim, med grow
 
 ## GENERATE SIMULATED DATA -------------------------------------------------------------------------         
 ## Start data set loop 
-name <- as.character("SimDat40yrMedGr.") # For naming saved files below
+name <- as.character("SimDat20yrMedGr.") # For naming saved files below
 n.datset <- 10
 for (dd in 1:n.datset) {
   
   print(dd)
   
   ## For a set number of years (e.g. 20), simulate climate variables for each year. Use the real data
-  n.yrs <- 41 #Assign number of years (plus 1) to simulate climate data for 
+  n.yrs <- 21 #Assign number of years (plus 1) to simulate climate data for 
   
   #Create empty variable to hold simulated climate data
   column.names <- colnames(clim32yr)
@@ -684,7 +684,7 @@ for (dd in 1:n.datset) {
   indivXyear <- datComb1 %>%
     dplyr::group_by(Year) %>%
     dplyr::summarise(Indivs = n_distinct(TagNew[RosNew > 0]))
-  # Why does it show 1 plt in missing yrs?  ***
+  # Does it show 1 plt in missing yrs?  ***
   ## -----------------------------------------------------------------------------------
   
   
