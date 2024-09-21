@@ -27,7 +27,7 @@ library(plotrix)
 
 ## ASSIGN NAME VARIABLE FOR DESIRED DATASETS 
 #date <- as.character("20240911")
-#name <- as.character("SimDat50yr")   #("SimDat20yrHiGrLH")
+name <- as.character("SimDat20yr")   #("SimDat20yrHiGr")
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -44,44 +44,152 @@ erbr$Year <- as.factor(erbr$Year)
 clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
 
 
-## Simulated data
-#dateSim <- "20240911"
-#nameSim <-  name  #"SimDat20yrHiGrLH."
-#pathSim <- "C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/"
-simDat1 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"NoMiss.1.4JAGS.csv",sep=""), header=TRUE)
-simDat2 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"NoMiss.2.4JAGS.csv",sep=""), header=TRUE)
-simDat3 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"NoMiss.3.4JAGS.csv",sep=""), header=TRUE)
-simDat4 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"NoMiss.4.4JAGS.csv",sep=""), header=TRUE)
-simDat5 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"NoMiss.5.4JAGS.csv",sep=""), header=TRUE)
-simDat6 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"NoMiss.6.4JAGS.csv",sep=""), header=TRUE)
-simDat7 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"NoMiss.7.4JAGS.csv",sep=""), header=TRUE)
-simDat8 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"NoMiss.8.4JAGS.csv",sep=""), header=TRUE)
-simDat9 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"NoMiss.9.4JAGS.csv",sep=""), header=TRUE)
-simDat10 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"NoMiss.10.4JAGS.csv",sep=""), header=TRUE)
+## Simulated data (could be miss or no-miss?)
+dateSim <- "/20240916"
+nameSim <-  "SimDat20yrNoMiss.srvCor." #name  #"SimDat20yr"
+pathSim <- getwd() #"C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/"
+simDat1 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"1.4JAGS.csv",sep=""), header=TRUE)
+simDat2 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"2.4JAGS.csv",sep=""), header=TRUE)
+simDat3 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"3.4JAGS.csv",sep=""), header=TRUE)
+simDat4 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"4.4JAGS.csv",sep=""), header=TRUE)
+simDat5 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"5.4JAGS.csv",sep=""), header=TRUE)
+simDat6 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"6.4JAGS.csv",sep=""), header=TRUE)
+simDat7 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"7.4JAGS.csv",sep=""), header=TRUE)
+simDat8 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"8.4JAGS.csv",sep=""), header=TRUE)
+simDat9 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"9.4JAGS.csv",sep=""), header=TRUE)
+simDat10 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"10.4JAGS.csv",sep=""), header=TRUE)
+#simDat10 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"NoMiss.10.4JAGS.csv",sep=""), header=TRUE)
+
 
 
 ## 'True' params from JAGS mod of real data 
 medParams.realDat <- readRDS("erbrMedParams_noYRE_20240803")
 
 
+
 ## GLMM results or files to run GLMM models below
 
 
+
 ## JAGS results
-#summ.mod1 <- readRDS("20240906_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_SimDat20yr.1.rds")
-dateSUMM <- "20240910"
-nameSUMM <- "SimDat50yrMiss"
-summ.mod1 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_",nameSUMM,".1.rds", sep=""))
-summ.mod2 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_",nameSUMM,".2.rds", sep=""))
-summ.mod3 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_",nameSUMM,".3.rds", sep=""))
-summ.mod4 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_",nameSUMM,".4.rds", sep=""))
-summ.mod5 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_",nameSUMM,".5.rds", sep=""))
-summ.mod6 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_",nameSUMM,".6.rds", sep=""))
-summ.mod7 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_",nameSUMM,".7.rds", sep=""))
-summ.mod8 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_",nameSUMM,".8.rds", sep=""))
-summ.mod9 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_",nameSUMM,".9.rds", sep=""))
-summ.mod10 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_",nameSUMM,".10.rds", sep=""))
+## MISSING
+dateSUMM <- "20240917"
+nameSUMM <- "SimDat20yrMiss.srvCor."
+summ.mod1ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"1.rds", sep=""))
+summ.mod2ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"2.rds", sep=""))
+summ.mod3ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"3.rds", sep=""))
+summ.mod4ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"4.rds", sep=""))
+summ.mod5ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"5.rds", sep=""))
+summ.mod6ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"6.rds", sep=""))
+summ.mod7ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"7.rds", sep=""))
+summ.mod8ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"8.rds", sep=""))
+summ.mod9ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"9.rds", sep=""))
+summ.mod10ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"10.rds", sep=""))
+#summ.mod10 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_",nameSUMM,".10.rds", sep=""))
+
+
+## NO MISSING
+dateSUMM <- "20240917"
+nameSUMMno <- nameSim #"SimDat40yrMiss"
+summ.mod1no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"1.rds", sep=""))
+summ.mod2no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"2.rds", sep=""))
+summ.mod3no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"3.rds", sep=""))
+summ.mod4no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"4.rds", sep=""))
+summ.mod5no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"5.rds", sep=""))
+summ.mod6no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"6.rds", sep=""))
+summ.mod7no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"7.rds", sep=""))
+summ.mod8no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"8.rds", sep=""))
+summ.mod9no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"9.rds", sep=""))
+summ.mod10no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"10.rds", sep=""))
 ## -----------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+## OBTAIN GLMM ESTIMATES ----------------------------------------------------------------
+## Loop over datasets 
+date <- as.character("20240921")
+#name
+name <- "SimDat20yr"
+
+paramsMM.grwth <- NULL
+seMM.grwth <- NULL    #Use SE in error bars in GLMM vs JAGS plots 
+paramsMM.surv <- NULL
+seMM.surv <- NULL
+n.datset <- 10
+
+for (dd in 1:n.datset) {
+  
+  ## Read in data
+  noMiss <- readRDS(file=paste(date, "_erbr_", name, "NoMiss.srvCor.",dd,".4GLM",".rds", sep=""))
+  
+  ## Add t+1 climate, sz, & tag into erbr data 
+  noMiss <- noMiss %>% mutate(TagNew1=lead(TagNew), RosNew1=lead(RosNew), Surv1=lead(surv))  
+  #Remove lines with mis-matched individuals 
+  noMiss <- noMiss[which(noMiss$TagNew == noMiss$TagNew1),]  
+  
+  ## Note: Log size in all models to match JAGS; this makes ending size a linear function of starting size
+  
+  ## Growth (param order is same as for JAGS output)
+  glmm.grwth <- glmer.nb(RosNew1 ~ log(RosNew) + TempFall + TempSummer + TempWinter + 
+                           PptFall + PptSummer + PptWinter + (1|TransectNew), data=noMiss)
+  
+  ## Survival  (param order is same as for JAGS output)
+  glmm.surv <- glmer(Surv1 ~ log(RosNew) + PptWinter + TempFall + TempSummer + 
+                       TempWinter + (1|TransectNew), family=binomial(link='logit'), data=noMiss)
+  
+  
+  
+  ## Extract parameter estimates, including intercept, and SEs from GLMMs
+  paramsMM.grwthTmp <- as.data.frame(summary(glmm.grwth)$coefficients[1:nrow(summary(glmm.grwth)$coefficients),1])
+  seMM.grwthTmp <- as.data.frame(summary(glmm.grwth)$coefficients[1:nrow(summary(glmm.grwth)$coefficients),2])
+  
+  colnames(paramsMM.grwthTmp) <- paste("GLMM.",dd,sep="")
+  colnames(seMM.grwthTmp) <- paste("SE.",dd,sep="")
+  
+  paramsMM.grwth <- as.data.frame(c(paramsMM.grwth, paramsMM.grwthTmp))
+  seMM.grwth <- as.data.frame(c(seMM.grwth, seMM.grwthTmp))
+  
+  
+  paramsMM.survTmp <- as.data.frame(summary(glmm.surv)$coefficients[1:nrow(summary(glmm.surv)$coefficients),1])
+  seMM.survTmp <- as.data.frame(summary(glmm.surv)$coefficients[1:nrow(summary(glmm.surv)$coefficients),2])
+  
+  colnames(paramsMM.survTmp) <- paste("GLMM.",dd,sep="")
+  colnames(seMM.survTmp) <- paste("SE.",dd,sep="")
+  paramsMM.surv <- as.data.frame(c(paramsMM.surv, paramsMM.survTmp))
+  seMM.surv <- as.data.frame(c(seMM.surv, seMM.survTmp))
+  
+}
+
+
+
+paramsMM.grwthTmp
+paramsMM.grwth
+paramsMM.survTmp
+names.paramTitles <- c("Grwth Intercept","Grwth Size","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
+                       "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Intercept","Surv Size",
+                       "Surv Winter Precip","Surv Fall Temp","Surv Summer Temp","Surv Winter Temp")
+
+paramsMM.grwth$ParamTitle <- names.paramTitles[1:8]
+seMM.grwth$ParamTitle <- names.paramTitles[1:8]
+paramsMM.survTmp
+paramsMM.surv$ParamTitle <- names.paramTitles[9:14]
+seMM.surv$ParamTitle <- names.paramTitles[9:14]
+
+
+## Save GLMM param and se results 
+#date <- as.character("20240921")
+name
+#name <- "SimDat20yr"
+saveRDS(paramsMM.grwth, file=paste(date, "_erbr_paramMMgrwthWint_", name, ".rds", sep=""))
+saveRDS(seMM.grwth, file=paste(date, "_erbr_seMMgrwthWint_", name, ".rds", sep=""))
+saveRDS(paramsMM.surv, file=paste(date, "_erbr_paramMMsurvWint_", name, ".rds", sep=""))
+saveRDS(seMM.surv, file=paste(date, "_erbr_seMMsurvWint_", name, ".rds", sep=""))
+## --------------------------------------
+
 
 
 
@@ -106,6 +214,7 @@ reps <- c(rep(1,nrow(climYrs1)), rep(2,nrow(climYrs2)), rep(3,nrow(climYrs3)), r
           rep(9,nrow(climYrs9)), rep(10,nrow(climYrs10)))
 climYrs$Rep <- as.factor(reps)
 ## ---------------------------------------------------------------------------------------------
+
 
 
 
@@ -168,21 +277,21 @@ medParams.realDatSurv$realData <- as.numeric(as.character(medParams.realDatSurv$
 
 
 ## GET MEDIAN PARAM VALUES FROM JAGS RUN ----------------------------------------------------
-names.param <- rownames(summ.mod1)[c(26:33,36:41)]
+names.param <- rownames(summ.mod1ms)[c(26:33,36:41)]
 names.paramTitles <- c("Grwth Intercept","Grwth Size","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
                        "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Intercept","Surv Size",
                        "Surv Winter Precip","Surv Fall Temp","Surv Summer Temp","Surv Winter Temp")
 
-medParams.1 <- summ.mod1[c(26:33,36:41),2]
-medParams.2 <- summ.mod2[c(26:33,36:41),2]
-medParams.3 <- summ.mod3[c(26:33,36:41),2]
-medParams.4 <- summ.mod4[c(26:33,36:41),2]
-medParams.5 <- summ.mod5[c(26:33,36:41),2]
-medParams.6 <- summ.mod6[c(26:33,36:41),2]
-medParams.7 <- summ.mod7[c(26:33,36:41),2]
-medParams.8 <- summ.mod8[c(26:33,36:41),2]
-medParams.9 <- summ.mod9[c(26:33,36:41),2]
-medParams.10 <- summ.mod10[c(26:33,36:41),2]
+medParams.1 <- summ.mod1ms[c(26:33,36:41),2]
+medParams.2 <- summ.mod2ms[c(26:33,36:41),2]
+medParams.3 <- summ.mod3ms[c(26:33,36:41),2]
+medParams.4 <- summ.mod4ms[c(26:33,36:41),2]
+medParams.5 <- summ.mod5ms[c(26:33,36:41),2]
+medParams.6 <- summ.mod6ms[c(26:33,36:41),2]
+medParams.7 <- summ.mod7ms[c(26:33,36:41),2]
+medParams.8 <- summ.mod8ms[c(26:33,36:41),2]
+medParams.9 <- summ.mod9ms[c(26:33,36:41),2]
+medParams.10 <- summ.mod10ms[c(26:33,36:41),2]
 
 medComb.grwth <- as.data.frame(cbind(medParams.1[1:8], medParams.2[1:8],medParams.3[1:8],
                                      medParams.4[1:8],medParams.5[1:8],medParams.6[1:8],
@@ -192,82 +301,6 @@ medComb.surv <- as.data.frame(cbind(medParams.1[9:14], medParams.2[9:14],medPara
                                      medParams.4[9:14],medParams.5[9:14],medParams.6[9:14],
                                      medParams.7[9:14],medParams.8[9:14],medParams.9[9:14],medParams.10[9:14]))
 ## --------------------------------------------------------------------------------------
-
-
-
-
-## OBTAIN GLMM ESTIMATES ----------------------------------------------------------------
-## Loop over datasets 
-#date <- as.character("20240911")
-#name
-#name <- "SimDat20yr"
-
-paramsMM.grwth <- NULL
-seMM.grwth <- NULL    #Use SE in error bars in GLMM vs JAGS plots 
-paramsMM.surv <- NULL
-seMM.surv <- NULL
-n.datset <- 10
-
-for (dd in 1:n.datset) {
-  
-  noMiss <- readRDS(file=paste(date, "_erbr_", name, "NoMiss.",dd,".4GLM",".rds", sep=""))
-  
-  ## Add t+1 climate, sz, & tag into erbr data 
-  noMiss <- noMiss %>% mutate(TagNew1=lead(TagNew), RosNew1=lead(RosNew), Surv1=lead(surv))  
-  
-  noMiss <- noMiss[which(noMiss$TagNew == noMiss$TagNew1),]  #Remove lines with mis-matched individuals 
-  
-  ## Note: Log size in all models to match JAGS; this makes ending size a linear function of starting size
-  
-  ## Growth (param order is same as for JAGS output)
-  glmm.grwth <- glmer.nb(RosNew1 ~ log(RosNew) + TempFall + TempSummer + TempWinter + 
-                           PptFall + PptSummer + PptWinter + (1|TransectNew), data=noMiss)
-  
-  ## Survival  (param order is same as for JAGS output)
-  glmm.surv <- glmer(Surv1 ~ log(RosNew) + PptWinter + TempFall + TempSummer + 
-                       TempWinter + (1|TransectNew), family=binomial(link='logit'), data=noMiss)
-  
- 
-  
-  
-  ## Extract parameter estimates, including intercept, and SEs from GLMMs
-  paramsMM.grwthTmp <- as.data.frame(summary(glmm.grwth)$coefficients[1:nrow(summary(glmm.grwth)$coefficients),1])
-  seMM.grwthTmp <- as.data.frame(summary(glmm.grwth)$coefficients[1:nrow(summary(glmm.grwth)$coefficients),2])
-  
-  colnames(paramsMM.grwthTmp) <- paste("GLMM.",dd,sep="")
-  colnames(seMM.grwthTmp) <- paste("SE.",dd,sep="")
-  
-  paramsMM.grwth <- as.data.frame(c(paramsMM.grwth, paramsMM.grwthTmp))
-  seMM.grwth <- as.data.frame(c(seMM.grwth, seMM.grwthTmp))
-  
-  
-  paramsMM.survTmp <- as.data.frame(summary(glmm.surv)$coefficients[1:nrow(summary(glmm.surv)$coefficients),1])
-  seMM.survTmp <- as.data.frame(summary(glmm.surv)$coefficients[1:nrow(summary(glmm.surv)$coefficients),2])
-  
-  colnames(paramsMM.survTmp) <- paste("GLMM.",dd,sep="")
-  colnames(seMM.survTmp) <- paste("SE.",dd,sep="")
-  paramsMM.surv <- as.data.frame(c(paramsMM.surv, paramsMM.survTmp))
-  seMM.surv <- as.data.frame(c(seMM.surv, seMM.survTmp))
-  
-}
-
-paramsMM.grwthTmp
-paramsMM.grwth$ParamTitle <- names.paramTitles[1:8]
-seMM.grwth$ParamTitle <- names.paramTitles[1:8]
-paramsMM.survTmp
-paramsMM.surv$ParamTitle <- names.paramTitles[9:14]
-seMM.surv$ParamTitle <- names.paramTitles[9:14]
-
-
-## Save GLMM param and se results 
-#date <- as.character("20240913")
-name
-#name <- "SimDat20yr"
-saveRDS(paramsMM.grwth, file=paste(date, "_erbr_paramMMgrwthWint_", name, ".rds", sep=""))
-saveRDS(seMM.grwth, file=paste(date, "_erbr_seMMgrwthWint_", name, ".rds", sep=""))
-saveRDS(paramsMM.surv, file=paste(date, "_erbr_paramMMsurvWint_", name, ".rds", sep=""))
-saveRDS(seMM.surv, file=paste(date, "_erbr_seMMsurvWint_", name, ".rds", sep=""))
-## --------------------------------------
 
 
 
@@ -375,8 +408,7 @@ write.csv(output, file="20240914_erbrSimDat50yrObsLH_predVals.csv", row.names=FA
 
 
 
-
-## QUICK PLOT ------------------------------------------------------------------------
+## QUICK PLOT OF PREDICTIONS ---------------------------------------------------------
 par(mfrow=c(1,1), mar=c(3.9,1.7,2.3,1.5))  #bottom, left, top and right 
 #par(pty="s")
 
@@ -387,4 +419,76 @@ plot(binmids, pred.grwthJAGS)
 plot(binmids, pred.survJAGS)
      points(binmids, pred.survGLMM, col="red")
      points(binmids, pred.survTrue, col="blue")
+## -----------------------------------------------------------------------------------
+     
+     
+     
+     
+     
+     
+     
+     
+## PLOTTING GLMM VS JAGS PARAMETER ESTIMATES -----------------------------------------
+    # names.param <- rownames(summ.mod1)[c(26:33,36:41)]
+     
+      #medParams.10 <- summ.mod10[c(26:33,36:41),2]
+     
+     #medComb.grwth <- as.data.frame(cbind(medParams.1[1:8], medParams.2[1:8],medParams.3[1:8],
+    #                                      medParams.4[1:8],medParams.5[1:8],medParams.6[1:8],
+    #                                      medParams.7[1:8],medParams.8[1:8],medParams.9[1:8],medParams.10[1:8]))
+     
+    # medComb.surv <- as.data.frame(cbind(medParams.1[9:14], medParams.2[9:14],medParams.3[9:14],
+    #                                     medParams.4[9:14],medParams.5[9:14],medParams.6[9:14],
+    #                                     medParams.7[9:14],medParams.8[9:14],medParams.9[9:14],medParams.10[9:14]))   
+
+     ## Get upper and lower CIs on JAGS estimates
+low95.1 <- summ.mod1[c(27:33,37:41),1]
+low95.2 <- summ.mod2[c(27:33,37:41),1]
+low95.3 <- summ.mod3[c(27:33,37:41),1]
+low95.4 <- summ.mod4[c(27:33,37:41),1]
+low95.5 <- summ.mod5[c(27:33,37:41),1]
+low95.6 <- summ.mod6[c(27:33,37:41),1]
+low95.7 <- summ.mod7[c(27:33,37:41),1]
+low95.8 <- summ.mod8[c(27:33,37:41),1]
+low95.9 <- summ.mod9[c(27:33,37:41),1]
+low95.10 <- summ.mod10[c(27:33,37:41),1]
+     
+up95.1 <- summ.mod1[c(27:33,37:41),3]
+up95.2 <- summ.mod2[c(27:33,37:41),3]
+up95.3 <- summ.mod3[c(27:33,37:41),3]
+up95.4 <- summ.mod4[c(27:33,37:41),3]
+up95.5 <- summ.mod5[c(27:33,37:41),3]
+up95.6 <- summ.mod6[c(27:33,37:41),3]
+up95.7 <- summ.mod7[c(27:33,37:41),3]
+up95.8 <- summ.mod8[c(27:33,37:41),3]
+up95.9 <- summ.mod9[c(27:33,37:41),3]
+up95.10 <- summ.mod10[c(27:33,37:41),3]
+     
+     
+     
+     ## Plot Growth with 95% quantiles 
+     par(mfrow=c(3,3), mar=c(3.9,2,2.3,1.5))  #bottom, left, top and right 
+     par(pty="s")
+     
+     for (nn in 1:nrow(paramsMM.grwthOrd)) {
+       
+       maxLim <- max(c((as.numeric(paramsMM.grwthOrd[nn,1:10]) + as.numeric(seMM.grwthOrd[nn,1:10])),
+                       as.numeric(upComb.grwth[nn,1:10]))) 
+       minLim <- min(c((as.numeric(paramsMM.grwthOrd[nn,1:10]) - as.numeric(seMM.grwthOrd[nn,1:10])),
+                       as.numeric(lowComb.grwth[nn,1:10]))) 
+       
+       plot(as.numeric(paramsMM.grwth[nn,1:10]), as.numeric(medComb.grwth[nn,1:10]),
+            ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="GLMM estimate", 
+            ylab="JAGS estimate", main=paramsMM.grwthOrd[nn,11], pch=19)
+       abline(a=0, b=1)
+       plotCI(x=as.numeric(paramsMM.grwthOrd[nn,1:10]), y=as.numeric(medComb.grwth[nn,1:10]), 
+              uiw=as.numeric(seMM.grwthOrd[nn,1:10]), err="x", add=T, sfrac=0)
+       plotCI(x=as.numeric(paramsMM.grwthOrd[nn,1:10]), y=as.numeric(medComb.grwth[nn,1:10]), 
+              liw=as.numeric(medComb.grwth[nn,1:10])-as.numeric(lowComb.grwth[nn,1:10]),
+              uiw=as.numeric(upComb.grwth[nn,1:10])-as.numeric(medComb.grwth[nn,1:10]), 
+              err="y", add=T, sfrac=0)
+       points(as.numeric(as.character(medParams.realDatGrwth$realData[nn])), 
+              as.numeric(as.character(medParams.realDatGrwth$realData[nn])), pch=8,
+              cex=1.75, col="red")
+     }
      

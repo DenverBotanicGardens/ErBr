@@ -44,20 +44,15 @@ for (dd in 1:n.datset) {
 
 
 ## LOAD DATA --------------------------------------------------------------------------------------
-#dats <- read.csv("20240904_erbr_SimDat20yrR2_Format4JAGS.csv", header = TRUE)
-#dats <- read.csv(file=paste("20240906", "_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), header=TRUE)
-
-
-## Assing name variable and load desired datasets
-date <- as.character("20240911")
-name <- as.character("SimDat50yrHiGrLH.NoMiss.")
-dats <- read.csv(file=paste(date,"_erbr_", name, dd, ".Format4JAGS", ".csv", sep=""), header=TRUE)
+## Assign name variable and load desired datasets
+date <- as.character("20240916")
+name <- as.character("SimDat20yrNoMiss.srvCor.")
+dats <- read.csv(file=paste(date,"_erbr_", name, dd, ".4JAGS", ".csv", sep=""), header=TRUE)
 ## ------------------------------------------------------------------------------------------------
 
 
 
 ## SET WD (WHERE JAGS SCRIPT IS LOCATED) ----------------------------------------------------------
-#setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -71,7 +66,7 @@ dats <- rename(dats, PptFall=Tot_fall_ppt, PptWinter=Tot_winter_ppt, PptSummer=T
 
 
 ## COUNT PLANT OBERVATION YEARS FOR EACH DATASET --------------------------------------------------
-sum(dats$surv, na.rm=TRUE) #Full dataset
+sum(dats$surv, na.rm=TRUE) 
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -200,18 +195,23 @@ newplt.yrtranscombo=100*newplt.trans+newplt.yr
 
 
 
+
 ## FOR GLM NON-MISSING DATASETS: SAVE & DON'T RUN RUN.JAGS, USE IN GLMMS IN PLOTTING CODE INSTEAD-  
-#date <- as.character("20240911")
-#name <- as.character("SimDat20yrNoMissMedGrLH.NoMiss.")
-#saveRDS(dats, file=paste("20240911", "_erbr_", name, dd,".4GLM", ".rds", sep=""))
-#}
+date <- Sys.Date()                                #Enter date to be added to file name
+date <- str_replace_all(date, "-", "")
+#name <- as.character("SimDat20yrNoMiss.")
+saveRDS(dats, file=paste(date, "_erbr_", name, dd,".4GLM", ".rds", sep=""))
+
+}
 ## ----------------------------------------------------------------------------------------------
 
 
 
 
+
+
 ## RUN ASSOCIATED JAGS MODEL ----------------------------------------------------------------------
-jags.mod <- run.jags('erbr_3JAGSmodBest_noYRE_20230418short.R', n.chains=3, data=dats, burnin=10000, thin=5, sample=10000, adapt=500, method='parallel')
+#jags.mod <- run.jags('erbr_3JAGSmodBest_noYRE_20230418short.R', n.chains=3, data=dats, burnin=10000, thin=5, sample=10000, adapt=500, method='parallel')
 #jags.mod <- run.jags('erbr_3JAGSmodBest_noYRE_20230418.R', n.chains=3, data=dats, burnin=10000, thin=10, sample=30000, adapt=500, method='parallel')
 
 
@@ -219,13 +219,12 @@ jags.mod <- run.jags('erbr_3JAGSmodBest_noYRE_20230418short.R', n.chains=3, data
 ## Save output
 date <- Sys.Date()                                #Enter date to be added to file name
 date <- str_replace_all(date, "-", "")
-#saveRDS(jags.mod, file=paste(date, "_erbr_JAGSmodBest_c3t5s10b10_noYRE_SimDat20yr.", dd, ".rds", sep=""))
 
-summ.mod <- summary(jags.mod)
-saveRDS(summ.mod, file=paste(date, "_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_", name, dd, ".rds", sep=""))
+#summ.mod <- summary(jags.mod)
+#saveRDS(summ.mod, file=paste(date, "_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_", name, dd, ".rds", sep=""))
 
 
-}   #End dataset loop
+#}   #End dataset loop
 
 
 time.diff <- Sys.time() - old #calculate difference
