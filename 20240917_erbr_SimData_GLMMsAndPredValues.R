@@ -47,7 +47,7 @@ clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
 ## Simulated data (could be miss or no-miss?)
 dateSim <- "/20240916"
 nameSim <-  "SimDat20yrNoMiss.srvCor." #name  #"SimDat20yr"
-pathSim <- getwd() #"C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/"
+pathSim <- "C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/" #getwd()
 simDat1 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"1.4JAGS.csv",sep=""), header=TRUE)
 simDat2 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"2.4JAGS.csv",sep=""), header=TRUE)
 simDat3 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"3.4JAGS.csv",sep=""), header=TRUE)
@@ -68,6 +68,10 @@ medParams.realDat <- readRDS("erbrMedParams_noYRE_20240803")
 
 
 ## GLMM results or files to run GLMM models below
+paramsMM.grwth <- readRDS(file=paste("20240921_erbr_paramMMgrwthWint_", name, ".rds", sep=""))
+seMM.grwth <- readRDS(file=paste("20240921_erbr_seMMgrwthWint_", name,".rds", sep=""))
+paramsMM.surv <- readRDS(file=paste("20240921_erbr_paramMMsurvWint_", name, ".rds", sep=""))
+seMM.surv <- readRDS(file=paste("20240921_erbr_seMMsurvWint_", name, ".rds", sep=""))
 
 
 
@@ -75,32 +79,32 @@ medParams.realDat <- readRDS("erbrMedParams_noYRE_20240803")
 ## MISSING
 dateSUMM <- "20240917"
 nameSUMM <- "SimDat20yrMiss.srvCor."
-summ.mod1ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"1.rds", sep=""))
-summ.mod2ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"2.rds", sep=""))
-summ.mod3ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"3.rds", sep=""))
-summ.mod4ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"4.rds", sep=""))
-summ.mod5ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"5.rds", sep=""))
-summ.mod6ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"6.rds", sep=""))
-summ.mod7ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"7.rds", sep=""))
-summ.mod8ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"8.rds", sep=""))
-summ.mod9ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"9.rds", sep=""))
-summ.mod10ms <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"10.rds", sep=""))
+summ.modMs1 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"1.rds", sep=""))
+summ.modMs2 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"2.rds", sep=""))
+summ.modMs3 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"3.rds", sep=""))
+summ.modMs4 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"4.rds", sep=""))
+summ.modMs5 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"5.rds", sep=""))
+summ.modMs6 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"6.rds", sep=""))
+summ.modMs7 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"7.rds", sep=""))
+summ.modMs8 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"8.rds", sep=""))
+summ.modMs9 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"9.rds", sep=""))
+summ.modMs10 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"10.rds", sep=""))
 #summ.mod10 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_",nameSUMM,".10.rds", sep=""))
 
 
 ## NO MISSING
 dateSUMM <- "20240917"
 nameSUMMno <- nameSim #"SimDat40yrMiss"
-summ.mod1no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"1.rds", sep=""))
-summ.mod2no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"2.rds", sep=""))
-summ.mod3no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"3.rds", sep=""))
-summ.mod4no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"4.rds", sep=""))
-summ.mod5no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"5.rds", sep=""))
-summ.mod6no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"6.rds", sep=""))
-summ.mod7no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"7.rds", sep=""))
-summ.mod8no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"8.rds", sep=""))
-summ.mod9no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"9.rds", sep=""))
-summ.mod10no <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"10.rds", sep=""))
+summ.modNo1 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"1.rds", sep=""))
+summ.modNo2 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"2.rds", sep=""))
+summ.modNo3 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"3.rds", sep=""))
+summ.modNo4 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"4.rds", sep=""))
+summ.modNo5 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"5.rds", sep=""))
+summ.modNo6 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"6.rds", sep=""))
+summ.modNo7 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"7.rds", sep=""))
+summ.modNo8 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"8.rds", sep=""))
+summ.modNo9 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"9.rds", sep=""))
+summ.modNo10 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"10.rds", sep=""))
 ## -----------------------------------------------------------------------------------------------
 
 
@@ -282,24 +286,46 @@ names.paramTitles <- c("Grwth Intercept","Grwth Size","Grwth Fall Temp","Grwth S
                        "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Intercept","Surv Size",
                        "Surv Winter Precip","Surv Fall Temp","Surv Summer Temp","Surv Winter Temp")
 
-medParams.1 <- summ.mod1ms[c(26:33,36:41),2]
-medParams.2 <- summ.mod2ms[c(26:33,36:41),2]
-medParams.3 <- summ.mod3ms[c(26:33,36:41),2]
-medParams.4 <- summ.mod4ms[c(26:33,36:41),2]
-medParams.5 <- summ.mod5ms[c(26:33,36:41),2]
-medParams.6 <- summ.mod6ms[c(26:33,36:41),2]
-medParams.7 <- summ.mod7ms[c(26:33,36:41),2]
-medParams.8 <- summ.mod8ms[c(26:33,36:41),2]
-medParams.9 <- summ.mod9ms[c(26:33,36:41),2]
-medParams.10 <- summ.mod10ms[c(26:33,36:41),2]
+## Missing data
+medParamsMs.1 <- summ.modMs1[c(26:33,36:41),2]
+medParamsMs.2 <- summ.modMs2[c(26:33,36:41),2]
+medParamsMs.3 <- summ.modMs3[c(26:33,36:41),2]
+medParamsMs.4 <- summ.modMs4[c(26:33,36:41),2]
+medParamsMs.5 <- summ.modMs5[c(26:33,36:41),2]
+medParamsMs.6 <- summ.modMs6[c(26:33,36:41),2]
+medParamsMs.7 <- summ.modMs7[c(26:33,36:41),2]
+medParamsMs.8 <- summ.modMs8[c(26:33,36:41),2]
+medParamsMs.9 <- summ.modMs9[c(26:33,36:41),2]
+medParamsMs.10 <- summ.modMs10[c(26:33,36:41),2]
 
-medComb.grwth <- as.data.frame(cbind(medParams.1[1:8], medParams.2[1:8],medParams.3[1:8],
-                                     medParams.4[1:8],medParams.5[1:8],medParams.6[1:8],
-                                     medParams.7[1:8],medParams.8[1:8],medParams.9[1:8],medParams.10[1:8]))
+medCombMs.grwth <- as.data.frame(cbind(medParamsMs.1[1:8], medParamsMs.2[1:8],medParamsMs.3[1:8],
+                                     medParamsMs.4[1:8],medParamsMs.5[1:8],medParamsMs.6[1:8],
+                                     medParamsMs.7[1:8],medParamsMs.8[1:8],medParamsMs.9[1:8],medParamsMs.10[1:8]))
 
-medComb.surv <- as.data.frame(cbind(medParams.1[9:14], medParams.2[9:14],medParams.3[9:14],
-                                     medParams.4[9:14],medParams.5[9:14],medParams.6[9:14],
-                                     medParams.7[9:14],medParams.8[9:14],medParams.9[9:14],medParams.10[9:14]))
+medCombMs.surv <- as.data.frame(cbind(medParamsMs.1[9:14], medParamsMs.2[9:14],medParamsMs.3[9:14],
+                                     medParamsMs.4[9:14],medParamsMs.5[9:14],medParamsMs.6[9:14],
+                                     medParamsMs.7[9:14],medParamsMs.8[9:14],medParamsMs.9[9:14],medParamsMs.10[9:14]))
+
+
+## No missing data
+medParamsNo.1 <- summ.modNo1[c(26:33,36:41),2]
+medParamsNo.2 <- summ.modNo2[c(26:33,36:41),2]
+medParamsNo.3 <- summ.modNo3[c(26:33,36:41),2]
+medParamsNo.4 <- summ.modNo4[c(26:33,36:41),2]
+medParamsNo.5 <- summ.modNo5[c(26:33,36:41),2]
+medParamsNo.6 <- summ.modNo6[c(26:33,36:41),2]
+medParamsNo.7 <- summ.modNo7[c(26:33,36:41),2]
+medParamsNo.8 <- summ.modNo8[c(26:33,36:41),2]
+medParamsNo.9 <- summ.modNo9[c(26:33,36:41),2]
+medParamsNo.10 <- summ.modNo10[c(26:33,36:41),2]
+
+medCombNo.grwth <- as.data.frame(cbind(medParamsNo.1[1:8], medParamsNo.2[1:8],medParamsNo.3[1:8],
+                                     medParamsNo.4[1:8],medParamsNo.5[1:8],medParamsNo.6[1:8],
+                                     medParamsNo.7[1:8],medParamsNo.8[1:8],medParamsNo.9[1:8],medParamsNo.10[1:8]))
+
+medCombNo.surv <- as.data.frame(cbind(medParamsNo.1[9:14], medParamsNo.2[9:14],medParamsNo.3[9:14],
+                                    medParamsNo.4[9:14],medParamsNo.5[9:14],medParamsNo.6[9:14],
+                                    medParamsNo.7[9:14],medParamsNo.8[9:14],medParamsNo.9[9:14],medParamsNo.10[9:14]))
 ## --------------------------------------------------------------------------------------
 
 
@@ -429,66 +455,270 @@ plot(binmids, pred.survJAGS)
      
      
 ## PLOTTING GLMM VS JAGS PARAMETER ESTIMATES -----------------------------------------
-    # names.param <- rownames(summ.mod1)[c(26:33,36:41)]
+rownames(summ.modMs1)[c(26:33,36:41)]
      
-      #medParams.10 <- summ.mod10[c(26:33,36:41),2]
+## Get upper and lower 95% limits on JAGS estimates
      
-     #medComb.grwth <- as.data.frame(cbind(medParams.1[1:8], medParams.2[1:8],medParams.3[1:8],
-    #                                      medParams.4[1:8],medParams.5[1:8],medParams.6[1:8],
-    #                                      medParams.7[1:8],medParams.8[1:8],medParams.9[1:8],medParams.10[1:8]))
+## Missing data
+low95ms.1 <- summ.modMs1[c(26:33,36:41),1]
+low95ms.2 <- summ.modMs2[c(26:33,36:41),1]
+low95ms.3 <- summ.modMs3[c(26:33,36:41),1]
+low95ms.4 <- summ.modMs4[c(26:33,36:41),1]
+low95ms.5 <- summ.modMs5[c(26:33,36:41),1]
+low95ms.6 <- summ.modMs6[c(26:33,36:41),1]
+low95ms.7 <- summ.modMs7[c(26:33,36:41),1]
+low95ms.8 <- summ.modMs8[c(26:33,36:41),1]
+low95ms.9 <- summ.modMs9[c(26:33,36:41),1]
+low95ms.10 <- summ.modMs10[c(26:33,36:41),1]
      
-    # medComb.surv <- as.data.frame(cbind(medParams.1[9:14], medParams.2[9:14],medParams.3[9:14],
-    #                                     medParams.4[9:14],medParams.5[9:14],medParams.6[9:14],
-    #                                     medParams.7[9:14],medParams.8[9:14],medParams.9[9:14],medParams.10[9:14]))   
+up95ms.1 <- summ.modMs1[c(26:33,36:41),3]
+up95ms.2 <- summ.modMs2[c(26:33,36:41),3]
+up95ms.3 <- summ.modMs3[c(26:33,36:41),3]
+up95ms.4 <- summ.modMs4[c(26:33,36:41),3]
+up95ms.5 <- summ.modMs5[c(26:33,36:41),3]
+up95ms.6 <- summ.modMs6[c(26:33,36:41),3]
+up95ms.7 <- summ.modMs7[c(26:33,36:41),3]
+up95ms.8 <- summ.modMs8[c(26:33,36:41),3]
+up95ms.9 <- summ.modMs9[c(26:33,36:41),3]
+up95ms.10 <- summ.modMs10[c(26:33,36:41),3]
 
-     ## Get upper and lower CIs on JAGS estimates
-low95.1 <- summ.mod1[c(27:33,37:41),1]
-low95.2 <- summ.mod2[c(27:33,37:41),1]
-low95.3 <- summ.mod3[c(27:33,37:41),1]
-low95.4 <- summ.mod4[c(27:33,37:41),1]
-low95.5 <- summ.mod5[c(27:33,37:41),1]
-low95.6 <- summ.mod6[c(27:33,37:41),1]
-low95.7 <- summ.mod7[c(27:33,37:41),1]
-low95.8 <- summ.mod8[c(27:33,37:41),1]
-low95.9 <- summ.mod9[c(27:33,37:41),1]
-low95.10 <- summ.mod10[c(27:33,37:41),1]
+lowCombMs.grwth <- as.data.frame(cbind(low95ms.1[1:8], low95ms.2[1:8],low95ms.3[1:8],
+                                      low95ms.4[1:8],low95ms.5[1:8],low95ms.6[1:8],
+                                      low95ms.7[1:8],low95ms.8[1:8],low95ms.9[1:8],low95ms.10[1:8]))
+
+upCombMs.grwth <- as.data.frame(cbind(up95ms.1[1:8], up95ms.2[1:8],up95ms.3[1:8],
+                                       up95ms.4[1:8],up95ms.5[1:8],up95ms.6[1:8],
+                                       up95ms.7[1:8],up95ms.8[1:8],up95ms.9[1:8],up95ms.10[1:8]))
+
+lowCombMs.surv <- as.data.frame(cbind(low95ms.1[9:14], low95ms.2[9:14],low95ms.3[9:14],
+                                     low95ms.4[9:14],low95ms.5[9:14],low95ms.6[9:14],
+                                     low95ms.7[9:14],low95ms.8[9:14],low95ms.9[9:14],low95ms.10[9:14])) 
+
+upCombMs.surv <- as.data.frame(cbind(up95ms.1[9:14], up95ms.2[9:14],up95ms.3[9:14],
+                                     up95ms.4[9:14],up95ms.5[9:14],up95ms.6[9:14],
+                                     up95ms.7[9:14],up95ms.8[9:14],up95ms.9[9:14],up95ms.10[9:14])) 
+
+
+
+
+## No-missing data
+low95no.1 <- summ.modNo1[c(26:33,36:41),1]
+low95no.2 <- summ.modNo2[c(26:33,36:41),1]
+low95no.3 <- summ.modNo3[c(26:33,36:41),1]
+low95no.4 <- summ.modNo4[c(26:33,36:41),1]
+low95no.5 <- summ.modNo5[c(26:33,36:41),1]
+low95no.6 <- summ.modNo6[c(26:33,36:41),1]
+low95no.7 <- summ.modNo7[c(26:33,36:41),1]
+low95no.8 <- summ.modNo8[c(26:33,36:41),1]
+low95no.9 <- summ.modNo9[c(26:33,36:41),1]
+low95no.10 <- summ.modNo10[c(26:33,36:41),1]
+
+up95no.1 <- summ.modNo1[c(26:33,36:41),3]
+up95no.2 <- summ.modNo2[c(26:33,36:41),3]
+up95no.3 <- summ.modNo3[c(26:33,36:41),3]
+up95no.4 <- summ.modNo4[c(26:33,36:41),3]
+up95no.5 <- summ.modNo5[c(26:33,36:41),3]
+up95no.6 <- summ.modNo6[c(26:33,36:41),3]
+up95no.7 <- summ.modNo7[c(26:33,36:41),3]
+up95no.8 <- summ.modNo8[c(26:33,36:41),3]
+up95no.9 <- summ.modNo9[c(26:33,36:41),3]
+up95no.10 <- summ.modNo10[c(26:33,36:41),3]
+
+lowCombNo.grwth <- as.data.frame(cbind(low95no.1[1:8], low95no.2[1:8],low95no.3[1:8],
+                                       low95no.4[1:8],low95no.5[1:8],low95no.6[1:8],
+                                       low95no.7[1:8],low95no.8[1:8],low95no.9[1:8],low95no.10[1:8]))
+
+upCombNo.grwth <- as.data.frame(cbind(up95no.1[1:8], up95no.2[1:8],up95no.3[1:8],
+                                      up95no.4[1:8],up95no.5[1:8],up95no.6[1:8],
+                                      up95no.7[1:8],up95no.8[1:8],up95no.9[1:8],up95no.10[1:8]))
+
+lowCombNo.surv <- as.data.frame(cbind(low95no.1[9:14], low95no.2[9:14],low95no.3[9:14],
+                                      low95no.4[9:14],low95no.5[9:14],low95no.6[9:14],
+                                      low95no.7[9:14],low95no.8[9:14],low95no.9[9:14],low95no.10[9:14])) 
+
+upCombNo.surv <- as.data.frame(cbind(up95no.1[9:14], up95no.2[9:14],up95no.3[9:14],
+                                     up95no.4[9:14],up95no.5[9:14],up95no.6[9:14],
+                                     up95no.7[9:14],up95no.8[9:14],up95no.9[9:14],up95no.10[9:14])) 
+## ------------------------------------------------------------------------------------------------
      
-up95.1 <- summ.mod1[c(27:33,37:41),3]
-up95.2 <- summ.mod2[c(27:33,37:41),3]
-up95.3 <- summ.mod3[c(27:33,37:41),3]
-up95.4 <- summ.mod4[c(27:33,37:41),3]
-up95.5 <- summ.mod5[c(27:33,37:41),3]
-up95.6 <- summ.mod6[c(27:33,37:41),3]
-up95.7 <- summ.mod7[c(27:33,37:41),3]
-up95.8 <- summ.mod8[c(27:33,37:41),3]
-up95.9 <- summ.mod9[c(27:33,37:41),3]
-up95.10 <- summ.mod10[c(27:33,37:41),3]
      
      
-     
-     ## Plot Growth with 95% quantiles 
-     par(mfrow=c(3,3), mar=c(3.9,2,2.3,1.5))  #bottom, left, top and right 
+
+
+
+
+## GLMM vs JAGS missing parameter estimates ---------------------------------------------------------------
+## Plot Growth GLMM vs JAGS missing with GLMM SE and JAGS 95% quantiles 
+     par(mfrow=c(4,4), mar=c(3.9,4,2.3,1))  #bottom, left, top and right 
      par(pty="s")
      
-     for (nn in 1:nrow(paramsMM.grwthOrd)) {
+     for (nn in 1:nrow(paramsMM.grwth)) {
        
-       maxLim <- max(c((as.numeric(paramsMM.grwthOrd[nn,1:10]) + as.numeric(seMM.grwthOrd[nn,1:10])),
-                       as.numeric(upComb.grwth[nn,1:10]))) 
-       minLim <- min(c((as.numeric(paramsMM.grwthOrd[nn,1:10]) - as.numeric(seMM.grwthOrd[nn,1:10])),
-                       as.numeric(lowComb.grwth[nn,1:10]))) 
+       maxLim <- max(c((as.numeric(paramsMM.grwth[nn,1:10]) + as.numeric(seMM.grwth[nn,1:10])),
+                       as.numeric(upCombMs.grwth[nn,1:10]))) 
+       minLim <- min(c((as.numeric(paramsMM.grwth[nn,1:10]) - as.numeric(seMM.grwth[nn,1:10])),
+                       as.numeric(lowCombMs.grwth[nn,1:10]))) 
        
        plot(as.numeric(paramsMM.grwth[nn,1:10]), as.numeric(medComb.grwth[nn,1:10]),
             ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="GLMM estimate", 
-            ylab="JAGS estimate", main=paramsMM.grwthOrd[nn,11], pch=19)
+            ylab="JAGS estimate", main=paramsMM.grwth[nn,11], pch=19)
        abline(a=0, b=1)
-       plotCI(x=as.numeric(paramsMM.grwthOrd[nn,1:10]), y=as.numeric(medComb.grwth[nn,1:10]), 
-              uiw=as.numeric(seMM.grwthOrd[nn,1:10]), err="x", add=T, sfrac=0)
-       plotCI(x=as.numeric(paramsMM.grwthOrd[nn,1:10]), y=as.numeric(medComb.grwth[nn,1:10]), 
-              liw=as.numeric(medComb.grwth[nn,1:10])-as.numeric(lowComb.grwth[nn,1:10]),
-              uiw=as.numeric(upComb.grwth[nn,1:10])-as.numeric(medComb.grwth[nn,1:10]), 
+       plotCI(x=as.numeric(paramsMM.grwth[nn,1:10]), y=as.numeric(medCombMs.grwth[nn,1:10]), 
+              uiw=as.numeric(seMM.grwth[nn,1:10]), err="x", add=T, sfrac=0)
+       plotCI(x=as.numeric(paramsMM.grwth[nn,1:10]), y=as.numeric(medCombMs.grwth[nn,1:10]), 
+              liw=as.numeric(medCombMs.grwth[nn,1:10])-as.numeric(lowCombMs.grwth[nn,1:10]),
+              uiw=as.numeric(upCombMs.grwth[nn,1:10])-as.numeric(medCombMs.grwth[nn,1:10]), 
               err="y", add=T, sfrac=0)
        points(as.numeric(as.character(medParams.realDatGrwth$realData[nn])), 
               as.numeric(as.character(medParams.realDatGrwth$realData[nn])), pch=8,
               cex=1.75, col="red")
      }
+     
+
+## Plot Survival GLMM vs JAGS missing with GLMM SE and JAGS 95% quantiles 
+    # par(mfrow=c(2,3), mar=c(3.9,3.9,2.3,1.5))  #bottom, left, top and right 
+    # par(pty="s")
+     
+     for (nn in 1:nrow(paramsMM.surv)) {
+       
+       maxLim <- max(c((as.numeric(paramsMM.surv[nn,1:10]) + as.numeric(seMM.surv[nn,1:10])),
+                       as.numeric(upCombMs.surv[nn,1:10]))) 
+       minLim <- min(c((as.numeric(paramsMM.surv[nn,1:10]) - as.numeric(seMM.surv[nn,1:10])),
+                       as.numeric(lowCombMs.surv[nn,1:10]))) 
+       
+       plot(as.numeric(paramsMM.surv[nn,1:10]), as.numeric(medComb.surv[nn,1:10]),
+            ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="GLMM estimate", 
+            ylab="JAGS estimate", main=paramsMM.surv[nn,11], pch=19)
+       abline(a=0, b=1)
+       plotCI(x=as.numeric(paramsMM.surv[nn,1:10]), y=as.numeric(medCombMs.surv[nn,1:10]), 
+              uiw=as.numeric(seMM.surv[nn,1:10]), err="x", add=T, sfrac=0)
+       plotCI(x=as.numeric(paramsMM.surv[nn,1:10]), y=as.numeric(medCombMs.surv[nn,1:10]), 
+              liw=as.numeric(medCombMs.surv[nn,1:10])-as.numeric(lowCombMs.surv[nn,1:10]),
+              uiw=as.numeric(upCombMs.surv[nn,1:10])-as.numeric(medCombMs.surv[nn,1:10]), 
+              err="y", add=T, sfrac=0)
+       points(as.numeric(as.character(medParams.realDatSurv$realData[nn])), 
+              as.numeric(as.character(medParams.realDatSurv$realData[nn])), pch=8,
+              cex=1.75, col="red")
+     }
+## ------------------------------------------------------------------------------------------------
+     
+     
+     
+     
+     
+     
+## JAGS parameter estimates MISSING data VS NO-MISSING data ---------------------------------------
+## Plot Growth JAGS with 95% quantiles 
+par(mfrow=c(4,4), mar=c(4,4,2.3,1))  #bottom, left, top and right 
+par(pty="s")
+     
+     for (nn in 1:nrow(medCombNo.grwth)) {
+       
+       maxLim <- max(c(as.numeric(upCombNo.grwth[nn,1:10])),
+                       as.numeric(upCombMs.grwth[nn,1:10])) 
+       minLim <- min(c(as.numeric(lowCombNo.grwth[nn,1:10])),
+                       as.numeric(lowCombMs.grwth[nn,1:10]))
+       
+       plot(as.numeric(medCombNo.grwth[nn,1:10]), as.numeric(medCombMs.grwth[nn,1:10]),
+            ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="JAGS no-missing data", 
+            ylab="JAGS missing data", main=paramsMM.grwth[nn,11], pch=19)
+       abline(a=0, b=1)
+       plotCI(x=as.numeric(medCombNo.grwth[nn,1:10]), y=as.numeric(medCombMs.grwth[nn,1:10]), 
+              liw=as.numeric(medCombNo.grwth[nn,1:10])-as.numeric(lowCombNo.grwth[nn,1:10]),
+              uiw=as.numeric(upCombNo.grwth[nn,1:10])-as.numeric(medCombNo.grwth[nn,1:10]), 
+              err="x", add=T, sfrac=0)
+       plotCI(x=as.numeric(medCombNo.grwth[nn,1:10]), y=as.numeric(medCombMs.grwth[nn,1:10]), 
+              liw=as.numeric(medCombMs.grwth[nn,1:10])-as.numeric(lowCombMs.grwth[nn,1:10]),
+              uiw=as.numeric(upCombMs.grwth[nn,1:10])-as.numeric(medCombMs.grwth[nn,1:10]), 
+              err="y", add=T, sfrac=0)
+       points(as.numeric(as.character(medParams.realDatGrwth$realData[nn])), 
+              as.numeric(as.character(medParams.realDatGrwth$realData[nn])), pch=8,
+              cex=1.75, col="red")
+     }
+     
+     
+## Plot Survival JAGS with JAGS 95% quantiles 
+     for (nn in 1:nrow(medCombNo.surv)) {
+       
+       maxLim <- max(c(as.numeric(upCombNo.surv[nn,1:10])),
+                     as.numeric(upCombMs.surv[nn,1:10])) 
+       minLim <- min(c(as.numeric(lowCombNo.surv[nn,1:10])),
+                     as.numeric(lowCombMs.surv[nn,1:10]))
+       
+       plot(as.numeric(medCombNo.surv[nn,1:10]), as.numeric(medComb.surv[nn,1:10]),
+            ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="JAGS no-missing data", 
+            ylab="JAGS missing data", main=paramsMM.surv[nn,11], pch=19)
+       abline(a=0, b=1)
+       plotCI(x=as.numeric(medCombNo.surv[nn,1:10]), y=as.numeric(medCombMs.surv[nn,1:10]), 
+              liw=as.numeric(medCombNo.surv[nn,1:10])-as.numeric(lowCombNo.surv[nn,1:10]),
+              uiw=as.numeric(upCombNo.surv[nn,1:10])-as.numeric(medCombNo.surv[nn,1:10]), 
+              err="x", add=T, sfrac=0)
+       plotCI(x=as.numeric(medCombNo.surv[nn,1:10]), y=as.numeric(medCombMs.surv[nn,1:10]), 
+              liw=as.numeric(medCombMs.surv[nn,1:10])-as.numeric(lowCombMs.surv[nn,1:10]),
+              uiw=as.numeric(upCombMs.surv[nn,1:10])-as.numeric(medCombMs.surv[nn,1:10]), 
+              err="y", add=T, sfrac=0)
+       points(as.numeric(as.character(medParams.realDatSurv$realData[nn])), 
+              as.numeric(as.character(medParams.realDatSurv$realData[nn])), pch=8,
+              cex=1.75, col="red")
+     }
+## ------------------------------------------------------------------------------------------------
+     
+     
+     
+     
+     
+     
+
+## GLMM vs JAGS no-missing parameter estimates ------------------------------------------------------
+## Plot Growth GLMM vs JAGS no-missing with GLMM SE and JAGS 95% quantiles 
+par(mfrow=c(4,4), mar=c(4,4,2.3,1))  #bottom, left, top and right 
+par(pty="s")
+     
+     for (nn in 1:nrow(paramsMM.grwth)) {
+       
+       maxLim <- max(c((as.numeric(paramsMM.grwth[nn,1:10]) + as.numeric(seMM.grwth[nn,1:10])),
+                       as.numeric(upCombNo.grwth[nn,1:10]))) 
+       minLim <- min(c((as.numeric(paramsMM.grwth[nn,1:10]) - as.numeric(seMM.grwth[nn,1:10])),
+                       as.numeric(lowCombNo.grwth[nn,1:10]))) 
+       
+       plot(as.numeric(paramsMM.grwth[nn,1:10]), as.numeric(medCombNo.grwth[nn,1:10]),
+            ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="GLMM estimate", 
+            ylab="JAGS no-missing data", main=paramsMM.grwth[nn,11], pch=19)
+       abline(a=0, b=1)
+       plotCI(x=as.numeric(paramsMM.grwth[nn,1:10]), y=as.numeric(medCombNo.grwth[nn,1:10]), 
+              uiw=as.numeric(seMM.grwth[nn,1:10]), err="x", add=T, sfrac=0)
+       plotCI(x=as.numeric(paramsMM.grwth[nn,1:10]), y=as.numeric(medCombNo.grwth[nn,1:10]), 
+              liw=as.numeric(medCombNo.grwth[nn,1:10])-as.numeric(lowCombNo.grwth[nn,1:10]),
+              uiw=as.numeric(upCombNo.grwth[nn,1:10])-as.numeric(medCombNo.grwth[nn,1:10]), 
+              err="y", add=T, sfrac=0)
+       points(as.numeric(as.character(medParams.realDatGrwth$realData[nn])), 
+              as.numeric(as.character(medParams.realDatGrwth$realData[nn])), pch=8,
+              cex=1.75, col="red")
+     }
+     
+     
+## Plot Survival GLMM vs JAGS no-missing with GLMM SE and JAGS 95% quantiles 
+     for (nn in 1:nrow(paramsMM.surv)) {
+       
+       maxLim <- max(c((as.numeric(paramsMM.surv[nn,1:10]) + as.numeric(seMM.surv[nn,1:10])),
+                       as.numeric(upCombNo.surv[nn,1:10]))) 
+       minLim <- min(c((as.numeric(paramsMM.surv[nn,1:10]) - as.numeric(seMM.surv[nn,1:10])),
+                       as.numeric(lowCombNo.surv[nn,1:10]))) 
+       
+       plot(as.numeric(paramsMM.surv[nn,1:10]), as.numeric(medCombNo.surv[nn,1:10]),
+            ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="GLMM estimate", 
+            ylab="JAGS no-missing data", main=paramsMM.surv[nn,11], pch=19)
+       abline(a=0, b=1)
+       plotCI(x=as.numeric(paramsMM.surv[nn,1:10]), y=as.numeric(medCombNo.surv[nn,1:10]), 
+              uiw=as.numeric(seMM.surv[nn,1:10]), err="x", add=T, sfrac=0)
+       plotCI(x=as.numeric(paramsMM.surv[nn,1:10]), y=as.numeric(medCombNo.surv[nn,1:10]), 
+              liw=as.numeric(medCombNo.surv[nn,1:10])-as.numeric(lowCombNo.surv[nn,1:10]),
+              uiw=as.numeric(upCombNo.surv[nn,1:10])-as.numeric(medCombNo.surv[nn,1:10]), 
+              err="y", add=T, sfrac=0)
+       points(as.numeric(as.character(medParams.realDatSurv$realData[nn])), 
+              as.numeric(as.character(medParams.realDatSurv$realData[nn])), pch=8,
+              cex=1.75, col="red")
+     }
+     
+      
      
