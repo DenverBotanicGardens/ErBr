@@ -612,29 +612,19 @@ print(dd)
   
   
   ## OPTION: FOR NO-MISSING DATA. RUN THIS WITH NO-MISS FILES SAVED ABOVE AFTER RUNNING MISSING DATA
- # rm(list=ls())
+ #rm(list=ls())
   
   ## LOAD DATA --------------------------------------------------------------------------------------
-#  clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
+#clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
   
   ## Start data set loop here
- # n.datset <- 10
-  #for (dd in 1:n.datset) {
+ #n.datset <- 10
+ #for (dd in 1:n.datset) {
     
     
-    ## LOAD NO MISSING DATA TO PROCESS WITH THE FOLLOWING FORMATTING CODE
-   # datComb1 <- read.csv(file=paste("20240917_erbr_SimDat40yrNoMiss.srvCor.",dd,".csv",sep=""), header = TRUE)
-    #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.1.csv", header = TRUE)
-    #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.2.csv", header = TRUE)
-    #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.3.csv", header = TRUE)
-    #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.4.csv", header = TRUE)
-    #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.5.csv", header = TRUE)
-    #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.6.csv", header = TRUE)
-    #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.7.csv", header = TRUE)
-    #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.8.csv", header = TRUE)
-    #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.9.csv", header = TRUE)
-    #datComb1 <- read.csv("20240906_erbr_SimDat20yrNoMiss.10.csv", header = TRUE)
-    ## ------------------------------------------------------------------------------------------------
+  ## LOAD NO-MISSING DATA TO PROCESS WITH THE FOLLOWING FORMATTING CODE
+  # datComb1 <- read.csv(file=paste("20240917_erbr_SimDat20yrHiGrNoMiss.srvCor.",dd,".csv",sep=""), header = TRUE)
+  ## ------------------------------------------------------------------------------------------------
     
     
     
@@ -809,10 +799,11 @@ print(dd)
     ## SAVE FORMATTED DATA ---------------------------------------------------------------
     date <- Sys.Date()                             #Enter date to be added to file name
     date <- str_replace_all(date, "-", "")
-    #type <- "Miss"
-    nameMiss <- as.character("Miss.srvCor.")        #Enter name of file
+    name <- "SimDat20yrHiGr"
+    nameMiss <- as.character("NoMiss.srvCor.")        #Enter name of file
     
     write.csv(erbr.1, file=paste(date,"_erbr_",name, nameMiss, dd, ".4JAGS", ".csv", sep=""), row.names=FALSE)
+    print(paste(date,"_erbr_",name, nameMiss, dd, ".4JAGS", ".csv", sep=""))
     ## -----------------------------------------------------------------------------------
     
     
