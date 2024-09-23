@@ -27,7 +27,7 @@ library(plotrix)
 
 ## ASSIGN NAME VARIABLE FOR DESIRED DATASETS 
 #date <- as.character("20240911")
-name <- as.character("SimDat40yr")   #("SimDat20yrHiGr")
+name <- as.character("SimDat40yrHiGr")   #("SimDat20yrHiGr")
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -116,8 +116,8 @@ summ.modMs10 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"1
 ## OBTAIN GLMM ESTIMATES ----------------------------------------------------------------
 ## Loop over datasets 
 dateGLM <- as.character("20240922")
-#name
-name <- "SimDat40yr"
+name
+#name <- "SimDat40yr"
 
 paramsMM.grwth <- NULL
 seMM.grwth <- NULL    #Use SE in error bars in GLMM vs JAGS plots 
@@ -454,7 +454,7 @@ plot(output$GrwthRate_True, output$GrwthRate_GLMM,col=alpha("grey40",0.5),main="
      xlab="True vital rate - GROWTH",ylab="Estimated vital rate - GROWTH", ylim=c(0,140), xlim=c(0,140))
 points(output$GrwthRate_True, output$GrwthRate_JAGS, col=alpha("purple",0.3))
 abline(a=0, b=1)
-legend("bottomright", c("GLMM","JAGS"), col=c(alpha("grey40",0.5),alpha("purple",0.3)), pch=19, cex=1,
+legend("bottomright", c("GLMM","MCMC"), col=c(alpha("grey40",0.5),alpha("purple",0.3)), pch=19, cex=1,
        horiz=FALSE, bty="y",seg.len=1)
 
  
@@ -463,7 +463,7 @@ plot(output$SurvRate_True, output$SurvRate_GLMM,col=alpha("grey40",0.5),main="Si
      xlab="True vital rate - SURVIVAL",ylab="Estimated vital rate - SURVIVAL",ylim=c(0.45,1), xlim=c(0.45,1))
 points(output$SurvRate_True, output$SurvRate_JAGS, col=alpha("purple",0.3))
 abline(a=0, b=1)
-legend("bottomright", c("GLMM","JAGS"), col=c(alpha("grey40",0.5),alpha("purple",0.3)), pch=19, cex=1,
+legend("bottomright", c("GLMM","MCMC"), col=c(alpha("grey40",0.5),alpha("purple",0.3)), pch=19, cex=1,
        horiz=FALSE, bty="y",seg.len=1)
 ## -----------------------------------------------------------------------------------
      
@@ -581,7 +581,7 @@ par(pty="s")
        
        plot(as.numeric(paramsMM.grwth[nn,1:10]), as.numeric(medCombMs.grwth[nn,1:10]),
             ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="GLMM no-missing data", 
-            ylab="JAGS missing data", main=paramsMM.grwth[nn,11], pch=19)
+            ylab="MCMC missing data", main=paramsMM.grwth[nn,11], pch=19)
        abline(h=as.numeric(as.character(medParams.realDatGrwth$realData[nn])),
               v=as.numeric(as.character(medParams.realDatGrwth$realData[nn])), col="grey60")
        #abline(a=0, b=1)
@@ -607,7 +607,7 @@ par(pty="s")
        
        plot(as.numeric(paramsMM.surv[nn,1:10]), as.numeric(medCombMs.surv[nn,1:10]),
             ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="GLMM no-missing data", 
-            ylab="JAGS missing data", main=paramsMM.surv[nn,11], pch=19)
+            ylab="MCMC missing data", main=paramsMM.surv[nn,11], pch=19)
        abline(h=as.numeric(as.character(medParams.realDatSurv$realData[nn])),
               v=as.numeric(as.character(medParams.realDatSurv$realData[nn])), col="grey60")
        plotCI(x=as.numeric(paramsMM.surv[nn,1:10]), y=as.numeric(medCombMs.surv[nn,1:10]), 
@@ -640,8 +640,8 @@ par(pty="s")
                        as.numeric(lowCombMs.grwth[nn,1:10]))
        
        plot(as.numeric(medCombNo.grwth[nn,1:10]), as.numeric(medCombMs.grwth[nn,1:10]),
-            ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="JAGS no-missing data", 
-            ylab="JAGS missing data", main=paramsMM.grwth[nn,11], pch=19)
+            ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="MCMC no-missing data", 
+            ylab="MCMC missing data", main=paramsMM.grwth[nn,11], pch=19)
        abline(a=0, b=1)
        plotCI(x=as.numeric(medCombNo.grwth[nn,1:10]), y=as.numeric(medCombMs.grwth[nn,1:10]), 
               liw=as.numeric(medCombNo.grwth[nn,1:10])-as.numeric(lowCombNo.grwth[nn,1:10]),
@@ -666,8 +666,8 @@ par(pty="s")
                      as.numeric(lowCombMs.surv[nn,1:10]))
        
        plot(as.numeric(medCombNo.surv[nn,1:10]), as.numeric(medComb.surv[nn,1:10]),
-            ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="JAGS no-missing data", 
-            ylab="JAGS missing data", main=paramsMM.surv[nn,11], pch=19)
+            ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="MCMC no-missing data", 
+            ylab="MCMC missing data", main=paramsMM.surv[nn,11], pch=19)
        abline(a=0, b=1)
        plotCI(x=as.numeric(medCombNo.surv[nn,1:10]), y=as.numeric(medCombMs.surv[nn,1:10]), 
               liw=as.numeric(medCombNo.surv[nn,1:10])-as.numeric(lowCombNo.surv[nn,1:10]),
@@ -702,8 +702,8 @@ par(pty="s")
                        as.numeric(lowCombNo.grwth[nn,1:10]))) 
        
        plot(as.numeric(paramsMM.grwth[nn,1:10]), as.numeric(medCombNo.grwth[nn,1:10]),
-            ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="GLMM estimate", 
-            ylab="JAGS no-missing data", main=paramsMM.grwth[nn,11], pch=19)
+            ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="GLMM no-missing data", 
+            ylab="MCMC no-missing data", main=paramsMM.grwth[nn,11], pch=19)
        abline(a=0, b=1)
        plotCI(x=as.numeric(paramsMM.grwth[nn,1:10]), y=as.numeric(medCombNo.grwth[nn,1:10]), 
               uiw=as.numeric(seMM.grwth[nn,1:10]), err="x", add=T, sfrac=0)
@@ -726,8 +726,8 @@ par(pty="s")
                        as.numeric(lowCombNo.surv[nn,1:10]))) 
        
        plot(as.numeric(paramsMM.surv[nn,1:10]), as.numeric(medCombNo.surv[nn,1:10]),
-            ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="GLMM estimate", 
-            ylab="JAGS no-missing data", main=paramsMM.surv[nn,11], pch=19)
+            ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="GLMM no-missing data", 
+            ylab="MCMC no-missing data", main=paramsMM.surv[nn,11], pch=19)
        abline(a=0, b=1)
        plotCI(x=as.numeric(paramsMM.surv[nn,1:10]), y=as.numeric(medCombNo.surv[nn,1:10]), 
               uiw=as.numeric(seMM.surv[nn,1:10]), err="x", add=T, sfrac=0)
