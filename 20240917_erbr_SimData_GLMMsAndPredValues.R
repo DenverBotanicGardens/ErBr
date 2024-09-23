@@ -27,7 +27,7 @@ library(plotrix)
 
 ## ASSIGN NAME VARIABLE FOR DESIRED DATASETS 
 #date <- as.character("20240911")
-name <- as.character("SimDat20yrHiGr")   #("SimDat20yrHiGr")
+name <- as.character("SimDat20yr")   #("SimDat20yrHiGr")
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -115,10 +115,12 @@ summ.modMs10 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"1
 
 ## OBTAIN GLMM ESTIMATES ----------------------------------------------------------------
 ## Loop over datasets 
-dateGLM <- as.character("20240922")
+dateGLM <- as.character("20240921")
 name
 #name <- "SimDat40yr"
 
+modList.grwth <- NULL        #List variable to store all models
+modList.surv <- NULL        #List variable to store all models
 paramsMM.grwth <- NULL
 seMM.grwth <- NULL    #Use SE in error bars in GLMM vs JAGS plots 
 paramsMM.surv <- NULL
@@ -144,6 +146,10 @@ for (dd in 1:n.datset) {
   ## Survival  (param order is same as for JAGS output)
   glmm.surv <- glmer(Surv1 ~ log(RosNew) + PptWinter + TempFall + TempSummer + 
                        TempWinter + (1|TransectNew), family=binomial(link='logit'), data=noMiss)
+  
+  ## Save model summaries in list
+  modList.grwth[[length(modList.grwth) + 1]] <- summary(glmm.grwth)
+  modList.surv[[length(modList.surv) + 1]] <- summary(glmm.surv)
   
   
   
@@ -185,13 +191,21 @@ seMM.surv$ParamTitle <- names.paramTitles[9:14]
 
 
 ## Save GLMM param and se results 
-date <- as.character("20240922")
+date <- as.character("20240923")
 name
 #name <- "SimDat20yr"
-saveRDS(paramsMM.grwth, file=paste(date, "_erbr_paramMMgrwthWint_", name, ".rds", sep=""))
-saveRDS(seMM.grwth, file=paste(date, "_erbr_seMMgrwthWint_", name, ".rds", sep=""))
-saveRDS(paramsMM.surv, file=paste(date, "_erbr_paramMMsurvWint_", name, ".rds", sep=""))
-saveRDS(seMM.surv, file=paste(date, "_erbr_seMMsurvWint_", name, ".rds", sep=""))
+
+## Save GLMM model summaries
+saveRDS(modList.grwth, file=paste(date, "_erbr_GLMMsummGrwth_", name, ".rds", sep=""))
+saveRDS(modList.surv, file=paste(date, "_erbr_GLMMsummSurv_", name, ".rds", sep=""))
+#write.csv(modList.grwth, file="20240923_erbr_GLMMsummGrwth_SimDat20yr.csv", row.names=FALSE)
+#write.csv(modList.surv, file="20240923_erbr_GLMMsummSurv_SimDat20yr.csv", row.names=FALSE)
+
+
+#saveRDS(paramsMM.grwth, file=paste(date, "_erbr_paramMMgrwthWint_", name, ".rds", sep=""))
+#saveRDS(seMM.grwth, file=paste(date, "_erbr_seMMgrwthWint_", name, ".rds", sep=""))
+#saveRDS(paramsMM.surv, file=paste(date, "_erbr_paramMMsurvWint_", name, ".rds", sep=""))
+#saveRDS(seMM.surv, file=paste(date, "_erbr_seMMsurvWint_", name, ".rds", sep=""))
 ## --------------------------------------
 
 
