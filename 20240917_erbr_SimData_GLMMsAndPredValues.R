@@ -27,7 +27,7 @@ library(plotrix)
 
 ## ASSIGN NAME VARIABLE FOR DESIRED DATASETS 
 #date <- as.character("20240911")
-name <- as.character("SimDat40yrHiGr")   #("SimDat20yrHiGr")
+name <- as.character("SimDat20yrHiGr")   #("SimDat20yrHiGr")
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -45,8 +45,8 @@ clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
 
 
 ## Simulated data (could be miss or no-miss?)
-dateSim <- "/20240917"
-nameSim <-  "SimDat40yrNoMiss.srvCor." #name  #"SimDat20yr"
+dateSim <- "20240917"
+nameSim <-  "SimDat40yrHiGrMiss.srvCor." #name  #"SimDat20yr"
 pathSim <- "C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/" #getwd()
 simDat1 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"1.4JAGS.csv",sep=""), header=TRUE)
 simDat2 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"2.4JAGS.csv",sep=""), header=TRUE)
@@ -77,8 +77,8 @@ seMM.surv <- readRDS(file=paste("20240921_erbr_seMMsurvWint_", name, ".rds", sep
 
 ## JAGS results
 ## MISSING
-dateSUMM <- "20240917"
-nameSUMM <- "SimDat40yrMiss.srvCor."
+dateSUMM <- "20240918"
+nameSUMM <- "SimDat40yrHiGrMiss.srvCor."
 summ.modMs1 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"1.rds", sep=""))
 summ.modMs2 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"2.rds", sep=""))
 summ.modMs3 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"3.rds", sep=""))
@@ -308,24 +308,24 @@ medCombMs.surv <- as.data.frame(cbind(medParamsMs.1[9:14], medParamsMs.2[9:14],m
 
 
 ## No missing data
-medParamsNo.1 <- summ.modNo1[c(26:33,36:41),2]
-medParamsNo.2 <- summ.modNo2[c(26:33,36:41),2]
-medParamsNo.3 <- summ.modNo3[c(26:33,36:41),2]
-medParamsNo.4 <- summ.modNo4[c(26:33,36:41),2]
-medParamsNo.5 <- summ.modNo5[c(26:33,36:41),2]
-medParamsNo.6 <- summ.modNo6[c(26:33,36:41),2]
-medParamsNo.7 <- summ.modNo7[c(26:33,36:41),2]
-medParamsNo.8 <- summ.modNo8[c(26:33,36:41),2]
-medParamsNo.9 <- summ.modNo9[c(26:33,36:41),2]
-medParamsNo.10 <- summ.modNo10[c(26:33,36:41),2]
+#medParamsNo.1 <- summ.modNo1[c(26:33,36:41),2]
+#medParamsNo.2 <- summ.modNo2[c(26:33,36:41),2]
+#medParamsNo.3 <- summ.modNo3[c(26:33,36:41),2]
+#medParamsNo.4 <- summ.modNo4[c(26:33,36:41),2]
+#medParamsNo.5 <- summ.modNo5[c(26:33,36:41),2]
+#medParamsNo.6 <- summ.modNo6[c(26:33,36:41),2]
+#medParamsNo.7 <- summ.modNo7[c(26:33,36:41),2]
+#medParamsNo.8 <- summ.modNo8[c(26:33,36:41),2]
+#medParamsNo.9 <- summ.modNo9[c(26:33,36:41),2]
+#medParamsNo.10 <- summ.modNo10[c(26:33,36:41),2]
 
-medCombNo.grwth <- as.data.frame(cbind(medParamsNo.1[1:8], medParamsNo.2[1:8],medParamsNo.3[1:8],
-                                     medParamsNo.4[1:8],medParamsNo.5[1:8],medParamsNo.6[1:8],
-                                     medParamsNo.7[1:8],medParamsNo.8[1:8],medParamsNo.9[1:8],medParamsNo.10[1:8]))
+#medCombNo.grwth <- as.data.frame(cbind(medParamsNo.1[1:8], medParamsNo.2[1:8],medParamsNo.3[1:8],
+#                                     medParamsNo.4[1:8],medParamsNo.5[1:8],medParamsNo.6[1:8],
+#                                     medParamsNo.7[1:8],medParamsNo.8[1:8],medParamsNo.9[1:8],medParamsNo.10[1:8]))
 
-medCombNo.surv <- as.data.frame(cbind(medParamsNo.1[9:14], medParamsNo.2[9:14],medParamsNo.3[9:14],
-                                    medParamsNo.4[9:14],medParamsNo.5[9:14],medParamsNo.6[9:14],
-                                    medParamsNo.7[9:14],medParamsNo.8[9:14],medParamsNo.9[9:14],medParamsNo.10[9:14]))
+#medCombNo.surv <- as.data.frame(cbind(medParamsNo.1[9:14], medParamsNo.2[9:14],medParamsNo.3[9:14],
+#                                    medParamsNo.4[9:14],medParamsNo.5[9:14],medParamsNo.6[9:14],
+#                                    medParamsNo.7[9:14],medParamsNo.8[9:14],medParamsNo.9[9:14],medParamsNo.10[9:14]))
 ## --------------------------------------------------------------------------------------
 
 
@@ -427,7 +427,7 @@ for (rr in 1:n.datset) {  #Dataset rep loop
 output$DATASET <- name
 
 ## Save output 
-write.csv(output, file="20240922_erbrSimDat40yr_predVals.csv", row.names=FALSE)
+write.csv(output, file="20240922_erbrSimDat40yrHiGr_predVals.csv", row.names=FALSE)
 #file=paste(date, name, dd, ".csv", sep=""), row.names=FALSE)
 ## -----------------------------------------------------------------------------------
 
@@ -582,18 +582,18 @@ par(pty="s")
        plot(as.numeric(paramsMM.grwth[nn,1:10]), as.numeric(medCombMs.grwth[nn,1:10]),
             ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="GLMM no-missing data", 
             ylab="MCMC missing data", main=paramsMM.grwth[nn,11], pch=19)
-       abline(h=as.numeric(as.character(medParams.realDatGrwth$realData[nn])),
-              v=as.numeric(as.character(medParams.realDatGrwth$realData[nn])), col="grey60")
-       #abline(a=0, b=1)
+       #abline(h=as.numeric(as.character(medParams.realDatGrwth$realData[nn])),
+       #      v=as.numeric(as.character(medParams.realDatGrwth$realData[nn])), col="grey60")
+       abline(a=0, b=1)
        plotCI(x=as.numeric(paramsMM.grwth[nn,1:10]), y=as.numeric(medCombMs.grwth[nn,1:10]), 
               uiw=as.numeric(seMM.grwth[nn,1:10]), err="x", add=T, sfrac=0)
        plotCI(x=as.numeric(paramsMM.grwth[nn,1:10]), y=as.numeric(medCombMs.grwth[nn,1:10]), 
               liw=as.numeric(medCombMs.grwth[nn,1:10])-as.numeric(lowCombMs.grwth[nn,1:10]),
               uiw=as.numeric(upCombMs.grwth[nn,1:10])-as.numeric(medCombMs.grwth[nn,1:10]), 
               err="y", add=T, sfrac=0)
-       points(as.numeric(as.character(medParams.realDatGrwth$realData[nn])), 
-              as.numeric(as.character(medParams.realDatGrwth$realData[nn])), pch=8,
-              cex=1.75, col="red")
+      # points(as.numeric(as.character(medParams.realDatGrwth$realData[nn])), 
+      #        as.numeric(as.character(medParams.realDatGrwth$realData[nn])), pch=8,
+      #        cex=1.75, col="red")
      }
      
 
@@ -608,17 +608,17 @@ par(pty="s")
        plot(as.numeric(paramsMM.surv[nn,1:10]), as.numeric(medCombMs.surv[nn,1:10]),
             ylim=c(minLim,maxLim), xlim=c(minLim,maxLim), xlab="GLMM no-missing data", 
             ylab="MCMC missing data", main=paramsMM.surv[nn,11], pch=19)
-       abline(h=as.numeric(as.character(medParams.realDatSurv$realData[nn])),
-              v=as.numeric(as.character(medParams.realDatSurv$realData[nn])), col="grey60")
+       #abline(h=as.numeric(as.character(medParams.realDatSurv$realData[nn])),
+       #      v=as.numeric(as.character(medParams.realDatSurv$realData[nn])), col="grey60")
        plotCI(x=as.numeric(paramsMM.surv[nn,1:10]), y=as.numeric(medCombMs.surv[nn,1:10]), 
               uiw=as.numeric(seMM.surv[nn,1:10]), err="x", add=T, sfrac=0)
        plotCI(x=as.numeric(paramsMM.surv[nn,1:10]), y=as.numeric(medCombMs.surv[nn,1:10]), 
               liw=as.numeric(medCombMs.surv[nn,1:10])-as.numeric(lowCombMs.surv[nn,1:10]),
               uiw=as.numeric(upCombMs.surv[nn,1:10])-as.numeric(medCombMs.surv[nn,1:10]), 
               err="y", add=T, sfrac=0)
-       points(as.numeric(as.character(medParams.realDatSurv$realData[nn])), 
-              as.numeric(as.character(medParams.realDatSurv$realData[nn])), pch=8,
-              cex=1.75, col="red")
+       #points(as.numeric(as.character(medParams.realDatSurv$realData[nn])), 
+        #      as.numeric(as.character(medParams.realDatSurv$realData[nn])), pch=8,
+        #     cex=1.75, col="red")
      }
 ## ------------------------------------------------------------------------------------------------
      
