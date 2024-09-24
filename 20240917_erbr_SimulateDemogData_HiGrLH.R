@@ -94,6 +94,9 @@ n.bin = length(binmids)
   medParams$repro_intercept <- medParams$repro_intercept+0.5  #2
   medParams$reproyesno_intercept <- medParams$reproyesno_intercept+2  #1.5
   medParams$reproyesno_RosCoef <- medParams$reproyesno_RosCoef*1.2
+  
+## Save alternative params for this LH
+saveRDS(medParams, file="erbrParams_HiGrAltLH_20240924.rds")
 # #######################################################
 
  
