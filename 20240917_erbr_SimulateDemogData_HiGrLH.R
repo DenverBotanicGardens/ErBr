@@ -8,7 +8,6 @@
 
 
 rm(list=ls())
-#setwd("C:/Users/Dan Doak/Desktop/Students/April/eriogonum models/manu fall2024/life histories")
 
 
 ## SET WD -----------------------------------------------------------------------------------------
@@ -19,8 +18,6 @@ rm(list=ls())
 
 ## LOAD DATA --------------------------------------------------------------------------------------
 clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
-#erbr <- read.csv("erbr_TagClust2022_20230408.csv", header=TRUE)
-#erbr$Year <- as.factor(erbr$Year)
 JAGSmodSumm_realDat <- readRDS("erbr_JAGSmodBestSUMM_c3t10s10b5_noYRE_20240829.rds")
 mx.mean <- readRDS("erbrMeanMatrix_noYRE_P1k_20240715") #Load mean matrix variable
 medParams <- readRDS("erbrMedParams_noYRE_20240803")    #Load median parameters variable 
@@ -193,8 +190,6 @@ plot(binmids,SSD[2:51])
 ## -------------------------------------------------------------------------------------------------
 
 ## Save mx for future runs 
-#saveRDS(mx, file=paste("20240908", "_erbrMatrix_medGrLH", ".rds", sep=""))
-#mx.newLH <- readRDS("20240908_erbrMatrix_medGrLH.rds") #Load mean matrix variable
 #saveRDS(mx, file=paste("20240917", "_erbrMatrix_hiGrLH", ".rds", sep=""))
 mx.newLH <- readRDS("20240917_erbrMatrix_hiGrLH.rds") #Load mean clim matrix variable
 
@@ -803,7 +798,7 @@ print(dd)
     date <- Sys.Date()                             #Enter date to be added to file name
     date <- str_replace_all(date, "-", "")
     name <- "SimDat20yrHiGr"
-    nameMiss <- as.character("NoMiss.srvCor.")        #Enter name of file
+    nameMiss <- as.character("Miss.srvCor.")        #Enter name of file
     
     write.csv(erbr.1, file=paste(date,"_erbr_",name, nameMiss, dd, ".4JAGS", ".csv", sep=""), row.names=FALSE)
     print(paste(date,"_erbr_",name, nameMiss, dd, ".4JAGS", ".csv", sep=""))
