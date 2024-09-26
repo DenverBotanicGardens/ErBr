@@ -45,8 +45,8 @@ for (dd in 1:n.datset) {
 
 ## LOAD DATA --------------------------------------------------------------------------------------
 ## Assign name variable and load desired datasets
-date <- as.character("20240924")
-name <- as.character("SimDat40yrMedGr.NoMiss.srvCor.")
+date <- as.character("20240925")
+name <- as.character("SimDat20yrMiss.srvCor.sdlgCor.")
 dats <- read.csv(file=paste(date,"_erbr_", name, dd, ".4JAGS", ".csv", sep=""), header=TRUE)
 ## ------------------------------------------------------------------------------------------------
 
@@ -197,13 +197,13 @@ newplt.yrtranscombo=100*newplt.trans+newplt.yr
 
 
 ## FOR GLM NON-MISSING DATASETS: SAVE & DON'T RUN RUN.JAGS, USE IN GLMMS IN PLOTTING CODE INSTEAD-  
-date <- Sys.Date()                                #Enter date to be added to file name
-date <- str_replace_all(date, "-", "")
-name
-saveRDS(dats, file=paste(date, "_erbr_", name, dd,".4GLM", ".rds", sep=""))
-print(paste(date, "_erbr_", name, dd,".4GLM", ".rds", sep=""))
+#date <- Sys.Date()                                #Enter date to be added to file name
+#date <- str_replace_all(date, "-", "")
+#name
+#saveRDS(dats, file=paste(date, "_erbr_", name, dd,".4GLM", ".rds", sep=""))
+#print(paste(date, "_erbr_", name, dd,".4GLM", ".rds", sep=""))
 
-}
+#}
 ## ----------------------------------------------------------------------------------------------
 
 
@@ -212,7 +212,7 @@ print(paste(date, "_erbr_", name, dd,".4GLM", ".rds", sep=""))
 
 
 ## RUN ASSOCIATED JAGS MODEL ----------------------------------------------------------------------
-#jags.mod <- run.jags('erbr_3JAGSmodBest_noYRE_20230418short.R', n.chains=3, data=dats, burnin=10000, thin=5, sample=10000, adapt=500, method='parallel')
+jags.mod <- run.jags('erbr_3JAGSmodBest_noYRE_20230418short.R', n.chains=3, data=dats, burnin=10000, thin=5, sample=10000, adapt=500, method='parallel')
 #jags.mod <- run.jags('erbr_3JAGSmodBest_noYRE_20230418.R', n.chains=3, data=dats, burnin=10000, thin=10, sample=30000, adapt=500, method='parallel')
 
 
@@ -222,10 +222,10 @@ date <- Sys.Date()                                #Enter date to be added to fil
 date <- str_replace_all(date, "-", "")
 
 #summ.mod <- summary(jags.mod)
-#saveRDS(summ.mod, file=paste(date, "_erbr_JAGSmodBestSUMM_c3t5s10b10_noYRE_", name, dd, ".rds", sep=""))
+saveRDS(summ.mod, file=paste(date, "_erbr_JAGSmodBestSUMM_", name, dd, ".rds", sep=""))
 
 
-#}   #End dataset loop
+}   #End dataset loop
 
 
 time.diff <- Sys.time() - old #calculate difference
