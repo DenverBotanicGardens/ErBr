@@ -207,7 +207,7 @@ plot(binmids,SSD[2:51])
 #saveRDS(mx, file=paste("20240920", "_erbrMatrix_medGrLH", ".rds", sep=""))
 mx.newLH <- readRDS("20240920_erbrMatrix_medGrLH.rds") #Load mean clim, med growth matrix variable
 
-#mx.newLH <- mx       
+mx.newLH <- mx       
 ## -------------------------------------------------------------------------------------------------
 
 
@@ -448,7 +448,7 @@ for (dd in 1:n.datset) {
   mx.survivors=mx.sz
   mx.survivors[is.na(mx.survivors)==FALSE]=1
   n.survivors=rowSums(mx.survivors,na.rm=TRUE)
-  n.sdlgs.needed=(200*0.25)-n.survivors
+  n.sdlgs.needed=(200*0.5)-n.survivors
   n.sdlgs.needed[n.sdlgs.needed<0] <- 0
   
   ## 4. After doing this, go back to the number of new plants in each year: for these, do the same approach as with the starting plts, but starting in the yr they are 'born'
@@ -603,6 +603,16 @@ for (dd in 1:n.datset) {
     dplyr::summarise(Indivs = n_distinct(TagNew[RosNew > 0]))
   print(indivXyear)
   ## -----------------------------------------------------------------------------------
+  
+  
+  
+  
+  ## CHECK ----------------------------------------------------
+  ## Add t+1 sz 
+  chck <- datComb %>% mutate(RosNew1=lead(RosNew)) 
+  par(mfrow=c(1,1), mar=c(4,4,2,1))  #bottom, left, top and right 
+  plot(chck$RosNew, chck$RosNew1)
+  ## --------------------------------------------------------------
   
   
   
