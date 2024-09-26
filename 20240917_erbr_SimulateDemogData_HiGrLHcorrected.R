@@ -191,8 +191,8 @@ plot(binmids,SSD[2:51])
 ## -------------------------------------------------------------------------------------------------
 
 ## Save mx for future runs 
-saveRDS(mx, file=paste("20240925", "_erbrMatrix_hiGrLHcor", ".rds", sep=""))
-#mx.newLH <- readRDS("20240917_erbrMatrix_hiGrLH.rds") #Load mean clim matrix variable
+#saveRDS(mx, file=paste("20240925", "_erbrMatrix_hiGrLHcor", ".rds", sep=""))
+mx.newLH <- readRDS("20240925_erbrMatrix_hiGrLHcor.rds") #Load mean clim matrix variable
 
 mx.newLH <- mx       
 ## -------------------------------------------------------------------------------------------------

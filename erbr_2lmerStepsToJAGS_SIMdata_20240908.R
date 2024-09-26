@@ -46,7 +46,7 @@ for (dd in 1:n.datset) {
 ## LOAD DATA --------------------------------------------------------------------------------------
 ## Assign name variable and load desired datasets
 date <- as.character("20240925")
-name <- as.character("SimDat20yrMiss.srvCor.sdlgCor.")
+name <- as.character("SimDat20yrHiGrMiss.srvCor.sdlgCor.")
 dats <- read.csv(file=paste(date,"_erbr_", name, dd, ".4JAGS", ".csv", sep=""), header=TRUE)
 ## ------------------------------------------------------------------------------------------------
 
@@ -220,8 +220,9 @@ jags.mod <- run.jags('erbr_3JAGSmodBest_noYRE_20230418short.R', n.chains=3, data
 ## Save output
 date <- Sys.Date()                                #Enter date to be added to file name
 date <- str_replace_all(date, "-", "")
+print(name)
 
-#summ.mod <- summary(jags.mod)
+summ.mod <- summary(jags.mod)
 saveRDS(summ.mod, file=paste(date, "_erbr_JAGSmodBestSUMM_", name, dd, ".rds", sep=""))
 
 
