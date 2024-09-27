@@ -486,18 +486,18 @@ for (dd in 1:n.datset) {
   
   
   ## OPTION: FOR NO-MISSING DATA. RUN THIS WITH NO-MISS FILES SAVED ABOVE AFTER RUNNING MISSING DATA
- rm(list=ls())
+ #rm(list=ls())
   
   ## LOAD DATA --------------------------------------------------------------------------------------
-  clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
+  #clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
   
   ## Start data set loop here
-  n.datset <- 10
-  for (dd in 1:n.datset) {
+  #n.datset <- 10
+  #for (dd in 1:n.datset) {
   
   
   ## LOAD NO MISSING DATA TO PROCESS WITH THE FOLLOWING FORMATTING CODE
-   datComb1 <- read.csv(file=paste("20240925_erbr_SimDat40yrNoMiss.srvCor.sdlgcor.",dd,".csv",sep=""), header = TRUE)
+   #datComb1 <- read.csv(file=paste("20240925_erbr_SimDat40yrNoMiss.srvCor.sdlgcor.",dd,".csv",sep=""), header = TRUE)
   ## ------------------------------------------------------------------------------------------------
   
   
@@ -563,7 +563,7 @@ for (dd in 1:n.datset) {
     }
   }
   
-  ## ** ADDITION FOR SIM DATA **
+  ## ADDITION FOR SIM DATA
   ## Move 1st year dead to non-missing years only (if death occurred in missing year)
   ## Loop over every row and make change
   for (rr in 1:(nrow(dats)-1)) {
@@ -675,7 +675,7 @@ for (dd in 1:n.datset) {
   date <- Sys.Date()                             #Enter date to be added to file name
   date <- str_replace_all(date, "-", "")
   #type <- "Miss"
-  name <- as.character("_erbr_SimDat40yrNoMiss.srvCor.sdlgCor.")        #Enter name of file
+  name <- as.character("_erbr_SimDat40yrMiss.srvCor.sdlgCor.")        #Enter name of file
   
   write.csv(erbr.1, file=paste(date, name, dd, ".4JAGS", ".csv", sep=""), row.names=FALSE)
   ## -----------------------------------------------------------------------------------

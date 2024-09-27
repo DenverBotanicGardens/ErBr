@@ -762,12 +762,13 @@ vrs.maxPpt4to13.mean <- vrs.maxPpt4to13 %>% group_by(SZ) %>% dplyr::summarize(ME
 colz <- c("#d73027","#fc8d59")#,"#91bfdb","#4575b4")#,"grey60")
 bin.num <- 50  #Define number of bins 
 
-pdf('20240123_ErBr_fig3.pdf', width=6.5, height=7, pointsize=8)
+pdf('20240927_ErBr_fig3.pdf', width=6.5, height=7, pointsize=8)
 par(mfrow=c(2,2))                               #Plot in 4 panels
 par(mar=c(9.3,5.5,1.75,3), mgp = c(2.5, 1, 0))  #bottom, left, top, and right
 
 plot(vrs.param$SZ[1:bin.num], vrs.mean$MEAN_GRWTH, xlab="Plant size in t (rosette number)",ylim=c(0,90), 
-     ylab="Plant size in t+1\n(rosette number)", type='l',lwd=2,cex.lab=1.5, cex.axis=1.25, col="#d73027")
+     ylab="Plant size in t+1\n(rosette number)", type='l',lwd=2,cex.lab=1.5, cex.axis=1.25, col="#d73027",
+     main="Growth")
 lines(vrs.param$SZ[1:bin.num], vrs.minPpt.mean$MEAN_GRWTH, col="#d73027",lwd=2,lty="dashed")
 lines(vrs.param$SZ[1:bin.num], vrs.maxPpt.mean$MEAN_GRWTH, col="#d73027",lwd=2,lty="dotted")
 lines(vrs.param4to13$SZ[1:bin.num], vrs.mean4to13$MEAN_GRWTH, col="#fc8d59",lwd=2, lty="solid")
@@ -779,13 +780,12 @@ lines(vrs.param4to13$SZ[1:bin.num], vrs.maxPpt4to13.mean$MEAN_GRWTH, col="#fc8d5
 #lines(vrs.param4to13odd$SZ[1:bin.num], vrs.mean4to13odd$MEAN_GRWTH, col="#4575b4",lwd=2, lty="solid")
 #lines(vrs.param4to13odd$SZ[1:bin.num], vrs.minPpt4to13odd.mean$MEAN_GRWTH, col="#4575b4",lwd=2, lty="dashed")
 #lines(vrs.param4to13odd$SZ[1:bin.num], vrs.maxPpt4to13odd.mean$MEAN_GRWTH, col="#4575b4",lwd=2, lty="dotted")
-
-legend("bottom", c("Full dataset", "2004-2013"), col=colz,lwd=2,
-       cex=1.1, inset=c(-0.2,-0.4), xpd=TRUE, horiz=FALSE, bty="y",seg.len=1)
+#legend("bottomright","Growth", bty="n", cex=1.5)
 #"2004-2013 even", "2004-2013 odd"
 
 plot(vrs.param$SZ[1:bin.num], vrs.mean$MEAN_SURV, xlab="Plant size in t (rosette number)", 
-     ylab="Survival probability", type='l',lwd=2,cex.lab=1.5, cex.axis=1.25, col="#d73027",ylim=c(0.8,1))
+     ylab="Survival probability", type='l',lwd=2,cex.lab=1.5, cex.axis=1.25, col="#d73027",ylim=c(0.8,1),
+     main="Survival")
 lines(vrs.param$SZ[1:bin.num], vrs.minPpt.mean$MEAN_SURV, col="#d73027",lwd=2,lty="dashed")
 lines(vrs.param$SZ[1:bin.num], vrs.maxPpt.mean$MEAN_SURV, col="#d73027",lwd=2,lty="dotted")
 lines(vrs.param4to13$SZ[1:bin.num], vrs.mean4to13$MEAN_SURV, col="#fc8d59",lwd=2, lty="solid")
@@ -797,13 +797,11 @@ lines(vrs.param4to13$SZ[1:bin.num], vrs.maxPpt4to13.mean$MEAN_SURV, col="#fc8d59
 #lines(vrs.param4to13odd$SZ[1:bin.num], vrs.mean4to13odd$MEAN_SURV, col="#4575b4",lwd=2, lty="solid")
 #lines(vrs.param4to13odd$SZ[1:bin.num], vrs.minPpt4to13odd.mean$MEAN_SURV, col="#4575b4",lwd=2, lty="dashed")
 #lines(vrs.param4to13odd$SZ[1:bin.num], vrs.maxPpt4to13odd.mean$MEAN_SURV, col="#4575b4",lwd=2, lty="dotted")
-
-legend("bottom", c("All years", "Wettest year", "Driest year"), col="black",lwd=1,cex=1.2,
-       lty=c("solid","dotted","dashed"),
-       inset=c(-0.2,-0.44), xpd=TRUE, horiz=FALSE, bty="y",seg.len=1.5)
+#legend("bottomright","Survival", bty="n", cex=1.5)
 
 plot(vrs.param$SZ[1:bin.num], vrs.mean$MEAN_REPROPROB, xlab="Plant size in t (rosette number)", 
-     ylab="Reproduction probability", type='l',lwd=2,cex.lab=1.5, cex.axis=1.25, col="#d73027",ylim=c(0,1))
+     ylab="Reproduction probability", type='l',lwd=2,cex.lab=1.5, cex.axis=1.25, col="#d73027",ylim=c(0,1),
+     main="Probability of reproducing")
 lines(vrs.param$SZ[1:bin.num], vrs.minPpt.mean$MEAN_REPROPROB, col="#d73027",lwd=2,lty="dashed")
 lines(vrs.param$SZ[1:bin.num], vrs.maxPpt.mean$MEAN_REPROPROB, col="#d73027",lwd=2,lty="dotted")
 lines(vrs.param4to13$SZ[1:bin.num], vrs.mean4to13$MEAN_REPROPROB, col="#fc8d59",lwd=2, lty="solid")
@@ -815,9 +813,11 @@ lines(vrs.param4to13$SZ[1:bin.num], vrs.maxPpt4to13.mean$MEAN_REPROPROB, col="#f
 #lines(vrs.param4to13odd$SZ[1:bin.num], vrs.mean4to13odd$MEAN_REPROPROB, col="#4575b4",lwd=2, lty="solid")
 #lines(vrs.param4to13odd$SZ[1:bin.num], vrs.minPpt4to13odd.mean$MEAN_REPROPROB, col="#4575b4",lwd=2, lty="dashed")
 #lines(vrs.param4to13odd$SZ[1:bin.num], vrs.maxPpt4to13odd.mean$MEAN_REPROPROB, col="#4575b4",lwd=2, lty="dotted")
+#legend("bottomright","p(Reproduction)", bty="n", cex=1.5)
 
 plot(vrs.param$SZ[1:bin.num], vrs.mean$MEAN_REPROAMT, xlab="Plant size in t (rosette number)",ylim=c(0,155),
-     ylab="Reproduction amount\n(inflorescence number)", type='l',lwd=2,cex.lab=1.5, cex.axis=1.25, col="#d73027")
+     ylab="Reproduction amount\n(inflorescence number)", type='l',lwd=2,cex.lab=1.5, cex.axis=1.25, col="#d73027",
+     main="Reproduction amount")
 lines(vrs.param$SZ[1:bin.num], vrs.minPpt.mean$MEAN_REPROAMT, col="#d73027",lwd=2,lty="dashed")
 lines(vrs.param$SZ[1:bin.num], vrs.maxPpt.mean$MEAN_REPROAMT, col="#d73027",lwd=2,lty="dotted")
 lines(vrs.param4to13$SZ[1:bin.num], vrs.mean4to13$MEAN_REPROAMT, col="#fc8d59",lwd=2, lty="solid")
@@ -829,6 +829,13 @@ lines(vrs.param4to13$SZ[1:bin.num], vrs.maxPpt4to13.mean$MEAN_REPROAMT, col="#fc
 #lines(vrs.param4to13odd$SZ[1:bin.num], vrs.mean4to13odd$MEAN_REPROAMT, col="#4575b4",lwd=2, lty="solid")
 #lines(vrs.param4to13odd$SZ[1:bin.num], vrs.minPpt4to13odd.mean$MEAN_REPROAMT, col="#4575b4",lwd=2, lty="dashed")
 #lines(vrs.param4to13odd$SZ[1:bin.num], vrs.maxPpt4to13odd.mean$MEAN_REPROAMT, col="#4575b4",lwd=2, lty="dotted")
+#legend("bottomright","Reproduction amount", bty="n", cex=1.5)
+legend("bottomleft", c("Full dataset", "2004-2013"), col=colz,lwd=2,
+       cex=1.1, inset=c(0,-0.4), xpd=TRUE, horiz=FALSE, bty="y",seg.len=1) #inset=c(-0.2,-0.4)
+legend("bottomright", c("All years", "Wettest year", "Driest year"), col="black",lwd=1,cex=1.2,
+       lty=c("solid","dotted","dashed"),
+       inset=c(0,-0.44), xpd=TRUE, horiz=FALSE, bty="y",seg.len=1.5) #inset=c(-0.2,-0.44)
+
 dev.off()
 ## --------------------------------------------------------------------------
 

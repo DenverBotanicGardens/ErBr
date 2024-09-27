@@ -1,6 +1,6 @@
 ---
 title: "erbr_IPM_stochastic"
-author: "April Goebl"
+author: "April Goebl and Dan Doak"
 date: "2/5/2021"
 output: html_document
 ---
@@ -13,12 +13,13 @@ knitr::opts_chunk$set(echo = FALSE)
 library(dplyr)
 library(matrixStats)
 library(viridis) 
-library("stringr")
+library(stringr)
 
 ```
 
 
 ```{r, echo=FALSE }
+## ** remove file paths **
 
 ## LOAD MATRICES FOR EACH YEAR (STUDY AND NON-STUDY PERIOD) & TRANSECT FROM IPMdeterm CODE 
 mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_P1k_20230503")  #Output generated from erbr_4IPMdeterm script 
@@ -33,8 +34,7 @@ erbr$Year <- as.factor(erbr$Year)
 ```{r}
 
 ## OBTAIN STABLE STAGE STRUCTURE
-## Modified from Dan's code 
-N.startNum <- 61                  #Set starting pop sz as 2022 obs sz; could increase to better reflect pop sz, not just demog plts in transects
+N.startNum <- 61              #Set starting pop sz as 2022 obs sz; could increase to better reflect pop sz, not just demog plts in transects
 
 mx.num <- length(mx.list)
 mx.mean <- Reduce('+', mx.list)/mx.num  #Calculate mean of all matrices 
@@ -43,7 +43,7 @@ N.vecStart=N.startNum * mnees$stable.stage
 
 date <- Sys.Date()        #Get date to be added to file name
 date <- str_replace_all(date, "-", "") 
-saveRDS(mx.mean, file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrMeanMatrix_noYRE_P1k", date, sep="_"))
+#saveRDS(mx.mean, file=paste("erbrMeanMatrix_noYRE_P1k", date, sep="_"))
 
 ```
 
@@ -186,42 +186,54 @@ mean(stoch.lams.all$LAMBDA)
 ## NEW PLOTS OF STOCH LAMBDA FOR EACH DATASET 
 ```{r}
 
-stoch.lams.9to13 <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLamsStoch_noYRE_y100r100P1k_noTrans_9to13_20240127")
-stoch.lams.4to8 <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLamsStoch_noYRE_y100r100P1k_noTrans_4to8_20240127")
-stoch.lams.4to13evn <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLamsStoch_noYRE_y100r100P1k_noTrans_4to13evn_20240126")
-stoch.lams.4to13odd <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLamsStoch_noYRE_y100r100P1k_noTrans_4to13odd_20240126")
-stoch.lams.4to13 <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLamsStoch_noYRE_y100r100P1k_noTrans_4to13_20240126")
-stoch.lams.full <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLamsStoch_noYRE_y100r100P1k_noTrans_Full_20240126")
+stoch.lams.9to13 <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Results_data_ms_archive/erbrLamsStoch_noYRE_y100r100P1k_noTrans_9to13_20240127")
+stoch.lams.4to8 <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Results_data_ms_archive/erbrLamsStoch_noYRE_y100r100P1k_noTrans_4to8_20240127")
+stoch.lams.4to13evn <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Results_data_ms_archive/erbrLamsStoch_noYRE_y100r100P1k_noTrans_4to13evn_20240126")
+stoch.lams.4to13odd <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Results_data_ms_archive/erbrLamsStoch_noYRE_y100r100P1k_noTrans_4to13odd_20240126")
+stoch.lams.4to13 <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Results_data_ms_archive/erbrLamsStoch_noYRE_y100r100P1k_noTrans_4to13_20240126")
+stoch.lams.full <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Results_data_ms_archive/erbrLamsStoch_noYRE_y100r100P1k_noTrans_Full_20240126")
 
 ## LOOK AT RESULTS
 ## Plot each dataset in a different panel
 cols <- c("#d73027","#fc8d59","#91bfdb","#4575b4","#fdcb44","#fee090")
 #brks <- c(20,30,40,30,40,40,40,30,40,40,30,40)
-pdf('20240210_ErBr_fig5.pdf', width=6, height=5, pointsize=8)
+pdf('20240927_ErBr_fig5.pdf', width=6, height=5, pointsize=8) #width=6, height=5
 par(mfrow=c(3,2))  
 par(mar=c(4.5,5,2.5,2)) 
 hist(stoch.lams.full$LAMBDA, breaks=100, border=FALSE, xlab=NA,
      main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0.9,1.02), col=cols[1])
 abline(v=1, col="red", lwd=0.75)
+legend("topleft", "Full dataset", col=cols[1], pch=19, cex=1.25,
+       horiz=FALSE, bty="n",seg.len=1, xpd=TRUE)
 hist(stoch.lams.4to13$LAMBDA, breaks=115, border=FALSE, xlab=NA,
      main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0.9,1.05), col=cols[2])
 abline(v=1, col="red", lwd=0.75)
+legend("topright", "2004-2013", col=cols[2], pch=19, cex=1.25,
+       horiz=FALSE, bty="n",seg.len=1, xpd=TRUE)
 hist(stoch.lams.4to13evn$LAMBDA, breaks=100, border=FALSE, xlab=NA,
      main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0.55,1.09), col=cols[3])
 abline(v=1, col="red", lwd=0.75)
+legend("topleft", "2004-2013 even yrs only", col=cols[3], pch=19, cex=1.25,
+       horiz=FALSE, bty="n",seg.len=1, xpd=TRUE)
 hist(stoch.lams.4to13odd$LAMBDA, breaks=290, border=FALSE, xlab=NA,
      main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0.5,1.6), col=cols[4])
 abline(v=1, col="red", lwd=0.75)
+legend("topright", "2004-2013 odd yrs only", col=cols[4], pch=19, cex=1.25,
+       horiz=FALSE, bty="n",seg.len=1, xpd=TRUE)
 hist(stoch.lams.4to8$LAMBDA, breaks=100, border=FALSE, xlab="Short term stochastic population growth rate",
      main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0.6,1.6), col=cols[5])
 abline(v=1, col="red", lwd=0.75)
+legend("topleft", "2004-2008", col=cols[5], pch=19, cex=1.25,
+       horiz=FALSE, bty="n",seg.len=1, xpd=TRUE)
 hist(stoch.lams.9to13$LAMBDA, breaks=9000, border=FALSE, xlab="Short term stochastic population growth rate",
      main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0.05,1.94), col=cols[6])
 abline(v=1, col="red", lwd=0.75)
+legend("topright", "2009-2013", col=cols[6], pch=19, cex=1.25,
+       horiz=FALSE, bty="n",seg.len=1, xpd=TRUE)
 
-legend("topright", c("Full dataset","2004-2013","2004-2013 even yrs only","2004-2013 odd yrs only",
-                   "2004-2008","2009-2013"), col=cols, pch=19, cex=1.1,
-       horiz=FALSE, bty="y",seg.len=1, xpd=TRUE) 
+#legend("topright", c("Full dataset","2004-2013","2004-2013 even yrs only","2004-2013 odd yrs only",
+#                   "2004-2008","2009-2013"), col=cols, pch=19, cex=1.1,
+#       horiz=FALSE, bty="y",seg.len=1, xpd=TRUE) 
 
 dev.off()
 
