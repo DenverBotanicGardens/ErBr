@@ -46,7 +46,7 @@ for (dd in 1:n.datset) {
 ## LOAD DATA --------------------------------------------------------------------------------------
 ## Assign name variable and load desired datasets
 date <- as.character("20240926")
-name <- as.character("SimDat20yrHiGrNoMiss.srvCor.sdlgCor.")
+name <- as.character("SimDat20yrMedGrNoMiss.srvCor.sdlgCor.")
 dats <- read.csv(file=paste(date,"_erbr_", name, dd, ".4JAGS", ".csv", sep=""), header=TRUE)
 ## ------------------------------------------------------------------------------------------------
 

@@ -26,7 +26,7 @@ library(plotrix)
 
 
 ## ASSIGN NAME VARIABLE FOR DESIRED DATASETS 
-name <- as.character("SimDat20yr") #"SimDat40yr"
+name <- as.character("SimDat20yrMedGr") #"SimDat20yr"
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -122,7 +122,7 @@ summ.modNo10 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,
 ## OBTAIN GLMM ESTIMATES ----------------------------------------------------------------
 ## Loop over datasets 
 dateGLM <- as.character("20240926")
-name <- "SimDat20yr"
+#name <- "SimDat20yrHiGr"
 
 modList.grwth <- NULL        #List variable to store all models
 modList.surv <- NULL        #List variable to store all models
@@ -131,8 +131,10 @@ seMM.grwth <- NULL    #Use SE in error bars in GLMM vs JAGS plots
 paramsMM.surv <- NULL
 seMM.surv <- NULL
 n.datset <- 10
+#n.datset <- 2
 
-for (dd in 4:n.datset) {
+
+for (dd in 1:n.datset) {
   
   ## Read in data
   noMiss <- readRDS(file=paste(dateGLM, "_erbr_", name, "NoMiss.srvCor.sdlgCor.",dd,".4GLM",".rds", sep=""))
@@ -146,7 +148,8 @@ for (dd in 4:n.datset) {
   
   ## Growth (param order is same as for JAGS output)
   glmm.grwth <- glmer.nb(RosNew1 ~ log(RosNew) + TempFall + TempSummer + TempWinter + 
-                           PptFall + PptSummer + PptWinter + (1|TransectNew), data=noMiss)
+                           PptFall + PptSummer + PptWinter + (1|TransectNew), data=noMiss)#,
+                           #control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000)))
   
   ## Survival  (param order is same as for JAGS output)
   glmm.surv <- glmer(Surv1 ~ log(RosNew) + PptWinter + TempFall + TempSummer + 
@@ -188,7 +191,7 @@ names.paramTitles <- c("Grwth Intercept","Grwth Size","Grwth Fall Temp","Grwth S
 
 paramsMM.grwth$ParamTitle <- names.paramTitles[1:8]
 seMM.grwth$ParamTitle <- names.paramTitles[1:8]
-paramsMM.survTmp
+paramsMM.surv
 paramsMM.surv$ParamTitle <- names.paramTitles[9:14]
 seMM.surv$ParamTitle <- names.paramTitles[9:14]
 
@@ -198,13 +201,13 @@ date <- as.character("20240926")
 name
 
 ## Save GLMM model summaries
-saveRDS(modList.grwth, file=paste(date, "_erbr_GLMMsummGrwth4.10_", name, ".rds", sep=""))
-saveRDS(modList.surv, file=paste(date, "_erbr_GLMMsummSurv4.10_", name, ".rds", sep=""))
+saveRDS(modList.grwth, file=paste(date, "_erbr_GLMMsummGrwth_", name, ".rds", sep=""))
+saveRDS(modList.surv, file=paste(date, "_erbr_GLMMsummSurv_", name, ".rds", sep=""))
 
-saveRDS(paramsMM.grwth, file=paste(date, "_erbr_paramMMgrwthWint4.10_", name, ".rds", sep=""))
-saveRDS(seMM.grwth, file=paste(date, "_erbr_seMMgrwthWint4.10_", name, ".rds", sep=""))
-saveRDS(paramsMM.surv, file=paste(date, "_erbr_paramMMsurvWint4.10_", name, ".rds", sep=""))
-saveRDS(seMM.surv, file=paste(date, "_erbr_seMMsurvWint4.10_", name, ".rds", sep=""))
+saveRDS(paramsMM.grwth, file=paste(date, "_erbr_paramMMgrwthWint_", name, ".rds", sep=""))
+saveRDS(seMM.grwth, file=paste(date, "_erbr_seMMgrwthWint_", name, ".rds", sep=""))
+saveRDS(paramsMM.surv, file=paste(date, "_erbr_paramMMsurvWint_", name, ".rds", sep=""))
+saveRDS(seMM.surv, file=paste(date, "_erbr_seMMsurvWint_", name, ".rds", sep=""))
 ## --------------------------------------
 
 
