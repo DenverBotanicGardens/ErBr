@@ -847,7 +847,7 @@ for (dd in 1:n.datset) {
   ## SAVE FORMATTED DATA ---------------------------------------------------------------
   date <- Sys.Date()                             #Enter date to be added to file name
   date <- str_replace_all(date, "-", "")
-  nameMiss <- as.character("NoMiss.srvCor.sdlgcor.")        #Enter name of file
+  nameMiss <- as.character("NoMiss.srvCor.sdlgCor.")    #"NoMiss.srvCor.sdlgcor."   #Enter name of file
   name <- "SimDat20yrMedGr"
   write.csv(erbr.1, file=paste(date,"_erbr_",name, nameMiss, dd, ".4JAGS", ".csv", sep=""), row.names=FALSE)
   print(paste(date,"_erbr_",name, nameMiss, dd, ".4JAGS", ".csv", sep=""))
