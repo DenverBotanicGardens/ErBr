@@ -60,7 +60,7 @@ N.vecStart=N.startNum * SSD
 ## FOR MED GRWTH --------------------
 # Specify min and max plt sz
 minsize <- 1
-maxsize <- (max(erbr$RosNew, na.rm=TRUE)) 
+maxsize <- 80#(max(erbr$RosNew, na.rm=TRUE)) 
 
 ## For median sz estimation
 ## new size density estimation for median size estimation
@@ -104,7 +104,7 @@ medParams$reproyesno_intercept = medParams$reproyesno_intercept+2
 medParams$reproyesno_RosCoef=medParams$reproyesno_RosCoef*1.2
 
 ## Save alternative params for this LH
-saveRDS(medParams, file="erbrParams_MedGrAltLH_20240924.rds")
+#saveRDS(medParams, file="erbrParams_MedGrAltLH_20240924.rds")
 #######################################################
 
 
@@ -204,10 +204,10 @@ plot(binmids,SSD[2:51])
 
 
 ## Save mx for future runs & load again -----------------------------------------------------------
-#saveRDS(mx, file=paste("20240920", "_erbrMatrix_medGrLH", ".rds", sep=""))
-mx.newLH <- readRDS("20240920_erbrMatrix_medGrLH.rds") #Load mean clim, med growth matrix variable
+#saveRDS(mx, file=paste("20240926", "_erbrMatrix_medGrLHcor", ".rds", sep=""))
+mx.newLH <- readRDS("20240926_erbrMatrix_medGrLHcor.rds") #Load mean clim, med growth matrix variable
 
-mx.newLH <- mx       
+#mx.newLH <- mx       
 ## -------------------------------------------------------------------------------------------------
 
 
@@ -223,7 +223,7 @@ mx.newLH <- mx
 
 ## GENERATE SIMULATED DATA -------------------------------------------------------------------------         
 ## Start data set loop 
-name <- as.character("SimDat20yrMedGr.") # For naming saved files below
+name <- as.character("SimDat20yrMedGr") # For naming saved files below
 n.datset <- 10
 for (dd in 1:n.datset) {
   
@@ -266,7 +266,7 @@ for (dd in 1:n.datset) {
   ## FOR MED GRWTH ----------------
   # Specify min and max plt sz
   minsize <- 1
-  maxsize <- (max(erbr$RosNew, na.rm=TRUE)) 
+  maxsize <- 80#(max(erbr$RosNew, na.rm=TRUE)) 
   
   ## For median sz estimation
   ##new size density estimation for median size estimation
@@ -295,10 +295,16 @@ for (dd in 1:n.datset) {
   
   ## Select starting sizes of plants for simulated data using SSD and median sz classes
   n.startPlts <- 200 #Num of starting plts
+  
+  ##** make a break point between small and big classes. 
+  ##*##For each, multiply the prob of each class by 0.5 
+  ##*and divide by the small of probs in that group (big sizes or small sizes).
+  
   N.startProbs <- (N.vecStart*1) / popSz.start
   sum(N.startProbs) #Should equal 1
   sz.startPlts <- sample(x=binmids, size=n.startPlts, replace=TRUE, prob=N.startProbs)  
   sz.startPlts <- round(sz.startPlts, digits=0)   #Round to nearest integer 
+  print(sz.startPlts)
   ## ------------------------------------------------------------------------------------------------
   
   
@@ -614,7 +620,7 @@ for (dd in 1:n.datset) {
   plot(chck$RosNew, chck$RosNew1)
   ## --------------------------------------------------------------
   
-  
+
   
   
   
@@ -623,7 +629,7 @@ for (dd in 1:n.datset) {
   date <- Sys.Date()                                               #Enter date to be added to file name
   date <- str_replace_all(date, "-", "")
   name
-  nameNoMiss <- as.character("NoMiss.srvCor.")                     #Enter name of file
+  nameNoMiss <- as.character("NoMiss.srvCor.sdlgCor.")                     #Enter name of file
   
   write.csv(datComb, file=paste(date,"_erbr_",name,nameNoMiss,dd,".csv", sep=""), row.names=FALSE)
   print(paste(date,"_erbr_",name,nameNoMiss,dd,".csv", sep=""))
@@ -841,8 +847,8 @@ for (dd in 1:n.datset) {
   ## SAVE FORMATTED DATA ---------------------------------------------------------------
   date <- Sys.Date()                             #Enter date to be added to file name
   date <- str_replace_all(date, "-", "")
-  nameMiss <- as.character("Miss.srvCor.")        #Enter name of file
-  name <- "SimDat40yrMedGr."
+  nameMiss <- as.character("Miss.srvCor.sdlgcor.")        #Enter name of file
+  name <- "SimDat20yrMedGr"
   write.csv(erbr.1, file=paste(date,"_erbr_",name, nameMiss, dd, ".4JAGS", ".csv", sep=""), row.names=FALSE)
   print(paste(date,"_erbr_",name, nameMiss, dd, ".4JAGS", ".csv", sep=""))
   ## -----------------------------------------------------------------------------------

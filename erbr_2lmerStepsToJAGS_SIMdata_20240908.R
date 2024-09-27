@@ -45,8 +45,8 @@ for (dd in 1:n.datset) {
 
 ## LOAD DATA --------------------------------------------------------------------------------------
 ## Assign name variable and load desired datasets
-date <- as.character("20240925")
-name <- as.character("SimDat20yrHiGrMiss.srvCor.sdlgCor.")
+date <- as.character("20240926")
+name <- as.character("SimDat20yrHiGrNoMiss.srvCor.sdlgCor.")
 dats <- read.csv(file=paste(date,"_erbr_", name, dd, ".4JAGS", ".csv", sep=""), header=TRUE)
 ## ------------------------------------------------------------------------------------------------
 
@@ -196,14 +196,14 @@ newplt.yrtranscombo=100*newplt.trans+newplt.yr
 
 
 
-## FOR GLM NON-MISSING DATASETS: SAVE & DON'T RUN RUN.JAGS, USE IN GLMMS IN PLOTTING CODE INSTEAD-  
-#date <- Sys.Date()                                #Enter date to be added to file name
-#date <- str_replace_all(date, "-", "")
-#name
-#saveRDS(dats, file=paste(date, "_erbr_", name, dd,".4GLM", ".rds", sep=""))
-#print(paste(date, "_erbr_", name, dd,".4GLM", ".rds", sep=""))
+# FOR GLM NON-MISSING DATASETS: SAVE & DON'T RUN RUN.JAGS, USE IN GLMMS IN PLOTTING CODE INSTEAD-  
+date <- Sys.Date()                                #Enter date to be added to file name
+date <- str_replace_all(date, "-", "")
+name
+saveRDS(dats, file=paste(date, "_erbr_", name, dd,".4GLM", ".rds", sep=""))
+print(paste(date, "_erbr_", name, dd,".4GLM", ".rds", sep=""))
 
-#}
+}
 ## ----------------------------------------------------------------------------------------------
 
 
