@@ -22,11 +22,11 @@ library(resample)
 library(gplots)
 library(stringr)
 library(plotrix)
-
+library(glmmTMB) # installed from tar for not the last version, but 1.1.9
 
 
 ## ASSIGN NAME VARIABLE FOR DESIRED DATASETS 
-name <- as.character("SimDat40yr") #"SimDat20yrMedGr" "SimDat20yr" "SimDat20yrHiGr"
+name <- as.character("SimDat20yr") #"SimDat20yrMedGr" "SimDat20yr" "SimDat20yrHiGr"
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -129,8 +129,8 @@ summ.modNo10 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,
 library(GLMMadaptive)
 
 ## Loop over datasets 
-dateGLM <- as.character("20240926")
-#name <- "SimDat20yrHiGr"
+dateGLM <- as.character("20240928")
+name <- "SimDat20yr"
 
 modList.grwth <- NULL        #List variable to store all models
 modList.surv <- NULL        #List variable to store all models
@@ -145,7 +145,7 @@ n.datset <- 3
 for (dd in 3:n.datset) {
   
   ## Read in data
-  noMiss <- readRDS(file=paste(dateGLM, "_erbr_", name, "NoMiss.srvCor.sdlgCor.",dd,".4GLM",".rds", sep=""))
+  noMiss <- readRDS(file=paste(dateGLM, "_erbr_", name, "Miss.srvCor.sdlgCor.",dd,".4GLM",".rds", sep=""))
   
   ## Add t+1 climate, sz, & tag into erbr data 
   noMiss <- noMiss %>% mutate(TagNew1=lead(TagNew), RosNew1=lead(RosNew), Surv1=lead(surv))  
@@ -163,12 +163,24 @@ for (dd in 3:n.datset) {
   noMiss$PptWinterSc <- noMiss$PptWinter / max(noMiss$PptWinter)
   
   glmm.grwth <- glmer.nb(RosNew1 ~ log(RosNew) + TempFallSc + TempSummerSc + 
-                           TempWinterSc + PptFallSc + PptSummerSc + PptWinterSc + (1|TransectNew), data=noMiss,
-                           control=glmerControl(optCtrl=list(maxfun=50000)))
+                           TempWinterSc + PptFallSc + PptSummerSc + PptWinterSc + (1|TransectNew), data=noMiss)#,
+                           #control=glmerControl(optCtrl=list(maxfun=50000)))
   
   #glmm.grwth <- mixed_model(fixed=RosNew1 ~ log(RosNew) + TempFall + TempSummer + TempWinter + 
   #                            PptFall + PptSummer + PptWinter, random=~1|TransectNew, data=noMiss,
   #                          family=zi.negative.binomial(), zi_fixed=~1)#, zi_random=~1)
+  
+  
+  plot(noMiss$RosNew,noMiss$RosNew1)
+  print(t(table(noMiss$Year)))
+  
+  
+  glmm.grwth <- glmmTMB(RosNew1 ~ log(RosNew) + TempFall + TempSummer + TempWinter + 
+                PptFall + PptSummer + PptWinter + (1|TransectNew), family=truncated_nbinom2(link = "log"), data=noMiss)
+  
+  
+  summary(glmm.grwth)
+  
   
   ## Survival  (param order is same as for JAGS output)
   glmm.surv <- glmer(Surv1 ~ log(RosNew) + PptWinter + TempFall + TempSummer + 
