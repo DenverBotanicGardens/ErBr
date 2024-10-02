@@ -13,8 +13,8 @@ library(MASS)
 library(dplyr)
 library(matrixStats)
 library(corrplot)
-library(rgl)
-library(viridis) 
+#library(rgl)
+#library(viridis) 
 library(car)
 library(coda)
 library(lme4)
@@ -29,7 +29,7 @@ library(plotrix)
 
 
 ## ASSIGN NAME VARIABLE FOR DESIRED DATASETS 
-name <- as.character("SimDat20yr") #"SimDat20yrMedGr" "SimDat20yr" "SimDat20yrHiGr"
+name <- as.character("SimDat40yr") #"SimDat20yrMedGr" "SimDat20yr" "SimDat20yrHiGr"
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -44,12 +44,13 @@ erbr$Year <- as.factor(erbr$Year)
 
 ## Climate data
 clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
+clim32yrMAXES <- read.csv("erbr_climData3seas32yr_MAXES.csv", header=TRUE)
 
 
 ## Simulated data for finding relevant climate years (could be miss or no-miss)
-dateSim <- "20240926"
-nameSim <-   "SimDat40yrNoMiss.srvCor.sdlgCor." #"SimDat20yrMedGrNoMiss.srvCor.sdlgCor." SimDat20yrHiGrNoMiss.srvCor.sdlgCor.
-pathSim <-  "C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/" #getwd()
+dateSim <- "/20241001"
+nameSim <-   "SimDat40yrNoMiss.srvCor.sdlgCor.grwthCor." #"SimDat20yrMedGrNoMiss.srvCor.sdlgCor." SimDat20yrHiGrNoMiss.srvCor.sdlgCor.
+pathSim <-  getwd() #"C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/" #
 simDat1 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"1.4JAGS.csv",sep=""), header=TRUE)
 simDat2 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"2.4JAGS.csv",sep=""), header=TRUE)
 simDat3 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"3.4JAGS.csv",sep=""), header=TRUE)
@@ -93,8 +94,8 @@ seMM.surv <- readRDS(file=paste("20240926_erbr_seMMsurvWint1.3_", name, ".rds", 
 
 ## JAGS results
 ## MISSING
-dateSUMM <- "20240926"
-nameSUMM <-  "SimDat40yrMiss.srvCor.sdlgCor." #"SimDat20yrHiGrMiss.srvCor." #"SimDat20yrMedGrMiss.srvCor.sdlgCor."
+dateSUMM <- "20240928"
+nameSUMM <-  "SimDat40yrMiss.srvCor.sdlgCor.grwthCor." #"SimDat20yrHiGrMiss.srvCor." #"SimDat20yrMedGrMiss.srvCor.sdlgCor."
 summ.modMs1 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"1.rds", sep=""))
 summ.modMs2 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"2.rds", sep=""))
 summ.modMs3 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"3.rds", sep=""))
@@ -127,132 +128,6 @@ summ.modNo10 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,
 
 
 
-
-## OBTAIN GLMM ESTIMATES ----------------------------------------------------------------
-library(GLMMadaptive)
-
-## Loop over datasets 
-dateGLM <- as.character("20240928")
-name <- "SimDat20yr"
-
-modList.grwth <- NULL        #List variable to store all models
-modList.surv <- NULL        #List variable to store all models
-paramsMM.grwth <- NULL
-seMM.grwth <- NULL    #Use SE in error bars in GLMM vs JAGS plots 
-paramsMM.surv <- NULL
-seMM.surv <- NULL
-n.datset <- 10
-n.datset <- 3
-
-
-for (dd in 3:n.datset) {
-  
-  ## Read in data
-  noMiss <- readRDS(file=paste(dateGLM, "_erbr_", name, "Miss.srvCor.sdlgCor.",dd,".4GLM",".rds", sep=""))
-  
-  ## Add t+1 climate, sz, & tag into erbr data 
-  noMiss <- noMiss %>% mutate(TagNew1=lead(TagNew), RosNew1=lead(RosNew), Surv1=lead(surv))  
-  #Remove lines with mis-matched individuals 
-  noMiss <- noMiss[which(noMiss$TagNew == noMiss$TagNew1),]  
-  
-  ## Note: Log size in all models to match JAGS; this makes ending size a linear function of starting size
-  
-  ## Growth (param order is same as for JAGS output)
-  #noMiss$TempFallSc <- noMiss$TempFall / max(noMiss$TempFall)
-  #noMiss$TempSummerSc <- noMiss$TempSummer / max(noMiss$TempSummer)
-  #noMiss$TempWinterSc <- noMiss$TempWinter / max(noMiss$TempWinter)
-  #noMiss$PptFallSc <- noMiss$PptFall / max(noMiss$PptFall)
-  #noMiss$PptSummerSc <- noMiss$PptSummer / max(noMiss$PptSummer)
-  #noMiss$PptWinterSc <- noMiss$PptWinter / max(noMiss$PptWinter)
-  
-  #glmm.grwth <- glmer.nb(RosNew1 ~ log(RosNew) + TempFallSc + TempSummerSc + 
-  #                         TempWinterSc + PptFallSc + PptSummerSc + PptWinterSc + (1|TransectNew), data=noMiss)#,
-                           #control=glmerControl(optCtrl=list(maxfun=50000)))
-  
-  #glmm.grwth <- mixed_model(fixed=RosNew1 ~ log(RosNew) + TempFall + TempSummer + TempWinter + 
-  #                            PptFall + PptSummer + PptWinter, random=~1|TransectNew, data=noMiss,
-  #                          family=zi.negative.binomial(), zi_fixed=~1)#, zi_random=~1)
-  
-  
-  plot(noMiss$RosNew,noMiss$RosNew1)
-  print(t(table(noMiss$Year)))
-  
-  
-  glmm.grwth <- glmmTMB(RosNew1 ~ log(RosNew) + TempFall + TempSummer + TempWinter + 
-                PptFall + PptSummer + PptWinter + (1|TransectNew), family=truncated_nbinom2(link = "log"), data=noMiss)
-  
-  summary(glmm.grwth)
-  
-  #medParams.realDat <- readRDS("erbrMedParams_noYRE_20240803")
-  #climMAXES = read.csv('erbr_climData3seas32yr_MAXES.csv')
-  #simulationOutput<-simulateResiduals(fittedModel = mod, plot=T) 
-  
-  
-
-  ## Survival  (param order is same as for JAGS output)
-  glmm.surv <- glmer(Surv1 ~ log(RosNew) + PptWinter + TempFall + TempSummer + 
-                       TempWinter + (1|TransectNew), family=binomial(link='logit'), data=noMiss)
-  
-  ## Save model summaries in list
-  modList.grwth[[length(modList.grwth) + 1]] <- summary(glmm.grwth)
-  modList.surv[[length(modList.surv) + 1]] <- summary(glmm.surv)
-  
-  
-  ## ** figure out new way to do this with GLMMtbm summary **
-  ## Extract parameter estimates, including intercept, and SEs from GLMMs
-  paramsMM.grwthTmp <- as.data.frame(summary(glmm.grwth)$coefficients[1:nrow(summary(glmm.grwth)$coefficients),1])
-  seMM.grwthTmp <- as.data.frame(summary(glmm.grwth)$coefficients[1:nrow(summary(glmm.grwth)$coefficients),2])
-  
- colnames(paramsMM.grwthTmp) <- paste("GLMM.",dd,sep="")
- colnames(seMM.grwthTmp) <- paste("SE.",dd,sep="")
-  
-  paramsMM.grwth <- as.data.frame(c(paramsMM.grwth, paramsMM.grwthTmp))
-  seMM.grwth <- as.data.frame(c(seMM.grwth, seMM.grwthTmp))
-  
-  
-  paramsMM.survTmp <- as.data.frame(summary(glmm.surv)$coefficients[1:nrow(summary(glmm.surv)$coefficients),1])
-  seMM.survTmp <- as.data.frame(summary(glmm.surv)$coefficients[1:nrow(summary(glmm.surv)$coefficients),2])
-  
-  colnames(paramsMM.survTmp) <- paste("GLMM.",dd,sep="")
-  colnames(seMM.survTmp) <- paste("SE.",dd,sep="")
-  paramsMM.surv <- as.data.frame(c(paramsMM.surv, paramsMM.survTmp))
-  seMM.surv <- as.data.frame(c(seMM.surv, seMM.survTmp))
-  
-}
-
-paramsMM.grwthTmp
-paramsMM.grwth
-paramsMM.survTmp
-names.paramTitles <- c("Grwth Intercept","Grwth Size","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
-                       "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Intercept","Surv Size",
-                       "Surv Winter Precip","Surv Fall Temp","Surv Summer Temp","Surv Winter Temp")
-
-paramsMM.grwth$ParamTitle <- names.paramTitles[1:8]
-seMM.grwth$ParamTitle <- names.paramTitles[1:8]
-paramsMM.surv
-paramsMM.surv$ParamTitle <- names.paramTitles[9:14]
-seMM.surv$ParamTitle <- names.paramTitles[9:14]
-
-
-## Save GLMM param and se results 
-date <- as.character("20240926")
-name
-
-## Save GLMM model summaries
-saveRDS(modList.grwth, file=paste(date, "_erbr_GLMMsummGrwth_", name, ".rds", sep=""))
-saveRDS(modList.surv, file=paste(date, "_erbr_GLMMsummSurv_", name, ".rds", sep=""))
-
-saveRDS(paramsMM.grwth, file=paste(date, "_erbr_paramMMgrwthWint_", name, ".rds", sep=""))
-saveRDS(seMM.grwth, file=paste(date, "_erbr_seMMgrwthWint_", name, ".rds", sep=""))
-saveRDS(paramsMM.surv, file=paste(date, "_erbr_paramMMsurvWint_", name, ".rds", sep=""))
-saveRDS(seMM.surv, file=paste(date, "_erbr_seMMsurvWint_", name, ".rds", sep=""))
-## --------------------------------------
-
-
-
-
-
-
 ## GET CLIMATE VARIABLES ------------------------------------------------------------------------
 climYrs1 <- clim32yr[clim32yr$Year %in% unique(simDat1$ClimYr),]
 climYrs2 <- clim32yr[clim32yr$Year %in% unique(simDat2$ClimYr),]
@@ -271,6 +146,16 @@ reps <- c(rep(1,nrow(climYrs1)), rep(2,nrow(climYrs2)), rep(3,nrow(climYrs3)), r
           rep(9,nrow(climYrs9)), rep(10,nrow(climYrs10)))
 climYrs$Rep <- as.factor(reps)
 ## ---------------------------------------------------------------------------------------------
+
+## SCALE CLIMATE VARIABLES ---------------------------------------------------------------------
+climYrs$Tot_fall_ppt <- climYrs$Tot_fall_ppt / clim32yrMAXES$Tot_fall_ppt
+climYrs$Tot_winter_ppt <- climYrs$Tot_winter_ppt / clim32yrMAXES$Tot_winter_ppt
+climYrs$Tot_summer_ppt <- climYrs$Tot_summer_ppt / clim32yrMAXES$Tot_summer_ppt
+climYrs$Mean_fall_temp <- climYrs$Mean_fall_temp / clim32yrMAXES$Mean_fall_temp
+climYrs$Mean_winter_temp <- climYrs$Mean_winter_temp / clim32yrMAXES$Mean_winter_temp
+climYrs$Mean_summer_temp <- climYrs$Mean_summer_temp / clim32yrMAXES$Mean_summer_temp
+## ---------------------------------------------------------------------------------------------
+
 
 
 
@@ -331,7 +216,21 @@ medParams.realDatSurv <- medParams.realDatTr[9:14,]
 medParams.realDatSurv$realData <- as.numeric(as.character(medParams.realDatSurv$realData))
 ## ------------------------------------------------------------------------------------------
 
+## RESCALE 'TRUE' PARAMS --------------------------------------------------------------------
+tempFsc <- medParams.realDatGrwth$realData[medParams.realDatGrwth$ParamTitle=="Grwth Fall Temp"] * clim32yrMAXES$Mean_fall_temp
+tempSsc <- medParams.realDatGrwth$realData[medParams.realDatGrwth$ParamTitle=="Grwth Summer Temp"] * clim32yrMAXES$Mean_summer_temp
+tempWsc <- medParams.realDatGrwth$realData[medParams.realDatGrwth$ParamTitle=="Grwth Winter Temp"] * clim32yrMAXES$Mean_winter_temp
+PptFsc <- medParams.realDatGrwth$realData[medParams.realDatGrwth$ParamTitle=="Grwth Fall Precip"] * clim32yrMAXES$Tot_fall_ppt
+PptSsc <- medParams.realDatGrwth$realData[medParams.realDatGrwth$ParamTitle=="Grwth Summer Precip"] * clim32yrMAXES$Tot_summer_ppt
+PptWsc <- medParams.realDatGrwth$realData[medParams.realDatGrwth$ParamTitle=="Grwth Winter Precip"] * clim32yrMAXES$Tot_winter_ppt
 
+medParams.realDatGrwth$realData[medParams.realDatGrwth$ParamTitle=="Grwth Fall Temp"] <- tempFsc
+medParams.realDatGrwth$realData[medParams.realDatGrwth$ParamTitle=="Grwth Summer Temp"] <- tempSsc
+medParams.realDatGrwth$realData[medParams.realDatGrwth$ParamTitle=="Grwth Winter Temp"] <- tempWsc
+medParams.realDatGrwth$realData[medParams.realDatGrwth$ParamTitle=="Grwth Fall Precip"] <- PptFsc
+medParams.realDatGrwth$realData[medParams.realDatGrwth$ParamTitle=="Grwth Summer Precip"] <- PptSsc 
+medParams.realDatGrwth$realData[medParams.realDatGrwth$ParamTitle=="Grwth Winter Precip"] <- PptWsc 
+## ------------------------------------------------------------------------------------------
 
 
 
@@ -363,7 +262,8 @@ medCombMs.surv <- as.data.frame(cbind(medParamsMs.1[9:14], medParamsMs.2[9:14],m
                                      medParamsMs.7[9:14],medParamsMs.8[9:14],medParamsMs.9[9:14],medParamsMs.10[9:14]))
 
 
-## No missing data
+
+## Nomissing data
 medParamsNo.1 <- summ.modNo1[c(26:33,36:41),2]
 medParamsNo.2 <- summ.modNo2[c(26:33,36:41),2]
 medParamsNo.3 <- summ.modNo3[c(26:33,36:41),2]
@@ -535,13 +435,13 @@ par(pty="s")
 par(mfrow=c(1,1), mar=c(4,4,2,1))  #bottom, left, top and right 
 
 ## Plot most recent rep from above
-#plot(binmids, pred.grwthJAGS)
+plot(binmids, pred.grwthJAGS)
 #     points(binmids, pred.grwthGLMM, col="red")
-#     points(binmids, pred.grwthTrue, col="blue")
+     points(binmids, pred.grwthTrue, col="blue")
      
-#plot(binmids, pred.survJAGS)
+plot(binmids, pred.survJAGS)
 #     points(binmids, pred.survGLMM, col="red")
-#     points(binmids, pred.survTrue, col="blue")
+     points(binmids, pred.survTrue, col="blue")
 
 ## Plot predicted VRS against plant size 
 plot(log(output$PLT_SZ),output$GrwthRate_True, main=name)  
@@ -620,7 +520,7 @@ hist(simDatComb$RosNew, xlim=c(0,150), breaks=30, xlab="Plant size", main=name)
 
 
 ## Plot all reps, years, sizes together           
-par(mfrow=c(2,1), mar=c(4,4,2,1))  #bottom, left, top and right 
+par(mfrow=c(1,1), mar=c(4,4,2,1))  #bottom, left, top and right 
 par(pty="s")
 
 ## Growth   
@@ -634,9 +534,8 @@ plot(output$GrwthRate_True, output$GrwthRate_GLMM,col=alpha("grey40",0.5),main=m
 abline(a=0, b=1)
 legend(legPos, "GLMM no-missing data", col=alpha("grey40",0.5),pch=19, cex=1,horiz=FALSE, bty="y")
 
-plot(log(output$GrwthRate_True), log(output$GrwthRate_JAGS),col=alpha("purple",0.5),main=mainTitle,
-     xlab="True vital rate - GROWTH",ylab="Estimated vital rate - GROWTH", 
-     log="xy")#,ylim=c(minAx,maxAx), xlim=c(minAx,maxAx))#,
+plot(output$GrwthRate_True, output$GrwthRate_JAGS,col=alpha("purple",0.5),main=mainTitle,
+     xlab="True vital rate - GROWTH",ylab="Estimated vital rate - GROWTH")#,ylim=c(minAx,maxAx), xlim=c(minAx,maxAx))#,
 abline(a=0, b=1)
 legend(legpos, "MCMC missing data", col=alpha("purple",0.5),pch=19, cex=1,horiz=FALSE, bty="y")
 
