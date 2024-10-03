@@ -71,24 +71,20 @@ medParams.realDat <- readRDS("erbrMedParams_noYRE_20240803")
 
 
 
+
+
 ## GLMM results or files to run GLMM models below
 name
-paramsMM.grwth <- readRDS(file=paste("20240926_erbr_paramMMgrwthWint_", name, ".rds", sep=""))
-seMM.grwth <- readRDS(file=paste("20240926_erbr_seMMgrwthWint_", name,".rds", sep=""))
-paramsMM.surv <- readRDS(file=paste("20240926_erbr_paramMMsurvWint_", name, ".rds", sep=""))
-seMM.surv <- readRDS(file=paste("20240926_erbr_seMMsurvWint_", name, ".rds", sep=""))
+glmmSumm.grwth <- readRDS(file=paste("20241001_erbr_GLMMtmbSummGrwth_", name, ".rds", sep=""))
+glmmSumm.surv <- readRDS(file=paste("20241001_erbr_GLMMsummSurv_", name, ".rds", sep=""))
 
-print(name)
-#paramsMM.grwth5 <- readRDS(file="20240926_erbr_paramMMgrwthWint5.10_SimDat20yrHiGr.rds")
-#seMM.grwth <- readRDS(file=paste("20240926_erbr_seMMgrwthWint_", name,".rds", sep=""))
-#paramsMM.surv <- readRDS(file=paste("20240926_erbr_paramMMsurvWint_", name, ".rds", sep=""))
-#seMM.surv <- readRDS(file=paste("20240926_erbr_seMMsurvWint_", name, ".rds", sep=""))
 
-print(name)
-paramsMM.grwth <- readRDS(file=paste("20240926_erbr_paramMMgrwthWint1.3_", name, ".rds", sep=""))
-seMM.grwth <- readRDS(file=paste("20240926_erbr_seMMgrwthWint1.3_", name,".rds", sep=""))
-paramsMM.surv <- readRDS(file=paste("20240926_erbr_paramMMsurvWint1.3_", name, ".rds", sep=""))
-seMM.surv <- readRDS(file=paste("20240926_erbr_seMMsurvWint1.3_", name, ".rds", sep=""))
+paramsMM.grwth <- readRDS(file=paste("20241003_erbr_paramMMgrwth_", name, ".rds", sep=""))
+seMM.grwth <- readRDS(file=paste("20241003_erbr_seMMgrwth_", name,".rds", sep=""))
+paramsMM.surv <- readRDS(file=paste("20241003_erbr_paramMMsurv_", name, ".rds", sep=""))
+seMM.surv <- readRDS(file=paste("20241003_erbr_seMMsurv_", name, ".rds", sep=""))
+
+
 
 
 
@@ -214,7 +210,7 @@ medParams.realDatGrwth <- medParams.realDatTr[1:8,]
 medParams.realDatGrwth$realData <- as.numeric(as.character(medParams.realDatGrwth$realData))
 medParams.realDatSurv <- medParams.realDatTr[9:14,]
 medParams.realDatSurv$realData <- as.numeric(as.character(medParams.realDatSurv$realData))
-## ------------------------------------------------------------------------------------------
+
 
 ## RESCALE 'TRUE' PARAMS --------------------------------------------------------------------
 tempFsc <- medParams.realDatGrwth$realData[medParams.realDatGrwth$ParamTitle=="Grwth Fall Temp"] * clim32yrMAXES$Mean_fall_temp
@@ -230,7 +226,24 @@ medParams.realDatGrwth$realData[medParams.realDatGrwth$ParamTitle=="Grwth Winter
 medParams.realDatGrwth$realData[medParams.realDatGrwth$ParamTitle=="Grwth Fall Precip"] <- PptFsc
 medParams.realDatGrwth$realData[medParams.realDatGrwth$ParamTitle=="Grwth Summer Precip"] <- PptSsc 
 medParams.realDatGrwth$realData[medParams.realDatGrwth$ParamTitle=="Grwth Winter Precip"] <- PptWsc 
+
+
+tempFsc.surv <- medParams.realDatSurv$realData[medParams.realDatSurv$ParamTitle=="Surv Fall Temp"] * clim32yrMAXES$Mean_fall_temp
+tempSsc.surv <- medParams.realDatSurv$realData[medParams.realDatSurv$ParamTitle=="Surv Summer Temp"] * clim32yrMAXES$Mean_summer_temp
+tempWsc.surv <- medParams.realDatSurv$realData[medParams.realDatSurv$ParamTitle=="Surv Winter Temp"] * clim32yrMAXES$Mean_winter_temp
+PptFsc.surv <- medParams.realDatSurv$realData[medParams.realDatSurv$ParamTitle=="Surv Fall Precip"] * clim32yrMAXES$Tot_fall_ppt
+PptSsc.surv <- medParams.realDatSurv$realData[medParams.realDatSurv$ParamTitle=="Surv Summer Precip"] * clim32yrMAXES$Tot_summer_ppt
+PptWsc.surv <- medParams.realDatSurv$realData[medParams.realDatSurv$ParamTitle=="Surv Winter Precip"] * clim32yrMAXES$Tot_winter_ppt
+
+medParams.realDatSurv$realData[medParams.realDatSurv$ParamTitle=="Surv Fall Temp"] <- tempFsc.surv
+medParams.realDatSurv$realData[medParams.realDatSurv$ParamTitle=="Surv Summer Temp"] <- tempSsc.surv
+medParams.realDatSurv$realData[medParams.realDatSurv$ParamTitle=="Surv Winter Temp"] <- tempWsc.surv
+medParams.realDatSurv$realData[medParams.realDatSurv$ParamTitle=="Surv Fall Precip"] <- PptFsc.surv
+medParams.realDatSurv$realData[medParams.realDatSurv$ParamTitle=="Surv Summer Precip"] <- PptSsc.surv 
+medParams.realDatSurv$realData[medParams.realDatSurv$ParamTitle=="Surv Winter Precip"] <- PptWsc.surv 
 ## ------------------------------------------------------------------------------------------
+
+
 
 
 
@@ -288,6 +301,16 @@ medCombNo.surv <- as.data.frame(cbind(medParamsNo.1[9:14], medParamsNo.2[9:14],m
 
 
 
+## EXTRACT ESTIMATES FROM GLMM SUMMARIES -----------------------------------------------
+#str(glmmSumm.grwth)
+#glmmGrwth.1 <- glmmSumm.grwth[1]
+#fixef(glmmGrwth.1)
+
+#glmmSurv.1 <- glmmSumm.surv[1]
+## --------------------------------------------------------------------------------------
+
+
+
 
 
 ## OBTAIN VITAL RATE PREDICTIONS ----------------------------------------------
@@ -333,13 +356,13 @@ for (rr in 1:n.datset) {  #Dataset rep loop
         #                + medCombNo.grwth[8,rr]*climYrs.sel$Tot_winter_ppt[yy])
   
   ## GLMM
-  #pred.grwthGLMM <- exp(paramsMM.grwth[1,rr] + paramsMM.grwth[2,rr]*log(binmids) 
-   #                 + paramsMM.grwth[3,rr]*climYrs.sel$Mean_fall_temp[yy]
-    #                + paramsMM.grwth[4,rr]*climYrs.sel$Mean_summer_temp[yy]
-     #               + paramsMM.grwth[5,rr]*climYrs.sel$Mean_winter_temp[yy]
-      #              + paramsMM.grwth[6,rr]*climYrs.sel$Tot_fall_ppt[yy]
-       #             + paramsMM.grwth[7,rr]*climYrs.sel$Tot_summer_ppt[yy]
-        #            + paramsMM.grwth[8,rr]*climYrs.sel$Tot_winter_ppt[yy])
+  pred.grwthGLMM <- exp(paramsMM.grwth[1,rr] + paramsMM.grwth[2,rr]*log(binmids) 
+                    + paramsMM.grwth[3,rr]*climYrs.sel$Mean_fall_temp[yy]
+                    + paramsMM.grwth[4,rr]*climYrs.sel$Mean_summer_temp[yy]
+                    + paramsMM.grwth[5,rr]*climYrs.sel$Mean_winter_temp[yy]
+                    + paramsMM.grwth[6,rr]*climYrs.sel$Tot_fall_ppt[yy]
+                    + paramsMM.grwth[7,rr]*climYrs.sel$Tot_summer_ppt[yy]
+                    + paramsMM.grwth[8,rr]*climYrs.sel$Tot_winter_ppt[yy])
   
   ## True params
   pred.grwthTrue <- exp(medParams.realDatGrwth$realData[1] + medParams.realDatGrwth$realData[2]*log(binmids) 
@@ -350,13 +373,11 @@ for (rr in 1:n.datset) {  #Dataset rep loop
                         + medParams.realDatGrwth$realData[7]*climYrs.sel$Tot_summer_ppt[yy]
                         + medParams.realDatGrwth$realData[8]*climYrs.sel$Tot_winter_ppt[yy])
   
-  #pred.grow.r <- exp(medParams$grwthvar_intercept[1] + medParams$grwthvar_RosCoef[2]*log(binmids)) 
   pred.grow.r <- exp(as.numeric(as.character(medParams.realDatTr.grow.r[1,1])) + 
                      as.numeric(as.character(medParams.realDatTr.grow.r[2,1]))*log(binmids)) 
   dense.zero <- dnbinom(0, size=pred.grow.r, mu=pred.grwthTrue, log = FALSE)
   pred.grwthTrue <- dense.zero+pred.grwthTrue*(1- dense.zero)
-  #Can this (419) be deleted?
-  #medParams.realDatTr.grow.r = medParams.realDatTr[9:10,] # save the growth variance (r) parameters
+  
   
   
   ## Survival (binom)
@@ -375,11 +396,11 @@ for (rr in 1:n.datset) {  #Dataset rep loop
       #                          medCombNo.surv[6,rr]*climYrs.sel$Mean_winter_temp[yy])))
   
   ## GLMM
-  #pred.survGLMM <- 1/(1+exp(-(paramsMM.surv[1,rr] + paramsMM.surv[2,rr]*log(binmids) + 
-   #                             paramsMM.surv[3,rr]*climYrs.sel$Tot_winter_ppt[yy] + 
-    #                            paramsMM.surv[4,rr]*climYrs.sel$Mean_fall_temp[yy] +
-     #                           paramsMM.surv[5,rr]*climYrs.sel$Mean_summer_temp[yy] +
-      #                          paramsMM.surv[6,rr]*climYrs.sel$Mean_winter_temp[yy])))
+  pred.survGLMM <- 1/(1+exp(-(paramsMM.surv[1,rr] + paramsMM.surv[2,rr]*log(binmids) + 
+                                paramsMM.surv[3,rr]*climYrs.sel$Tot_winter_ppt[yy] + 
+                                paramsMM.surv[4,rr]*climYrs.sel$Mean_fall_temp[yy] +
+                                paramsMM.surv[5,rr]*climYrs.sel$Mean_summer_temp[yy] +
+                                paramsMM.surv[6,rr]*climYrs.sel$Mean_winter_temp[yy])))
   
   ## True params
   pred.survTrue <- 1/(1+exp(-(medParams.realDatSurv$realData[1] + medParams.realDatSurv$realData[2]*log(binmids) + 
@@ -396,12 +417,12 @@ for (rr in 1:n.datset) {  #Dataset rep loop
   
   output.yr$GrwthRate_JAGS <- pred.grwthJAGS 
   #output.yr$GrwthRate_JAGSnoMs <- pred.grwthJAGSno
-  #output.yr$GrwthRate_GLMM <- pred.grwthGLMM 
+  output.yr$GrwthRate_GLMM <- pred.grwthGLMM 
   output.yr$GrwthRate_True <- pred.grwthTrue 
   
   output.yr$SurvRate_JAGS <- pred.survJAGS 
   #output.yr$SurvRate_JAGSnoMs <- pred.survJAGSno 
-  #output.yr$SurvRate_GLMM <- pred.survGLMM 
+  output.yr$SurvRate_GLMM <- pred.survGLMM 
   output.yr$SurvRate_True <- pred.survTrue 
   
   output.rep <- rbind(output.rep, output.yr)
@@ -411,11 +432,12 @@ for (rr in 1:n.datset) {  #Dataset rep loop
   output <- rbind(output, output.rep)
 
 } ## End dataset replicates loop
-  
+ 
+ 
 output$DATASET <- name
 
 ## Save output 
-write.csv(output, file="20240927_erbrSimDat20yrMedGr_predVals.csv", row.names=FALSE)
+write.csv(output, file="20241003_erbrSimDat40yr_predVals.csv", row.names=FALSE)
 #file=paste(date, name, dd, ".csv", sep=""), row.names=FALSE)
 
 ## LOAD PREDICTIONS
@@ -526,16 +548,16 @@ par(pty="s")
 ## Growth   
 mainTitle <- name
 minAx <- 0
-maxAx <- 6
+maxAx <- 150
 legpos <- "topleft"
 
 plot(output$GrwthRate_True, output$GrwthRate_GLMM,col=alpha("grey40",0.5),main=mainTitle,
      xlab="True vital rate - GROWTH",ylab="Estimated vital rate - GROWTH", ylim=c(minAx,maxAx), xlim=c(minAx,maxAx))
 abline(a=0, b=1)
-legend(legPos, "GLMM no-missing data", col=alpha("grey40",0.5),pch=19, cex=1,horiz=FALSE, bty="y")
+legend(legpos, "GLMM no-missing data", col=alpha("grey40",0.5),pch=19, cex=1,horiz=FALSE, bty="y")
 
 plot(output$GrwthRate_True, output$GrwthRate_JAGS,col=alpha("purple",0.5),main=mainTitle,
-     xlab="True vital rate - GROWTH",ylab="Estimated vital rate - GROWTH")#,ylim=c(minAx,maxAx), xlim=c(minAx,maxAx))#,
+     xlab="True vital rate - GROWTH",ylab="Estimated vital rate - GROWTH",ylim=c(minAx,maxAx), xlim=c(minAx,maxAx))#,
 abline(a=0, b=1)
 legend(legpos, "MCMC missing data", col=alpha("purple",0.5),pch=19, cex=1,horiz=FALSE, bty="y")
 
@@ -548,9 +570,9 @@ legend(legpos, "MCMC no-missing data", col=alpha("pink",0.5),pch=19, cex=1,horiz
 
  
 ## Survival 
-minAx <- 0
+minAx <- 0.4
 maxAx <- 1
-legPos <- "topleft"
+legPos <- "bottomright"
 mainTitle <- name
 
 plot(output$SurvRate_True, output$SurvRate_GLMM,col=alpha("grey40",0.5),main=mainTitle,
