@@ -22,14 +22,11 @@ library(resample)
 library(gplots)
 library(stringr)
 library(plotrix)
-#library(glmmTMB) # installed from tar for not the last version, but 1.1.9
-#install.packages("Matrix")
-#install.packages("TMB", type = "source")
-#install.packages("glmmTMB", type = "source") 
+
 
 
 ## ASSIGN NAME VARIABLE FOR DESIRED DATASETS 
-name <- as.character("SimDat40yr") #"SimDat20yrMedGr" "SimDat20yr" "SimDat20yrHiGr"
+name <- as.character("SimDat40yr") #"SimDat20yr" "SimDat20yrHiGr" "SimDat20yrMedGr"
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -48,9 +45,9 @@ clim32yrMAXES <- read.csv("erbr_climData3seas32yr_MAXES.csv", header=TRUE)
 
 
 ## Simulated data for finding relevant climate years (could be miss or no-miss)
-dateSim <- "/20241001"
-nameSim <-   "SimDat40yrNoMiss.srvCor.sdlgCor.grwthCor." #"SimDat20yrMedGrNoMiss.srvCor.sdlgCor." SimDat20yrHiGrNoMiss.srvCor.sdlgCor.
-pathSim <-  getwd() #"C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/" #
+dateSim <- "20241005"
+nameSim <-   "SimDat20yrMedGrNoMiss.srvCor.sdlgCor.grwthCor." #"SimDat20yrHiGrNoMiss.srvCor.sdlgCor.
+pathSim <-  "C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/" #getwd() #
 simDat1 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"1.4JAGS.csv",sep=""), header=TRUE)
 simDat2 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"2.4JAGS.csv",sep=""), header=TRUE)
 simDat3 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"3.4JAGS.csv",sep=""), header=TRUE)
@@ -65,8 +62,8 @@ simDat10 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"10.4JAGS.csv",
 
 
 ## 'True' params from JAGS mod of real data (or alternatative vales for alt LHs)
-medParams.realDat <- readRDS("erbrMedParams_noYRE_20240803")
-#medParams.realDat <- readRDS("erbrParams_MedGrAltLH_20240924.rds")
+#medParams.realDat <- readRDS("erbrMedParams_noYRE_20240803")
+medParams.realDat <- readRDS("erbrParams_MedGrAltLH_20240924.rds")
 #medParams.realDat <- readRDS("erbrParams_HiGrAltLHcor_20240925.rds")
 
 
@@ -75,14 +72,14 @@ medParams.realDat <- readRDS("erbrMedParams_noYRE_20240803")
 
 ## GLMM results or files to run GLMM models below
 name
-glmmSumm.grwth <- readRDS(file=paste("20241001_erbr_GLMMtmbSummGrwth_", name, ".rds", sep=""))
-glmmSumm.surv <- readRDS(file=paste("20241001_erbr_GLMMsummSurv_", name, ".rds", sep=""))
+#glmmSumm.grwth <- readRDS(file=paste("20241001_erbr_GLMMtmbSummGrwth_", name, ".rds", sep=""))
+#glmmSumm.surv <- readRDS(file=paste("20241001_erbr_GLMMsummSurv_", name, ".rds", sep=""))
 
 
-paramsMM.grwth <- readRDS(file=paste("20241003_erbr_paramMMgrwth_", name, ".rds", sep=""))
-seMM.grwth <- readRDS(file=paste("20241003_erbr_seMMgrwth_", name,".rds", sep=""))
-paramsMM.surv <- readRDS(file=paste("20241003_erbr_paramMMsurv_", name, ".rds", sep=""))
-seMM.surv <- readRDS(file=paste("20241003_erbr_seMMsurv_", name, ".rds", sep=""))
+paramsMM.grwth <- readRDS(file=paste("20241005_erbr_paramMMtmbGrwth_", name, ".rds", sep=""))
+seMM.grwth <- readRDS(file=paste("20241005_erbr_seMMtmbGrwth_", name,".rds", sep=""))
+paramsMM.surv <- readRDS(file=paste("20241005_erbr_paramMMsurv_", name, ".rds", sep=""))
+seMM.surv <- readRDS(file=paste("20241005_erbr_seMMsurv_", name, ".rds", sep=""))
 
 
 
@@ -90,8 +87,8 @@ seMM.surv <- readRDS(file=paste("20241003_erbr_seMMsurv_", name, ".rds", sep="")
 
 ## JAGS results
 ## MISSING
-dateSUMM <- "20240928"
-nameSUMM <-  "SimDat40yrMiss.srvCor.sdlgCor.grwthCor." #"SimDat20yrHiGrMiss.srvCor." #"SimDat20yrMedGrMiss.srvCor.sdlgCor."
+dateSUMM <- "20241002"
+nameSUMM <-  "SimDat20yrMedGrMiss.srvCor.sdlgCor.grwthCor." #"SimDat20yrHiGrMiss.srvCor." #"SimDat20yrMedGrMiss.srvCor.sdlgCor."
 summ.modMs1 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"1.rds", sep=""))
 summ.modMs2 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"2.rds", sep=""))
 summ.modMs3 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"3.rds", sep=""))
@@ -161,9 +158,10 @@ climYrs$Mean_summer_temp <- climYrs$Mean_summer_temp / clim32yrMAXES$Mean_summer
 
 # Specify min and max plt sz
 minsize <- 1
-maxsize <- 151 #(max(erbr$RosNew, na.rm=TRUE)) 
+#maxsize <- 151 #(max(erbr$RosNew, na.rm=TRUE)) 
 #maxsize <- 600  ## ** Try this for Fast gr LH datasets **
-
+maxsize <- 80   ## ** Try this for Med gr LH datasets **
+ 
 ## For median sz estimation
 ##new size density estimation for median size estimation
 pdfsz=density(erbr$RosNew, n=1024, cut=0, na.rm=TRUE) 
@@ -186,6 +184,23 @@ for(jj in 1:(length(vec.bin)-1)) {
 }
 
 binmids <- c(1, binmids)  
+
+
+
+## For HI and MED GR
+bin.num <- 50  #Define number of bins 
+
+## Improved method of finding median size/ bin mids (code from Dan)
+vec.bin = c(minsize, minsize+1:bin.num*(maxsize-minsize)*(1/bin.num)) 
+## Do this block to make medians the focal estimated size for each category
+binmids = rep(NA, length(vec.bin)-1)
+
+for (bb in 1:length(vec.bin)-1) {
+  bounds <- c(vec.bin[bb], vec.bin[bb+1])
+  binmids[bb] <- median(bounds)
+}
+
+n.bin = length(binmids)
 ## ------------------------------------------------------------------------------------------
 
 
@@ -302,11 +317,6 @@ medCombNo.surv <- as.data.frame(cbind(medParamsNo.1[9:14], medParamsNo.2[9:14],m
 
 
 ## EXTRACT ESTIMATES FROM GLMM SUMMARIES -----------------------------------------------
-#str(glmmSumm.grwth)
-#glmmGrwth.1 <- glmmSumm.grwth[1]
-#fixef(glmmGrwth.1)
-
-#glmmSurv.1 <- glmmSumm.surv[1]
 ## --------------------------------------------------------------------------------------
 
 
@@ -436,8 +446,10 @@ for (rr in 1:n.datset) {  #Dataset rep loop
  
 output$DATASET <- name
 
+
+
 ## Save output 
-write.csv(output, file="20241003_erbrSimDat40yr_predVals.csv", row.names=FALSE)
+write.csv(output, file="20241005_erbrSimDat20yrMedGr_predVals.csv", row.names=FALSE)
 #file=paste(date, name, dd, ".csv", sep=""), row.names=FALSE)
 
 ## LOAD PREDICTIONS
@@ -451,6 +463,20 @@ write.csv(output, file="20241003_erbrSimDat40yr_predVals.csv", row.names=FALSE)
 
 
 
+## SHOW GRWTH AND SURV VS SZ FOR EACH LH --------------------------------------------- 
+## This would be a good way to show the basic differences in the LHs 
+#simDatComb <- simDatComb %>% mutate(RosNew1=lead(RosNew))  
+#plot(simDatComb$RosNew, simDatComb$RosNew1, xlab="Plant size in year t", ylab="Plant size in year t+1",
+#     main=name, pch=19,cex=0.6) 
+
+## Do for mean climate year ***
+plot(output$PLT_SZ, output$SurvRate_True, xlab="Plant size", ylab="Survival rate based on input parameters",
+     pch=19, cex=0.6, main=name, ylim=c(0,1))
+
+
+
+
+
 
 ## PLOT VR PREDICTIONS ---------------------------------------------------------
 par(pty="s")
@@ -458,77 +484,77 @@ par(mfrow=c(1,1), mar=c(4,4,2,1))  #bottom, left, top and right
 
 ## Plot most recent rep from above
 plot(binmids, pred.grwthJAGS)
-#     points(binmids, pred.grwthGLMM, col="red")
+     points(binmids, pred.grwthGLMM, col="red")
      points(binmids, pred.grwthTrue, col="blue")
      
 plot(binmids, pred.survJAGS)
-#     points(binmids, pred.survGLMM, col="red")
+     points(binmids, pred.survGLMM, col="red")
      points(binmids, pred.survTrue, col="blue")
 
 ## Plot predicted VRS against plant size 
-plot(log(output$PLT_SZ),output$GrwthRate_True, main=name)  
-plot(output$PLT_SZ,output$GrwthRate_GLMM, main="20 years - Med Growth LH")  
-plot(log(output$PLT_SZ),output$GrwthRate_JAGS, main=name)  
+#plot(log(output$PLT_SZ),output$GrwthRate_True, main=name)  
+#plot(output$PLT_SZ,output$GrwthRate_GLMM, main="20 years - Med Growth LH")  
+#plot(log(output$PLT_SZ),output$GrwthRate_JAGS, main=name)  
 
-plot(log(output$PLT_SZ),output$SurvRate_True, main=name)  
-plot(output$PLT_SZ,output$SurvRate_GLMM, main="20 years - Med Growth LH")  
-plot(log(output$PLT_SZ),output$SurvRate_JAGS, main=name)  
+#plot(log(output$PLT_SZ),output$SurvRate_True, main=name)  
+#plot(output$PLT_SZ,output$SurvRate_GLMM, main="20 years - Med Growth LH")  
+#plot(log(output$PLT_SZ),output$SurvRate_JAGS, main=name)  
 
 
 
 ## Plot reps separately 
 ## GROWTH
-par(mfrow=c(4,3), mar=c(4,4,2,1))  #bottom, left, top and right 
-for (rr in 1:10) {
-plot(output$PLT_SZ[output$REP==rr], output$GrwthRate_True[output$REP==rr], xlab="plant size", ylab="True predicted growth",
-     cex=0.65, pch=16)
-}
-plot.new()
-legend("center", "20 YEAR\nMEDIUM GRWTH LH", bty="n",cex=1.15)
+#par(mfrow=c(4,3), mar=c(4,4,2,1))  #bottom, left, top and right 
+#for (rr in 1:10) {
+#plot(output$PLT_SZ[output$REP==rr], output$GrwthRate_True[output$REP==rr], xlab="plant size", ylab="True predicted growth",
+#     cex=0.65, pch=16)
+#}
+#plot.new()
+#legend("center", "20 YEAR\nMEDIUM GRWTH LH", bty="n",cex=1.15)
 
-par(mfrow=c(4,3), mar=c(4,4,2,1))  #bottom, left, top and right 
-for (rr in 1:10) {
-  plot(output$PLT_SZ[output$REP==rr], output$GrwthRate_JAGS[output$REP==rr], xlab="plant size", ylab="MCMC predicted growth",
-       cex=0.65, pch=16, ylim=c(0,350))
-}
-plot.new()
-legend("center", "20 YEAR\nMEDIUM GRWTH LH", bty="n",cex=1.15)
+#par(mfrow=c(4,3), mar=c(4,4,2,1))  #bottom, left, top and right 
+#for (rr in 1:10) {
+#  plot(output$PLT_SZ[output$REP==rr], output$GrwthRate_JAGS[output$REP==rr], xlab="plant size", ylab="MCMC predicted growth",
+#       cex=0.65, pch=16, ylim=c(0,350))
+#}
+#plot.new()
+#legend("center", "20 YEAR\nMEDIUM GRWTH LH", bty="n",cex=1.15)
 
-par(mfrow=c(4,3), mar=c(4,4,2,1))  #bottom, left, top and right 
-for (rr in 1:10) {
-  plot(output$PLT_SZ[output$REP==rr], output$GrwthRate_GLMM[output$REP==rr], xlab="plant size", ylab="MCMC predicted growth",
-       cex=0.65, pch=16, ylim=c(0,175))
-}
-plot.new()
-legend("center", "20 YEAR\nMEDIUM GRWTH LH", bty="n",cex=1.15)
+#par(mfrow=c(4,3), mar=c(4,4,2,1))  #bottom, left, top and right 
+#for (rr in 1:10) {
+#  plot(output$PLT_SZ[output$REP==rr], output$GrwthRate_GLMM[output$REP==rr], xlab="plant size", ylab="MCMC predicted growth",
+#       cex=0.65, pch=16, ylim=c(0,175))
+#}
+#plot.new()
+#legend("center", "20 YEAR\nMEDIUM GRWTH LH", bty="n",cex=1.15)
 #plot(output$PLT_SZ[output$REP==rr & output$CLIM_YR==2002], output$GrwthRate_True[output$REP==rr & output$CLIM_YR==2002])
 
 
 ## SURVIVAL
 ## Plot reps separately 
-par(mfrow=c(4,3), mar=c(4,4,2,1))  #bottom, left, top and right 
-for (rr in 1:10) {
-  plot(output$PLT_SZ[output$REP==rr], output$SurvRate_True[output$REP==rr], xlab="plant size", ylab="True predicted survival",
-       cex=0.65, pch=16, ylim=c(0.2,1))
-}
-plot.new()
-legend("center", "20 YEAR\nMEDIUM GRWTH LH", bty="n",cex=1.15)
+#par(mfrow=c(4,3), mar=c(4,4,2,1))  #bottom, left, top and right 
+#for (rr in 1:10) {
+#  plot(output$PLT_SZ[output$REP==rr], output$SurvRate_True[output$REP==rr], xlab="plant size", ylab="True predicted survival",
+#       cex=0.65, pch=16, ylim=c(0.2,1))
+#}
+#plot.new()
+#legend("center", "20 YEAR\nMEDIUM GRWTH LH", bty="n",cex=1.15)
 
-par(mfrow=c(4,3), mar=c(4,4,2,1))  #bottom, left, top and right 
-for (rr in 1:10) {
-  plot(output$PLT_SZ[output$REP==rr], output$SurvRate_JAGS[output$REP==rr], xlab="plant size", ylab="MCMC predicted survival",
-       cex=0.65, pch=16, ylim=c(0.2,1))
-}
-plot.new()
-legend("center", "20 YEAR\nMEDIUM GRWTH LH", bty="n",cex=1.15)
+#par(mfrow=c(4,3), mar=c(4,4,2,1))  #bottom, left, top and right 
+#for (rr in 1:10) {
+#  plot(output$PLT_SZ[output$REP==rr], output$SurvRate_JAGS[output$REP==rr], xlab="plant size", ylab="MCMC predicted survival",
+#       cex=0.65, pch=16, ylim=c(0.2,1))
+#}
+#plot.new()
+#legend("center", "20 YEAR\nMEDIUM GRWTH LH", bty="n",cex=1.15)
 
-par(mfrow=c(4,3), mar=c(4,4,2,1))  #bottom, left, top and right 
-for (rr in 1:10) {
-  plot(output$PLT_SZ[output$REP==rr], output$SurvRate_GLMM[output$REP==rr], xlab="plant size", ylab="MCMC predicted survival",
-       cex=0.65, pch=16, ylim=c(0.2,1))
-}
-plot.new()
-legend("center", "20 YEAR\nMEDIUM GRWTH LH", bty="n",cex=1.15)
+#par(mfrow=c(4,3), mar=c(4,4,2,1))  #bottom, left, top and right 
+#for (rr in 1:10) {
+#  plot(output$PLT_SZ[output$REP==rr], output$SurvRate_GLMM[output$REP==rr], xlab="plant size", ylab="MCMC predicted survival",
+#       cex=0.65, pch=16, ylim=c(0.2,1))
+#}
+#plot.new()
+#legend("center", "20 YEAR\nMEDIUM GRWTH LH", bty="n",cex=1.15)
 ## ------------------------------
 
 
@@ -536,20 +562,20 @@ legend("center", "20 YEAR\nMEDIUM GRWTH LH", bty="n",cex=1.15)
 ## Histograms of size ------------
 par(mfrow=c(1,1), mar=c(4,4,2,1))  #bottom, left, top and right 
 simDatComb<-rbind(simDat1,simDat2,simDat3,simDat4,simDat5,simDat6,simDat7,simDat8,simDat9,simDat10)
-hist(simDatComb$RosNew, xlim=c(0,150), breaks=30, xlab="Plant size", main=name)   
+hist(simDatComb$RosNew, xlim=c(0,100), breaks=40, xlab="Plant size", main=name)   
 ## ------------------------------
 
 
 
 ## Plot all reps, years, sizes together           
-par(mfrow=c(1,1), mar=c(4,4,2,1))  #bottom, left, top and right 
+par(mfrow=c(2,2), mar=c(4,4,2,1))  #bottom, left, top and right 
 par(pty="s")
 
 ## Growth   
 mainTitle <- name
 minAx <- 0
-maxAx <- 150
-legpos <- "topleft"
+maxAx <- 50
+legpos <- "bottomright"
 
 plot(output$GrwthRate_True, output$GrwthRate_GLMM,col=alpha("grey40",0.5),main=mainTitle,
      xlab="True vital rate - GROWTH",ylab="Estimated vital rate - GROWTH", ylim=c(minAx,maxAx), xlim=c(minAx,maxAx))
@@ -561,6 +587,7 @@ plot(output$GrwthRate_True, output$GrwthRate_JAGS,col=alpha("purple",0.5),main=m
 abline(a=0, b=1)
 legend(legpos, "MCMC missing data", col=alpha("purple",0.5),pch=19, cex=1,horiz=FALSE, bty="y")
 
+
 plot(output$GrwthRate_True, output$GrwthRate_JAGSnoMs,col=alpha("pink",0.5),main=mainTitle,
      xlab="True vital rate - GROWTH",ylab="Estimated vital rate - GROWTH", ylim=c(minAx,maxAx), xlim=c(minAx,maxAx))
 abline(a=0, b=1)
@@ -570,7 +597,7 @@ legend(legpos, "MCMC no-missing data", col=alpha("pink",0.5),pch=19, cex=1,horiz
 
  
 ## Survival 
-minAx <- 0.4
+minAx <- 0
 maxAx <- 1
 legPos <- "bottomright"
 mainTitle <- name
@@ -585,6 +612,7 @@ plot(output$SurvRate_True, output$SurvRate_JAGS,col=alpha("purple",0.5),main=mai
 abline(a=0, b=1)
 legend(legPos, "MCMC missing data", col=alpha("purple",0.5),pch=19, cex=1,horiz=FALSE, bty="y")
 
+
 plot(output$SurvRate_True, output$SurvRate_JAGSnoMs,col=alpha("pink",0.5),main=mainTitle,
      xlab="True vital rate - SURVIVAL",ylab="Estimated vital rate - SURVIVAL",ylim=c(minAx,maxAx), xlim=c(minAx,maxAx))
 abline(a=0, b=1)
@@ -596,18 +624,6 @@ legend("bottomright", c("GLMM","MCMC missing","MCMC no-missing"), col=c(alpha("g
      
 
 
-
-
-#in the SI show the mean size t+1 vs size t for each of the LHs 
-#and a figure that shows survival vs size t , with a line for each, 
-#would be a good way to show the basic differences in the LHs the most easily.
-simDatComb <- simDatComb %>% mutate(RosNew1=lead(RosNew))  
-plot(simDatComb$RosNew, simDatComb$RosNew1, xlab="Plant size in year t", ylab="Plant size in year t+1",
-     main=name, pch=19,cex=0.6) 
-
-plot(output$PLT_SZ, output$SurvRate_True, xlab="Plant size", ylab="Survival rate based on input parameters",
-     pch=19, cex=0.6, main=name, ylim=c(0,1))
-     
      
      
      

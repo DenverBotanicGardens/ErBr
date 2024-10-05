@@ -623,20 +623,23 @@ print(dd)
   
   
   ## OPTION: FOR NO-MISSING DATA. RUN THIS WITH NO-MISS FILES SAVED ABOVE AFTER RUNNING MISSING DATA
- #rm(list=ls())
+ rm(list=ls())
   
   ## LOAD DATA --------------------------------------------------------------------------------------
- #clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
+  clim32yr <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
+  clim32yrMAXES <- read.csv("erbr_climData3seas32yr_MAXES.csv", header=TRUE)
+  
+  name <- "20yrHiGrNoMiss.srvCor.sdlgCor.grwthCor."
   
   ## Start data set loop here
- #n.datset <- 10
- #for (dd in 1:n.datset) {
+ n.datset <- 10
+ for (dd in 1:n.datset) {
     
     
   ## LOAD NO-MISSING DATA TO PROCESS WITH THE FOLLOWING FORMATTING CODE
-  # datComb1 <- read.csv(file=paste("20240925_erbr_SimDat20yrHiGrNoMiss.srvCor.sdlgCor.",dd,".csv",sep=""), header = TRUE)
+  datComb1 <- read.csv(file=paste("20241001_erbr_SimDat",name,dd,".csv",sep=""), header = TRUE)
+  print(paste("20241001_erbr_SimDat",name,dd,".csv",sep=""))
   ## ------------------------------------------------------------------------------------------------
-    
     
     
     
@@ -798,6 +801,14 @@ print(dd)
     ## ADD IN CLIMATE VARIABLES ----------------------------------------------------------
     erbr.1 <- erbr.1 %>%
       left_join(clim32yr, by = c("ClimYr" = "Year"))
+    
+    ## SCALE climate variables **
+    erbr.1$Tot_fall_ppt <- erbr.1$Tot_fall_ppt/clim32yrMAXES$Tot_fall_ppt
+    erbr.1$Tot_winter_ppt <- erbr.1$Tot_winter_ppt/clim32yrMAXES$Tot_winter_ppt
+    erbr.1$Tot_summer_ppt <- erbr.1$Tot_summer_ppt/clim32yrMAXES$Tot_summer_ppt
+    erbr.1$Mean_fall_temp <- erbr.1$Mean_fall_temp/clim32yrMAXES$Mean_fall_temp
+    erbr.1$Mean_winter_temp <- erbr.1$Mean_winter_temp/clim32yrMAXES$Mean_winter_temp
+    erbr.1$Mean_summer_temp <- erbr.1$Mean_summer_temp/clim32yrMAXES$Mean_summer_temp
     ## -----------------------------------------------------------------------------------
     
     
@@ -808,13 +819,12 @@ print(dd)
     
     
     ## SAVE FORMATTED DATA ---------------------------------------------------------------
-    date <- Sys.Date()                             #Enter date to be added to file name
-    date <- str_replace_all(date, "-", "")
-    name <- "SimDat20yrHiGr"
-    nameMiss <- as.character("Miss.srvCor.sdlgCor.")        #Enter name of file
-    
-    write.csv(erbr.1, file=paste(date,"_erbr_",name, nameMiss, dd, ".4JAGS", ".csv", sep=""), row.names=FALSE)
-    print(paste(date,"_erbr_",name, nameMiss, dd, ".4JAGS", ".csv", sep=""))
+    date4JAGS <- Sys.Date()                             #Enter date to be added to file name
+    date4JAGS <- str_replace_all(date4JAGS, "-", "")
+    #name <- "SimDat20yrHiGr"
+
+    write.csv(erbr.1, file=paste(date4JAGS,"_erbr_",name, dd, ".4JAGS", ".csv", sep=""), row.names=FALSE)
+    print(paste(date4JAGS,"_erbr_SimDat",name, dd, ".4JAGS", ".csv", sep=""))
     ## -----------------------------------------------------------------------------------
     
     
@@ -826,6 +836,6 @@ print(dd)
 plot(erbr.1$Year,erbr.1$RosNew)
 
 boxplot(erbr.1$RosNew~erbr.1$Year)
-rowSums(mx.sdlgYes,na.rm=TRUE)
+#rowSums(mx.sdlgYes,na.rm=TRUE)
 
 table(erbr.1$Year)
