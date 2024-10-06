@@ -45,8 +45,8 @@ clim32yrMAXES <- read.csv("erbr_climData3seas32yr_MAXES.csv", header=TRUE)
 
 
 ## Simulated data for finding relevant climate years (could be miss or no-miss)
-dateSim <- "20241005"
-nameSim <-   "SimDat20yrMedGrNoMiss.srvCor.sdlgCor.grwthCor." #"SimDat20yrHiGrNoMiss.srvCor.sdlgCor.
+dateSim <- "20241001"
+nameSim <-   "SimDat40yrNoMiss.srvCor.sdlgCor.grwthCor." #"SimDat20yrHiGrNoMiss.srvCor.sdlgCor.
 pathSim <-  "C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/" #getwd() #
 simDat1 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"1.4JAGS.csv",sep=""), header=TRUE)
 simDat2 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"2.4JAGS.csv",sep=""), header=TRUE)
@@ -62,8 +62,8 @@ simDat10 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"10.4JAGS.csv",
 
 
 ## 'True' params from JAGS mod of real data (or alternatative vales for alt LHs)
-#medParams.realDat <- readRDS("erbrMedParams_noYRE_20240803")
-medParams.realDat <- readRDS("erbrParams_MedGrAltLH_20240924.rds")
+medParams.realDat <- readRDS("erbrMedParams_noYRE_20240803")
+#medParams.realDat <- readRDS("erbrParams_MedGrAltLH_20240924.rds")
 #medParams.realDat <- readRDS("erbrParams_HiGrAltLHcor_20240925.rds")
 
 
@@ -87,8 +87,8 @@ seMM.surv <- readRDS(file=paste("20241005_erbr_seMMsurv_", name, ".rds", sep="")
 
 ## JAGS results
 ## MISSING
-dateSUMM <- "20241002"
-nameSUMM <-  "SimDat20yrMedGrMiss.srvCor.sdlgCor.grwthCor." #"SimDat20yrHiGrMiss.srvCor." #"SimDat20yrMedGrMiss.srvCor.sdlgCor."
+dateSUMM <- "20240928"
+nameSUMM <-  "SimDat40yrMiss.srvCor.sdlgCor.grwthCor." #"SimDat20yrHiGrMiss.srvCor." #"SimDat20yrMedGrMiss.srvCor.sdlgCor."
 summ.modMs1 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"1.rds", sep=""))
 summ.modMs2 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"2.rds", sep=""))
 summ.modMs3 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"3.rds", sep=""))
@@ -102,8 +102,8 @@ summ.modMs10 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"1
 
 
 ## NO MISSING
-dateSUMM <- "20240926"
-nameSUMMno <- "SimDat20yrNoMiss.srvCor.sdlgCor."  #nameSim #"SimDat40yrMiss"
+dateSUMM <- "20241002"
+nameSUMMno <- "SimDat20yrNoMiss.srvCor.sdlgCor.grwthCor."  #nameSim #"SimDat40yrMiss"
 summ.modNo1 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"1.rds", sep=""))
 summ.modNo2 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"2.rds", sep=""))
 summ.modNo3 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMMno,"3.rds", sep=""))
@@ -158,9 +158,9 @@ climYrs$Mean_summer_temp <- climYrs$Mean_summer_temp / clim32yrMAXES$Mean_summer
 
 # Specify min and max plt sz
 minsize <- 1
-#maxsize <- 151 #(max(erbr$RosNew, na.rm=TRUE)) 
+maxsize <- 151 #(max(erbr$RosNew, na.rm=TRUE)) 
 #maxsize <- 600  ## ** Try this for Fast gr LH datasets **
-maxsize <- 80   ## ** Try this for Med gr LH datasets **
+#maxsize <- 80   ## ** Try this for Med gr LH datasets **
  
 ## For median sz estimation
 ##new size density estimation for median size estimation
@@ -187,7 +187,7 @@ binmids <- c(1, binmids)
 
 
 
-## For HI and MED GR
+## For HI and MED GR ------------------
 bin.num <- 50  #Define number of bins 
 
 ## Improved method of finding median size/ bin mids (code from Dan)
@@ -316,10 +316,6 @@ medCombNo.surv <- as.data.frame(cbind(medParamsNo.1[9:14], medParamsNo.2[9:14],m
 
 
 
-## EXTRACT ESTIMATES FROM GLMM SUMMARIES -----------------------------------------------
-## --------------------------------------------------------------------------------------
-
-
 
 
 
@@ -331,8 +327,8 @@ medCombNo.surv <- as.data.frame(cbind(medParamsNo.1[9:14], medParamsNo.2[9:14],m
 column.names <- c("DATASET","REP","CLIM_YR","PLT_SZ","SurvRate_JAGS","SurvRate_GLMM","SurvRate_True",
                   "GrwthRate_JAGS","GrwthRate_GLMM","GrwthRate_True")
 
-column.names <- c("DATASET","REP","CLIM_YR","PLT_SZ","SurvRate_JAGS","SurvRate_JAGSnoMs","SurvRate_GLMM","SurvRate_True",
-                  "GrwthRate_JAGS","GrwthRate_JAGSnoMs","GrwthRate_GLMM","GrwthRate_True")
+#column.names <- c("DATASET","REP","CLIM_YR","PLT_SZ","SurvRate_JAGS","SurvRate_JAGSnoMs","SurvRate_GLMM","SurvRate_True",
+#                  "GrwthRate_JAGS","GrwthRate_JAGSnoMs","GrwthRate_GLMM","GrwthRate_True")
 
 output <- NULL
 n.datset <- 10
@@ -449,7 +445,7 @@ output$DATASET <- name
 
 
 ## Save output 
-write.csv(output, file="20241005_erbrSimDat20yrMedGr_predVals.csv", row.names=FALSE)
+write.csv(output, file="20241005_erbrSimDat40yr_predVals.csv", row.names=FALSE)
 #file=paste(date, name, dd, ".csv", sep=""), row.names=FALSE)
 
 ## LOAD PREDICTIONS
@@ -562,7 +558,7 @@ plot(binmids, pred.survJAGS)
 ## Histograms of size ------------
 par(mfrow=c(1,1), mar=c(4,4,2,1))  #bottom, left, top and right 
 simDatComb<-rbind(simDat1,simDat2,simDat3,simDat4,simDat5,simDat6,simDat7,simDat8,simDat9,simDat10)
-hist(simDatComb$RosNew, xlim=c(0,100), breaks=40, xlab="Plant size", main=name)   
+hist(simDatComb$RosNew, xlim=c(0,150), breaks=40, xlab="Plant size", main=name)   
 ## ------------------------------
 
 
@@ -574,7 +570,7 @@ par(pty="s")
 ## Growth   
 mainTitle <- name
 minAx <- 0
-maxAx <- 50
+maxAx <- 150
 legpos <- "bottomright"
 
 plot(output$GrwthRate_True, output$GrwthRate_GLMM,col=alpha("grey40",0.5),main=mainTitle,
@@ -597,7 +593,7 @@ legend(legpos, "MCMC no-missing data", col=alpha("pink",0.5),pch=19, cex=1,horiz
 
  
 ## Survival 
-minAx <- 0
+minAx <- 0.4
 maxAx <- 1
 legPos <- "bottomright"
 mainTitle <- name
@@ -617,9 +613,6 @@ plot(output$SurvRate_True, output$SurvRate_JAGSnoMs,col=alpha("pink",0.5),main=m
      xlab="True vital rate - SURVIVAL",ylab="Estimated vital rate - SURVIVAL",ylim=c(minAx,maxAx), xlim=c(minAx,maxAx))
 abline(a=0, b=1)
 legend(legPos, "MCMC no-missing data", col=alpha("pink",0.5),pch=19, cex=1,horiz=FALSE, bty="y")
-#points(output$SurvRate_True, output$SurvRate_JAGS, col=alpha("purple",0.3))
-legend("bottomright", c("GLMM","MCMC missing","MCMC no-missing"), col=c(alpha("grey40",0.5),alpha("purple",0.5),alpha("pink",0.5)), 
-       pch=19, cex=1.25,horiz=FALSE, bty="y",seg.len=1)
 ## -----------------------------------------------------------------------------------
      
 
@@ -718,6 +711,10 @@ upCombNo.surv <- as.data.frame(cbind(up95no.1[9:14], up95no.2[9:14],up95no.3[9:1
      
      
      
+## MODIFY STANDARD ERROR FROM GLMM TO BE COMPARABLE TO 95% CI -------------------------------------
+seMM.grwth[,1:10] <- seMM.grwth[,1:10] * 1.96
+seMM.surv[,1:10] <- seMM.surv[,1:10] * 1.96
+## ------------------------------------------------------------------------------------------------
 
 
 
@@ -909,6 +906,8 @@ par(pty="s")
               as.numeric(as.character(medParams.realDatSurv$realData[nn])), pch=8,
               cex=1.75, col="red")
      }
+plot.new()
+legend("center", name, bty="n",cex=1.2)
 ## --------------------------------------------------------------------------------------------     
       
      
