@@ -478,14 +478,14 @@ plot(mnBySz.obs$PLT_SZ, mnBySz.obs$mnGrwth, ylim=c(0,220), xlim=c(0,200), type="
      xlab="Plant size in t", ylab="Plant size in t+1", main="Growth")
 lines(mnBySz.hi$PLT_SZ, mnBySz.hi$mnGrwth, lwd=4, col="grey")
 lines(mnBySz.med$PLT_SZ, mnBySz.med$mnGrwth, lwd=4, , col="palegreen3")
-legend("bottomright", c("Observed","Medium Growth","High Growth"),
+legend("bottomright", c("Observed","Low survival","Medium survival"),
        col=c("black","palegreen3","grey"), bty="y",cex=1,lty=1,lwd=3)
 
 plot(mnBySz.obs$PLT_SZ, mnBySz.obs$mnSurv, ylim=c(0.5,1), xlim=c(0,200), type="l", lwd=4,
      xlab="Plant size in t", ylab="Survival probability", main="Survival")
 lines(mnBySz.hi$PLT_SZ, mnBySz.hi$mnSurv, lwd=4, col="grey")
 lines(mnBySz.med$PLT_SZ, mnBySz.med$mnSurv, lwd=4, col="palegreen3")
-legend("bottomright", c("Observed","Medium Growth","High Growth"),
+legend("bottomright", c("Observed","Low survival","Medium survival"),
        col=c("black","palegreen3","grey"), bty="y",cex=1,lty=1,lwd=3)
 
 

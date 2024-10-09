@@ -149,7 +149,7 @@ for(i in 1:Ncases){
 ########################################    
 ## These lines give the prior distributions for the parameters to be estimated
  # r_disp ~ dgamma(0.01, 0.01) # this is the dispersion for all cases, as is standard
-  r_disp ~ dunif(0,50)
+  r_disp ~ dunif(0,50) ## ** REVIEWER ASKED FOR THIS TO BE REMOVED AS IT'S NOT USED **
 	# Note: the prior for the dispersion parameter k is quite important for convergence
 	# [A DuMouchel prior may be better than a Gamma prior]
 
