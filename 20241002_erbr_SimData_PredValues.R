@@ -26,7 +26,7 @@ library(plotrix)
 
 
 ## ASSIGN NAME VARIABLE FOR DESIRED DATASETS 
-name <- as.character("SimDat40yr") #"SimDat20yr" "SimDat20yrHiGr" "SimDat20yrMedGr"
+name <- as.character("SimDat20yrHiGr") #"SimDat20yr" "SimDat20yrMedGr" 
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -45,8 +45,8 @@ clim32yrMAXES <- read.csv("erbr_climData3seas32yr_MAXES.csv", header=TRUE)
 
 
 ## Simulated data for finding relevant climate years (could be miss or no-miss)
-dateSim <- "20241001"
-nameSim <-   "SimDat40yrNoMiss.srvCor.sdlgCor.grwthCor." #"SimDat20yrHiGrNoMiss.srvCor.sdlgCor.
+dateSim <- "20241005"
+nameSim <-   "SimDat20yrHiGrNoMiss.srvCor.sdlgCor.grwthCor." #"SimDat20yrHiGrNoMiss.srvCor.sdlgCor.
 pathSim <-  "C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Manuscript/MS_DataAndCode_archive/" #getwd() #
 simDat1 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"1.4JAGS.csv",sep=""), header=TRUE)
 simDat2 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"2.4JAGS.csv",sep=""), header=TRUE)
@@ -62,9 +62,9 @@ simDat10 <- read.csv(file=paste(pathSim,dateSim,"_erbr_",nameSim,"10.4JAGS.csv",
 
 
 ## 'True' params from JAGS mod of real data (or alternatative vales for alt LHs)
-medParams.realDat <- readRDS("erbrMedParams_noYRE_20240803")
+#medParams.realDat <- readRDS("erbrMedParams_noYRE_20240803")
 #medParams.realDat <- readRDS("erbrParams_MedGrAltLH_20240924.rds")
-#medParams.realDat <- readRDS("erbrParams_HiGrAltLHcor_20240925.rds")
+medParams.realDat <- readRDS("erbrParams_HiGrAltLHcor_20240925.rds")
 
 
 
@@ -87,8 +87,8 @@ seMM.surv <- readRDS(file=paste("20241005_erbr_seMMsurv_", name, ".rds", sep="")
 
 ## JAGS results
 ## MISSING
-dateSUMM <- "20240928"
-nameSUMM <-  "SimDat40yrMiss.srvCor.sdlgCor.grwthCor." #"SimDat20yrHiGrMiss.srvCor." #"SimDat20yrMedGrMiss.srvCor.sdlgCor."
+dateSUMM <- "20241002"
+nameSUMM <-  "SimDat20yrHiGrMiss.srvCor.sdlgCor.grwthCor." #"SimDat20yrHiGrMiss.srvCor." #"SimDat20yrMedGrMiss.srvCor.sdlgCor."
 summ.modMs1 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"1.rds", sep=""))
 summ.modMs2 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"2.rds", sep=""))
 summ.modMs3 <- readRDS(file=paste(dateSUMM,"_erbr_JAGSmodBestSUMM_",nameSUMM,"3.rds", sep=""))
@@ -158,11 +158,13 @@ climYrs$Mean_summer_temp <- climYrs$Mean_summer_temp / clim32yrMAXES$Mean_summer
 
 # Specify min and max plt sz
 minsize <- 1
-maxsize <- 151 #(max(erbr$RosNew, na.rm=TRUE)) 
-#maxsize <- 600  ## ** Try this for Fast gr LH datasets **
+#maxsize <- 151 #(max(erbr$RosNew, na.rm=TRUE)) 
+maxsize <- 600  ## ** Try this for Fast gr LH datasets **
 #maxsize <- 80   ## ** Try this for Med gr LH datasets **
  
-## For median sz estimation
+
+## For OBSERvED LH -------------------------------------
+## Median sz estimation
 ##new size density estimation for median size estimation
 pdfsz=density(erbr$RosNew, n=1024, cut=0, na.rm=TRUE) 
 pdfsz2=cbind(pdfsz$x,pdfsz$y)
@@ -449,9 +451,9 @@ write.csv(output, file="20241005_erbrSimDat40yr_predVals.csv", row.names=FALSE)
 #file=paste(date, name, dd, ".csv", sep=""), row.names=FALSE)
 
 ## LOAD PREDICTIONS
-#output <- read.csv("20240924_erbrSimDat20yrHiGr_predVals.csv", header=TRUE) ## **Try increasing max sz to 300 **
-#output <- read.csv("20240924_erbrSimDat20yrMedGr_predVals.csv", header=TRUE)
-#output <- read.csv("20240922_erbrSimDat40yr_predVals.csv", header=TRUE)
+output.obs <- read.csv("20241005_erbrSimDat20yr_predVals.csv", header=TRUE) 
+output.med <- read.csv("20241005_erbrSimDat20yrMedGr_predVals.csv", header=TRUE)
+output.hi <- read.csv("20241005_erbrSimDat20yrHiGr_predVals.csv", header=TRUE)
 ## -----------------------------------------------------------------------------------
 
 
@@ -460,14 +462,32 @@ write.csv(output, file="20241005_erbrSimDat40yr_predVals.csv", row.names=FALSE)
 
 
 ## SHOW GRWTH AND SURV VS SZ FOR EACH LH --------------------------------------------- 
-## This would be a good way to show the basic differences in the LHs 
-#simDatComb <- simDatComb %>% mutate(RosNew1=lead(RosNew))  
-#plot(simDatComb$RosNew, simDatComb$RosNew1, xlab="Plant size in year t", ylab="Plant size in year t+1",
-#     main=name, pch=19,cex=0.6) 
 
-## Do for mean climate year ***
-plot(output$PLT_SZ, output$SurvRate_True, xlab="Plant size", ylab="Survival rate based on input parameters",
-     pch=19, cex=0.6, main=name, ylim=c(0,1))
+## Calc means across all climate years
+mnBySz.obs <- output.obs %>% group_by(PLT_SZ) %>% 
+              summarise(mnGrwth=mean(GrwthRate_True), mnSurv=mean(SurvRate_True))
+mnBySz.med <- output.med %>% group_by(PLT_SZ) %>% 
+              summarise(mnGrwth=mean(GrwthRate_True), mnSurv=mean(SurvRate_True))
+mnBySz.hi <- output.hi %>% group_by(PLT_SZ) %>% 
+             summarise(mnGrwth=mean(GrwthRate_True), mnSurv=mean(SurvRate_True))
+
+
+par(mfrow=c(2,1), mar=c(4,4,2,1))  #bottom, left, top and right 
+
+plot(mnBySz.obs$PLT_SZ, mnBySz.obs$mnGrwth, ylim=c(0,220), xlim=c(0,200), type="l", lwd=4,
+     xlab="Plant size in t", ylab="Plant size in t+1", main="Growth")
+lines(mnBySz.hi$PLT_SZ, mnBySz.hi$mnGrwth, lwd=4, col="grey")
+lines(mnBySz.med$PLT_SZ, mnBySz.med$mnGrwth, lwd=4, , col="palegreen3")
+legend("bottomright", c("Observed","Medium Growth","High Growth"),
+       col=c("black","palegreen3","grey"), bty="y",cex=1,lty=1,lwd=3)
+
+plot(mnBySz.obs$PLT_SZ, mnBySz.obs$mnSurv, ylim=c(0.5,1), xlim=c(0,200), type="l", lwd=4,
+     xlab="Plant size in t", ylab="Survival probability", main="Survival")
+lines(mnBySz.hi$PLT_SZ, mnBySz.hi$mnSurv, lwd=4, col="grey")
+lines(mnBySz.med$PLT_SZ, mnBySz.med$mnSurv, lwd=4, col="palegreen3")
+legend("bottomright", c("Observed","Medium Growth","High Growth"),
+       col=c("black","palegreen3","grey"), bty="y",cex=1,lty=1,lwd=3)
+
 
 
 
