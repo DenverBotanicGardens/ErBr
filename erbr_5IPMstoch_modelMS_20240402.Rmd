@@ -1,0 +1,533 @@
+---
+title: "erbr_IPM_stochastic"
+author: "April Goebl and Dan Doak"
+date: "2/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+rm(list=ls())
+source('eigenall.r')
+knitr::opts_chunk$set(echo = FALSE)
+library(dplyr)
+library(matrixStats)
+library(viridis) 
+library(stringr)
+
+```
+
+
+```{r, echo=FALSE }
+## ** remove file paths **
+
+## LOAD MATRICES FOR EACH YEAR (STUDY AND NON-STUDY PERIOD) & TRANSECT FROM IPMdeterm CODE 
+mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_P1k_20230503")  #Output generated from erbr_4IPMdeterm script 
+
+erbr <- read.csv("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/ErBr/erbr_TagClust2022_20230408.csv", header=TRUE)
+erbr$Year <- as.factor(erbr$Year)
+
+```
+
+
+
+```{r}
+
+## OBTAIN STABLE STAGE STRUCTURE
+N.startNum <- 61              #Set starting pop sz as 2022 obs sz; could increase to better reflect pop sz, not just demog plts in transects
+
+mx.num <- length(mx.list)
+mx.mean <- Reduce('+', mx.list)/mx.num  #Calculate mean of all matrices 
+mnees=eigenall(mx.mean)
+N.vecStart=N.startNum * mnees$stable.stage
+
+date <- Sys.Date()        #Get date to be added to file name
+date <- str_replace_all(date, "-", "") 
+#saveRDS(mx.mean, file=paste("erbrMeanMatrix_noYRE_P1k", date, sep="_"))
+
+```
+
+
+
+
+
+## STOCHASTIC LAMBDA (SHORT TERM) FOR EACH DATASET 
+```{r}
+
+## ESTIMATE SS_LAMBDA FOR EACH DATASET; 'IGNORE' TRANSECT DIFFERENCES
+#mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_P1k_20230503")  #Output from erbr_4IPMdeterm script
+#mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to13_P1k_20231026") 
+#mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to13even_P1k_20231026") 
+#mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to13odd_P1k_20231026") 
+#mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to8_P1k_20231028") 
+mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_9to13_P1k_20231028") 
+
+
+## OBTAIN STABLE STAGE STRUCTURE
+## Modified from Dan's code 
+N.startNum <- 61                  #Set starting pop sz as 2022 obs sz; could increase to better reflect pop sz, not just demog plts in transects
+
+mx.num <- length(mx.list)
+mx.mean <- Reduce('+', mx.list)/mx.num  #Calculate mean of all matrices 
+mnees=eigenall(mx.mean)
+N.vecStart=N.startNum * mnees$stable.stage
+
+
+names.mx <- unique(names(mx.list))
+names.yr <- unique(sub('\\_.*', '', names.mx))        #Keep text preceding '_'
+names.yr <- unique(sub('.*\\-', '', names.yr))        #Keep text following '-'
+names.param <- unique(sub('\\-.*', '', names.mx))     #Keep text preceding '-'
+
+sim.yrs <- 100  #Number of years to simulate, e.g. 100
+reps <- 100     #Number of replicate runs to make for env variability, e.g. 100
+
+## Variables for output 
+stoch.lams.template <- as.data.frame(matrix(NA, nrow=(reps*length(names.param)), ncol=3))  
+colnames(stoch.lams.template) <- c("PARAM", "REP", "LAMBDA")
+stoch.lams.template$REP <- rep(1:reps)
+#stoch.lams.template$TRANS <- rep(names.trans, each=reps)
+stoch.lams.template$PARAM <- rep(names.param, each=(nrow(stoch.lams.template)/length(names.param)))
+
+stoch.lams.all <- NULL
+
+
+## Start parameter loop (for a given parameter draw, select X yrs (e.g. 100))
+for (pp in 1:length(names.param)) {
+  mx.param <- mx.list[grep(names.param[pp], names(mx.list))]         #Subset mx.list by each parameter
+  stoch.lams <- subset(stoch.lams.template, PARAM==names.param[pp])  #Subset output template by param in parameter loop 
+  
+  ## Start transect loop
+  #for (tt in 1:length(names.trans)) {
+  #mx.trans <- mx.param[grep(names.trans[tt], names(mx.param))]       #Subset mx list by each transect
+  
+
+  ## Modified from Dan 
+  ## Input parameters
+  mx.num.param <- length(mx.param)               #This includes all yr matrices for a given param
+  probs <- rep(1/mx.num.param, mx.num.param)     #List of probs of occurrence for the lams: should sum to 1
+
+  ## Make a vector of random values to use to pick between all yr matrices:
+  mx.randVals <- matrix(sample(1:mx.num.param, size=reps*sim.yrs, prob=probs, replace=TRUE), nrow=sim.yrs, ncol=reps)
+  ## End of inputs
+  
+
+  lams <- matrix(0, sim.yrs-1, reps)                              #Set up a matrix for the pop sizes to fill
+  #stoch.lams.trans <- subset(stoch.lams, TRANS==names.trans[tt])  #Subset output template by trans in transect loop
+  N.vec <- N.vecStart                                             #Re-set to desired starting values
+
+  
+  ## Loop over reps and years 
+  for (jj in 1:reps) {
+    N.vec <- N.vecStart
+    
+    for (ii in 1:(sim.yrs-1)) {
+  
+      pick <- mx.randVals[ii,jj]                         #Pick a mx corresponding to 1 yr (i.e. set of clim conditions) 
+      mx <- mx.param[pick]
+
+      oldN.vec <- N.vec
+      ## Multiply matrix by vec w num indivs per sz class (initially this is stbl stage struct)
+      N.vec <- as.matrix(as_tibble(mx)) %*% N.vec        #Grow the population one year
+    
+      lams[ii,jj] <- sum(N.vec)/sum(oldN.vec)
+      N.vec <- N.startNum*N.vec/sum(N.vec)               #Restandardize the tot nums in vector so doesn't get too big or sm 
+    } #End of ii (years) loop
+    
+    stoch.lams[jj,3]= mean(lams[,jj])                              
+  } #End of jj (reps) loop
+## End of Dan's code 
+  
+  stoch.lams.all <- rbind(stoch.lams.all, stoch.lams)
+#} #End of tt (transect loop)
+
+} #End of pp (parameter) loop
+## ---------------------------
+
+
+## SAVE OUTPUT
+date <- Sys.Date()        #Get date to be added to file name
+date <- str_replace_all(date, "-", "") #library("stringr")?
+saveRDS(stoch.lams.all, file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLamsStoch_noYRE_y100r100P1k_noTrans_9to13", date, sep="_"))
+#stoch.lams.all <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrLamsStoch_noYRE_y100r100P1k_220807")
+
+
+
+## LOOK AT RESULTS
+hist(stoch.lams.all$LAMBDA, breaks=150, border=FALSE, xlab="Short term stochastic population growth rate",
+     main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0,15), col="grey90")
+abline(v=1, col="red", lwd=0.75)
+
+
+## Plot each dataset in a different panel
+#cols <- viridis(12)
+#brks <- c(20,30,40,30,40,40,40,30,40,40,30,40)
+#par(mfrow=c(3,4))                      
+
+#for (tt in 1:length(names.trans)) {
+#  lam.trns <- subset(stoch.lams.all, TRANS==names.trans[tt])
+
+#hist(lam.trns$LAMBDA, breaks=brks[tt], border=FALSE, xlab="Short term stochastic lambda",
+#     main=names.trans[tt], cex.lab=1.4, cex.axis=1.2, xlim=c(0.6,1.2), col=cols[tt])
+#abline(v=1, col="red", lwd=0.5)
+#}
+
+
+## Calculate mean
+mean(stoch.lams.all$LAMBDA)
+#lam.mean.trans <- stoch.lams.all %>% group_by(TRANS) %>% summarise(MEAN=mean(LAMBDA), 
+#                  MED=median(LAMBDA), MAX=max(LAMBDA), MIN=min(LAMBDA))
+#min(lam.mean.trans$MEAN)
+#max(lam.mean.trans$MEAN)
+#mean(stoch.lams.all$LAMBDA)  ## Overall mean
+
+```
+
+
+## NEW PLOTS OF STOCH LAMBDA FOR EACH DATASET 
+```{r}
+
+stoch.lams.9to13 <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Results_data_ms_archive/erbrLamsStoch_noYRE_y100r100P1k_noTrans_9to13_20240127")
+stoch.lams.4to8 <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Results_data_ms_archive/erbrLamsStoch_noYRE_y100r100P1k_noTrans_4to8_20240127")
+stoch.lams.4to13evn <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Results_data_ms_archive/erbrLamsStoch_noYRE_y100r100P1k_noTrans_4to13evn_20240126")
+stoch.lams.4to13odd <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Results_data_ms_archive/erbrLamsStoch_noYRE_y100r100P1k_noTrans_4to13odd_20240126")
+stoch.lams.4to13 <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Results_data_ms_archive/erbrLamsStoch_noYRE_y100r100P1k_noTrans_4to13_20240126")
+stoch.lams.full <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/Results_data_ms_archive/erbrLamsStoch_noYRE_y100r100P1k_noTrans_Full_20240126")
+
+## LOOK AT RESULTS
+## Plot each dataset in a different panel
+cols <- c("#d73027","#fc8d59","#91bfdb","#4575b4","#fdcb44","#fee090")
+#brks <- c(20,30,40,30,40,40,40,30,40,40,30,40)
+pdf('20240927_ErBr_fig5.pdf', width=6, height=5, pointsize=8) #width=6, height=5
+par(mfrow=c(3,2))  
+par(mar=c(4.5,5,2.5,2)) 
+hist(stoch.lams.full$LAMBDA, breaks=100, border=FALSE, xlab=NA,
+     main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0.9,1.02), col=cols[1])
+abline(v=1, col="red", lwd=0.75)
+legend("topleft", "Full dataset", col=cols[1], pch=19, cex=1.25,
+       horiz=FALSE, bty="n",seg.len=1, xpd=TRUE)
+hist(stoch.lams.4to13$LAMBDA, breaks=115, border=FALSE, xlab=NA,
+     main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0.9,1.05), col=cols[2])
+abline(v=1, col="red", lwd=0.75)
+legend("topright", "2004-2013", col=cols[2], pch=19, cex=1.25,
+       horiz=FALSE, bty="n",seg.len=1, xpd=TRUE)
+hist(stoch.lams.4to13evn$LAMBDA, breaks=100, border=FALSE, xlab=NA,
+     main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0.55,1.09), col=cols[3])
+abline(v=1, col="red", lwd=0.75)
+legend("topleft", "2004-2013 even yrs only", col=cols[3], pch=19, cex=1.25,
+       horiz=FALSE, bty="n",seg.len=1, xpd=TRUE)
+hist(stoch.lams.4to13odd$LAMBDA, breaks=290, border=FALSE, xlab=NA,
+     main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0.5,1.6), col=cols[4])
+abline(v=1, col="red", lwd=0.75)
+legend("topright", "2004-2013 odd yrs only", col=cols[4], pch=19, cex=1.25,
+       horiz=FALSE, bty="n",seg.len=1, xpd=TRUE)
+hist(stoch.lams.4to8$LAMBDA, breaks=100, border=FALSE, xlab="Short term stochastic population growth rate",
+     main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0.6,1.6), col=cols[5])
+abline(v=1, col="red", lwd=0.75)
+legend("topleft", "2004-2008", col=cols[5], pch=19, cex=1.25,
+       horiz=FALSE, bty="n",seg.len=1, xpd=TRUE)
+hist(stoch.lams.9to13$LAMBDA, breaks=9000, border=FALSE, xlab="Short term stochastic population growth rate",
+     main=NA, cex.lab=1.4, cex.axis=1.2, xlim=c(0.05,1.94), col=cols[6])
+abline(v=1, col="red", lwd=0.75)
+legend("topright", "2009-2013", col=cols[6], pch=19, cex=1.25,
+       horiz=FALSE, bty="n",seg.len=1, xpd=TRUE)
+
+#legend("topright", c("Full dataset","2004-2013","2004-2013 even yrs only","2004-2013 odd yrs only",
+#                   "2004-2008","2009-2013"), col=cols, pch=19, cex=1.1,
+#       horiz=FALSE, bty="y",seg.len=1, xpd=TRUE) 
+
+dev.off()
+
+#for (tt in 1:length(names.trans)) {
+#  lam.trns <- subset(stoch.lams.all, TRANS==names.trans[tt])
+
+#hist(lam.trns$LAMBDA, breaks=brks[tt], border=FALSE, xlab="Short term stochastic lambda",
+#     main=names.trans[tt], cex.lab=1.4, cex.axis=1.2, xlim=c(0.6,1.2), col=cols[tt])
+#abline(v=1, col="red", lwd=0.5)
+#}
+
+
+## Calculate mean
+mean(stoch.lams.all$LAMBDA)
+
+
+
+```
+
+
+
+
+
+
+
+## LOOK AT NUMBERS OF NEW OR SM PLANTS IN EACH YEAR
+```{r}
+
+## To understand the pop sz increase ~2007, that is not captured by predictions, plot nums of new plts in each yr (by sz group)
+
+## Make df that will hold data containing new plants
+years <- unique(erbr$Year)
+years <- years[order(years)]
+dats.newPlts <- as.data.frame(rep(unique(erbr$TransectNew), each=length(years)))
+colnames(dats.newPlts) <- "TransectNew"
+dats.newPlts$Year <- rep(years)
+
+## Identify new plants
+newPlts <- erbr %>% group_by(TagNew) %>% slice(which.min(Year))  #Identify rows with 1st appearance for each plt
+newPlts <- newPlts[newPlts$Year!=2004,]                          #Remove 2004 (first year of data collection)
+sz.cutoff <- 5                                                   #Sz cutoff, above which likely not recently a seedling 
+newPlts.sm <- newPlts[newPlts$RosNew<sz.cutoff,]                 #Rm if larger than X ros (these likely missed & are not new)
+newPlts.lrg <- newPlts[newPlts$RosNew>sz.cutoff,]                #Remove if smaller than X ros 
+num.newPlts.sm <- newPlts.sm %>% group_by(Year) %>% summarise(NUM=n())   #Count num new plts per year
+num.newPlts.lrg <- newPlts.lrg %>% group_by(Year) %>% summarise(NUM=n()) #Count num new plts per year
+
+barplot(num.newPlts.sm$NUM, names=num.newPlts.sm$Year, main="New small plants (<5ros) per year", ylab="New plants")
+barplot(num.newPlts.lrg$NUM, names=num.newPlts.lrg$Year, main="New large plants (>5ros) per year", ylab="New plants") 
+
+
+## PLOT SMALL PLANTS IN EACH YEAR *****
+erbr.sm <- erbr[erbr$RosNew<5 & !is.na(erbr$RosNew),]
+num.erbr.sm <- erbr.sm %>% group_by(Year) %>% summarise(NUM=n())   #Count num small plts per year
+barplot(num.erbr.sm$NUM, names=num.erbr.sm$Year, main="Small plants (<5ros) per year", ylab="Small plants")
+
+```
+
+
+
+
+
+## UPDATED PLOT OF ESTIMATED POP SZ PER YEAR COMPARED TO OBSERVED
+```{r}
+
+## Calculate observed: Subset by year and count the number of living plants 
+num.indivs <- erbr %>% group_by(Year) %>% summarise(numIndivs=sum(surv, na.rm=TRUE)) 
+num.indivs$Year <- as.numeric(as.character(num.indivs$Year))
+num.indivs <- num.indivs[which(num.indivs$numIndivs!=0),]
+
+## Do counts excluding anything less than given size (e.g. 5 ros)
+erbr.lrg <- erbr[erbr$RosNew>5,]
+#length(erbr.yr$RosNew[erbr.yr$RosNew<2 & !is.na(erbr.yr$RosNew)])
+num.indivs <- erbr.lrg %>% group_by(Year) %>% summarise(numIndivs=sum(surv, na.rm=TRUE)) 
+num.indivs$Year <- as.numeric(as.character(num.indivs$Year))
+num.indivs <- num.indivs[which(num.indivs$numIndivs!=0),]
+
+
+## To obtain predicted pop size, estimate for each transect separately and then sum together. 
+## Load matrices
+#mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_P1k_20230503")
+mx.list <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrIPMmxList_noYRE_4to13_P1k_20231026")
+#mx.list <- mx.list4to13
+
+names.mx <- unique(names(mx.list))
+names.trans <- unique(sub('.*\\_', '', names.mx))     #Keep text following '_'
+#names.yr <- unique(sub('\\_.*', '', names.mx))        #Keep text preceding '_'
+#names.yr <- unique(sub('.*\\-', '', names.yr))        #Keep text following '-'
+names.param <- unique(sub('\\-.*', '', names.mx))     #Keep text preceding '-'
+
+
+## Subset to keep only years from study period (e.g. 2004-2021) 
+startYr <- "2007"
+match.yr <- as.character(c(startYr:2021))
+mx.list <- mx.list[grep(paste(match.yr,collapse="|"), names(mx.list))]
+names.mx <- unique(names(mx.list))
+names.yr <- unique(sub('\\_.*', '', names.mx))        #Keep text preceding '_'
+names.yr <- unique(sub('.*\\-', '', names.yr))        #Keep text following '-'
+mx.studyYrs <- mx.list[grep(paste(names.yr, collapse="|"), names(mx.list))]
+sim.yrs <- length(names.yr)
+## ---------------------------------------------------------------------------
+
+
+
+
+## Determine the observed number of plts of each size for each transect at the start of the study (2004 or 2007)
+pltsStart <- erbr[erbr$Year==startYr,]  
+hist(pltsStart$RosNew)
+unique(pltsStart$RosNew)
+#table(pltsStart$RosNew)
+
+minsize <- 1
+maxsize <- max(erbr$RosNew, na.rm=TRUE)
+bin.num <- 50
+vec.bin <- c(minsize, minsize+1:bin.num*(maxsize-minsize)*(1/bin.num)) ##**SHOULD WE SET HIGHER MIN SZ? ##
+vec.bin <- c(0,vec.bin) #Add additional zero-1 bin for seedlings
+length(vec.bin)
+
+## Loop over vec bin and assign bin bounds, then count num plts that fall into each size bin for each transect
+binCounts = as.data.frame(matrix(NA, nrow=length(vec.bin)-1, ncol=length(names.trans)))
+colnames(binCounts) <- names.trans
+
+for (cc in 1:length(names.trans)) {
+  pltsStartTran <- pltsStart[pltsStart$TransectNew==names.trans[cc],]
+  
+  for (bb in 1:length(vec.bin)-1) {
+    bounds <- c(vec.bin[bb], vec.bin[bb+1])
+    subsetSzs <- pltsStartTran[which(pltsStartTran$RosNew > bounds[1] & pltsStartTran$RosNew <= bounds[2]),]
+      binCounts[bb,cc] <- nrow(subsetSzs)
+  }
+}
+totsTrans <- colSums(binCounts)
+startNum <- num.indivs$numIndivs[num.indivs$Year==startYr]
+
+
+
+
+## Start parameter loop (for a given parameter draw, loop over transects and data yrs)
+pop.sz.all <- NULL  #Variable for saving output
+
+for (pp in 1:length(names.param)) {
+  ## Subset by parameter
+  mx.param <- mx.studyYrs[grep(paste(names.param[pp],"-",sep=""), names(mx.studyYrs))]
+  pop.sz <- as.data.frame(matrix(NA, nrow=length(names.trans), ncol=sim.yrs))
+  
+  ## Transect loop
+  for (tt in 1:length(names.trans)) {
+  mx.paramTrans <- mx.param[grep(names.trans[tt], names(mx.param))]
+
+  ## AG modified from Dan
+  N.vec <- binCounts[,tt]                                    #Re-set to desired starting values
+  N.vec[1:2] <- 0                                            #TRY EXCLUDING ANYTHING >=4 rosettes; set to zero
+
+
+  ## Loop over years (from e.g. 2004-2021 to give estimates for 2005-2022)
+    for (ii in 1:(sim.yrs)) {
+  
+      mx <- mx.paramTrans[ii]
+    
+      ## Multiply matrix by vec w num indivs per sz class (initially this was observed nums)
+      N.vec <- as.matrix(as_tibble(mx)) %*% N.vec        #This grows the population one year
+      N.vec[1:2] <- 0                                    #**TRY EXCLUDING ANYTHING >=4 rosettes; set to zero
+      pop.sz[tt,ii]= sum(N.vec) 
+
+    } # end of ii (years) loop
+  } # end of tt (transect) loop
+
+   pop.sz.all <- rbind(pop.sz.all, pop.sz)
+} #End pp (param) loop
+
+
+## Add and rename columns
+pop.sz.all$TRANS <- rep(names.trans)
+pop.sz.all$PARAM <- rep(names.param, each=length(names.trans))
+colnames(pop.sz.all) <- c(as.character((as.numeric(startYr)+1):2022),"TRANS","PARAM")
+
+
+
+
+## SAVE FOR PLOTTING BELOW BY RENAMING BASED ON DATA SET 
+pop.sz.all.full <- pop.sz.all
+names.yr.full <- names.yr
+
+pop.sz.all.consec <- pop.sz.all
+names.yr.consec <- names.yr
+
+
+
+
+## Calculate mean and 95% quantile of predicted pop size
+## Sum across transects and average across params 
+pop.sz.params.full <- pop.sz.all.full %>% group_by(PARAM) %>% summarise(across(c(1:(length(pop.sz.all.full)-2)), sum, na.rm=TRUE))
+pop.sz.params.consec <- pop.sz.all.consec %>% group_by(PARAM) %>% summarise(across(c(1:(length(pop.sz.all.consec)-2)), sum, na.rm=TRUE))
+
+pop.sz.means.full <- colMeans(pop.sz.params.full[,2:length(pop.sz.params.full)])
+pop.sz.means.consec <- colMeans(pop.sz.params.consec[,2:length(pop.sz.params.consec)])
+pop.sz.means.full <- c(startNum, pop.sz.means.full)      #Add observed num at start
+pop.sz.means.consec <- c(startNum, pop.sz.means.consec)  #Add observed num at start
+
+quant95PopSz.full <- as.data.frame(pop.sz.params.full[,2:ncol(pop.sz.params.full)]) %>% summarise_all(funs(quantile(., probs=0.95)))
+quant95PopSz.full <- as.data.frame(t(quant95PopSz.full))
+
+quant05PopSz.full <- as.data.frame(pop.sz.params.full[,2:ncol(pop.sz.params.full)]) %>% summarise_all(funs(quantile(., probs=0.05))) 
+quant05PopSz.full <- as.data.frame(t(quant05PopSz.full))
+
+quant95PopSz.consec <- as.data.frame(pop.sz.params.consec[,2:ncol(pop.sz.params.consec)]) %>% 
+  summarise_all(funs(quantile(., probs=0.95))) 
+quant95PopSz.consec <- as.data.frame(t(quant95PopSz.consec))
+
+quant05PopSz.consec <- as.data.frame(pop.sz.params.consec[,2:ncol(pop.sz.params.consec)]) %>% 
+  summarise_all(funs(quantile(., probs=0.05)))
+quant05PopSz.consec <- as.data.frame(t(quant05PopSz.consec))
+
+
+
+## Save output 
+#setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
+dateToday <- Sys.Date()        #Get date to be added to file name
+dateToday <- str_replace_all(dateToday, "-", "") 
+saveRDS(pop.sz.all.full, 
+        file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzAllFull-07noSm", dateToday, sep="_"))
+saveRDS(pop.sz.all.consec, 
+        file=paste("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzAll4to13-07noSm", dateToday, sep="_"))
+
+## LOAD
+#pop.sz.all.full <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzAllFull07_20231230") 
+#pop.sz.all.consec <- readRDS("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship/erbrPopSzAll4to13-07_20240102") 
+
+
+
+
+
+## Plot from 2007 onward
+pdf('20240402_ErBr_fig4.pdf', width=6.5, height=4.5, pointsize=8)
+plot(as.numeric(as.character(num.indivs$Year[4:14])), num.indivs$numIndivs[4:14], type='l', ylim=c(30,150), 
+     ylab="Number of individuals",xlab="Year", cex.lab=1.2, cex.axis=1.1, lwd=2)
+
+lines(2007:2022, pop.sz.means.consec[1:length(pop.sz.means.consec)],
+      col="#fc8d59",lwd=2)
+arrows((2008:2022),pop.sz.means.consec[2:length(pop.sz.means.consec)], 
+       (2008:2022),quant95PopSz.consec[1:15,1], 
+       length=0, angle=90, col="#fc8d59", lwd=0.6)
+arrows((2008:2022),pop.sz.means.consec[2:length(pop.sz.means.consec)], 
+       (2008:2022),quant05PopSz.consec[1:15,1], 
+       length=0, angle=90, col="#fc8d59", lwd=0.6)
+
+points(as.numeric(as.character(num.indivs$Year)), num.indivs$numIndivs, pch=16, cex=0.85)
+
+lines(2007:2022,pop.sz.means.full[1:length(pop.sz.means.full)],
+      col="#d73027",lwd=2)  
+arrows(2008:2022,pop.sz.means.full[2:length(pop.sz.means.full)], 
+       2008:2022,quant95PopSz.full[1:15,1], 
+       length=0, angle=90, col="#d73027", lwd=0.6)
+arrows(2008:2022,pop.sz.means.full[2:length(pop.sz.means.full)], 
+       2008:2022,quant05PopSz.full[1:15,1], 
+       length=0, angle=90, col="#d73027", lwd=0.6)
+
+legend("bottomleft", c("Observed", "Full dataset", "2004-2013"), col=c("black","#d73027","#fc8d59"),lwd=2,cex=1.2,
+       horiz=FALSE, bty="y",seg.len=1, xpd=TRUE)
+
+dev.off()
+
+```
+
+
+
+
+
+## PLOT THE DISTRIBUTION OF OBSERVED PLANT SIZES
+```{r}
+
+head(erbr)
+#using RosNew, look at distribution of sizes across all years
+hist(erbr$RosNew, breaks=100, xlim=c(0,150), xlab="Plant size (rosette number)", 
+     ylab="Number of individuals", main="Distribution of plant sizes across all years")
+
+#also look at distribution of sizes in one year at a time
+erbr.yr <- erbr[erbr$Year==2007,]
+hist(erbr.yr$RosNew, breaks=50, xlim=c(0,120))
+erbr.yr <- erbr[erbr$Year==2010,]
+hist(erbr.yr$RosNew, breaks=50, xlim=c(0,130))
+erbr.yr <- erbr[erbr$Year==2018,]
+hist(erbr.yr$RosNew, breaks=40, xlim=c(0,60))
+
+
+## Look at number of plants less than given size in different years
+erbr.yr <- erbr[erbr$Year==2007,]
+length(erbr.yr$RosNew[erbr.yr$RosNew<2 & !is.na(erbr.yr$RosNew)])
+erbr.yr <- erbr[erbr$Year==2008,]
+length(erbr.yr$RosNew[erbr.yr$RosNew<2 & !is.na(erbr.yr$RosNew)])
+erbr.yr <- erbr[erbr$Year==2009,]
+length(erbr.yr$RosNew[erbr.yr$RosNew<2 & !is.na(erbr.yr$RosNew)])
+erbr.yr <- erbr[erbr$Year==2010,]
+length(erbr.yr$RosNew[erbr.yr$RosNew<2 & !is.na(erbr.yr$RosNew)])
+
+```
+
+

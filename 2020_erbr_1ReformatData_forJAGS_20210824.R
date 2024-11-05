@@ -16,8 +16,8 @@ graphics.off()
 
 
 ## SET WD -----------------------------------------------------------------------------------------
-# setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
-setwd("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Projects/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels")
+setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
+#setwd("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Projects/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels")
 ## ------------------------------------------------------------------------------------------------
 
 
@@ -26,20 +26,19 @@ library(dplyr)
 library(bazar)
 library(stringr)
 library(tidyr)
-
 ## ------------------------------------------------------------------------------------------------
 
 
 ## LOAD DATA --------------------------------------------------------------------------------------
-# erbr <- read.csv("Files_from_Michelle/rawdata_2018_1.csv", header=TRUE)
-currentyr <- as.numeric(format(as.Date(Sys.Date(),format="%Y-%m-%d"), "%Y"))
+erbr <- read.csv("Files_from_Michelle/rawdata_2018_1.csv", header=TRUE)
+#currentyr <- as.numeric(format(as.Date(Sys.Date(),format="%Y-%m-%d"), "%Y"))
 # Michelle's path
-myUsername <- "deprengm"
-erbr <- read.csv(paste("C:/Users/",myUsername,"/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Data/rawdata_",
-                           currentyr,".csv", sep=""))
+#myUsername <- "deprengm"
+#erbr <- read.csv(paste("C:/Users/",myUsername,"/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Data/rawdata_",
+#                           currentyr,".csv", sep=""))
 # erbr <- read.csv("Eriogonum-brandegeei_rawdata_2004-2020.csv")
-clim3seas <- read.csv("C:/Users/deprengm/OneDrive - Denver Botanic Gardens/P drive/hackathon/ErBr/erbr_climData3seas2022-11-09.csv", header=TRUE)
-
+#clim3seas <- read.csv("C:/Users/deprengm/OneDrive - Denver Botanic Gardens/P drive/hackathon/ErBr/erbr_climData3seas2022-11-09.csv", header=TRUE)
+clim3seas <- read.csv("erbr_climData3seas32yr_221114.csv", header=TRUE)
 ## ------------------------------------------------------------------------------------------------
 
 ## MODIFY FORM OF DATA ----------------------------------------------------------------------------
@@ -103,9 +102,12 @@ erbr.1[erbr.1$Year == 2020,]
 ## Add a modified Tag column (site, transect, tag) to hold truncated tag values only (for clustered analysis)
 ### MEDL 2022.12.15 realizing that some tags are used when closer tag is lost, need to limit truncation to a certain distance
 ## From the PHPmyadmin database, the tags, transects, and sites tables to join to get the location information
-tagsPHP <- read.csv("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Projects/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels/_erbr_tags_PHP2022.csv")
-sitesPHP <- read.csv("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Projects/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels/_erbr_sites_PHP2022.csv")
-transectsPHP <- read.csv("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Projects/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels/_erbr_transects_PHP2022.csv")
+#tagsPHP <- read.csv("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Projects/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels/_erbr_tags_PHP2022.csv")
+#sitesPHP <- read.csv("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Projects/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels/_erbr_sites_PHP2022.csv")
+#transectsPHP <- read.csv("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_Projects/2020_Eriogonum-brandegeei_AprilGoebl_PVA/2021_Eriogonum-brandegeei_integratedpopulationmodels/_erbr_transects_PHP2022.csv")
+tagsPHP <- read.csv("Files_from_Michelle/_erbr_tags_PHP2022.csv")
+sitesPHP <- read.csv("Files_from_Michelle/_erbr_sites_PHP2022.csv")
+transectsPHP <- read.csv("Files_from_Michelle/_erbr_transects_PHP2022.csv")
 names(tagsPHP)
 names(sitesPHP)
 names(transectsPHP)
@@ -307,7 +309,7 @@ erbr.3 <- erbr.2 %>% dplyr::select(!c(Transect, Tag, X, Y, DiameterX, DiameterY,
 ## SAVE FORMATTED DATA ---------------------------------------------------------------
 # date <- as.character(210510)          #Enter date to be added to file name
 date <- as.character(Sys.Date())
-name <- as.character("TagClust_") #Enter name of file, e.g. Tagclust, 4to13, 4to13odd, 4to13even, 4to8, 9to13
+name <- as.character("TagClust2018_") #Enter name of file, e.g. Tagclust, 4to13, 4to13odd, 4to13even, 4to8, 9to13
 # name <- as.character("TagNotClust_")
 
 write.csv(erbr.3, file=paste("erbr_", name, date, ".csv", sep=""), row.names=FALSE)
