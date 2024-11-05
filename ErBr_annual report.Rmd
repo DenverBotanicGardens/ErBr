@@ -37,11 +37,13 @@ script <- getURL("https://raw.githubusercontent.com/DenverBotanicGardens/ErBr/ma
                  ssl.verifypeer = FALSE)
 eval(parse(text = script))
 
+currentyr <- as.numeric(format(as.Date(Sys.Date(),format="%Y-%m-%d"), "%Y"))
 
 ## After add new climate data once:
-load("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/2022_Eriogonum-brandegeei/erbrseasons.Rdata")
+# PRISM code is at the very bottom
+load(paste("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/",currentyr,"_Eriogonum-brandegeei/erbrseasons.Rdata", sep=""))
 
-load("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/2022_Eriogonum-brandegeei/climatelong.Rdata")
+load(paste("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/",currentyr,"_Eriogonum-brandegeei/climatelong.Rdata", sep=""))
 
 ```
 
@@ -49,7 +51,6 @@ load("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProject
 Download Raw Data and and Summary Table
 <https://research.botanicgardens.org/admin/>
 ```{r}
-currentyr <- as.numeric(format(as.Date(Sys.Date(),format="%Y-%m-%d"), "%Y"))
 # Michelle's path
 myUsername <- "deprengm"
 
@@ -70,7 +71,7 @@ tab1out <- erbr.summary[!is.na(erbr.summary$SumOfRosettes),1:8]
 tab1out[is.na(tab1out)] <- 0
 write.csv(tab1out[order(tab1out$Site, tab1out$Transect, tab1out$Year),],
           file = paste("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/",
-                        currentyr,"_Eriogonum-brandegeei/",currentyr,"_ErBr/Table1.csv", sep=""))
+                        currentyr,"_Eriogonum-brandegeei/Table1.csv", sep=""))
 
 # Rust in how many years of the total
 # total
@@ -79,220 +80,6 @@ length(2004:currentyr)
 table(erbr.summary$Year[erbr.summary$Rust>0], erbr.summary$Rust[erbr.summary$Rust>0])
 ```
 
-# Climate Data
-just use the data downloaded for AsMi
-```{r}
-prism_set_dl_dir("Q:/Research/All_Projects_by_Species/Astragalus SPECIES/Astragalus_microcymbus/PRISM_asmiclimate")
-#Precipitation total, rain and snow
-get_prism_monthlys(type="ppt", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
-#Maximum temperature (average)
-get_prism_monthlys(type="tmax", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
-#Minimum temperature (average)
-get_prism_monthlys(type="tmin", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
-
-get_prism_monthlys(type = "vpdmax", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
-```
-cleanup
-```{r}
-
-get_prism_monthlys(type="ppt", mon = 1:7, keepZip = FALSE, years = currentyr)
-#Maximum temperature (average)
-get_prism_monthlys(type="tmax", mon = 1:7, keepZip = FALSE, years = currentyr)
-#Minimum temperature (average)
-get_prism_monthlys(type="tmin", mon = 1:7, keepZip = FALSE, years = currentyr)
-get_prism_monthlys(type="tmin", mon = 12, keepZip = FALSE, years = 2021)
-
-```
-
-
-```{r}
-erbrlatlong <- data.frame(Lat = 38.5434, Long = -105.2184)
-
-maxs <- prism_archive_subset(type = "tmax", temp_period = "monthly")
-mins <- prism_archive_subset(type = "tmin", temp_period = "monthly")
-ppt <- prism_archive_subset(type = "ppt", temp_period = "monthly")
-wvdm <- prism_archive_subset(type = "vpdmax", temp_period = "monthly")
-length(maxs) # 490, 510
-length(mins) # 490
-length(ppt) # 490
-
-avgTemps.max <- lapply(maxs, function(x){
-  rastertemps <- raster(pd_to_file(x))
-  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = x)
-})
-
-avgTemps.min <- lapply(mins, function(x){
-  rastertemps <- raster(pd_to_file(x))
-  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = x)
-})
-
-avgPrecip <- lapply(ppt, function(x){
-  rastertemps <- raster(pd_to_file(x))
-  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = x)
-})
-
-avgwvdm <- lapply(wvdm, function(x){
-  rastertemps <- raster(pd_to_file(x))
-  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = x)
-})
-
-mins.avg <- do.call(rbind, avgTemps.min)
-maxs.avg <- do.call(rbind, avgTemps.max)
-ppt.avg <- do.call(rbind, avgPrecip)
-wvdm.avg <- do.call(rbind, avgwvdm)
-
-erbr.climate.monthly <- ppt.avg %>%
-  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
-         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
-         # Make previous 12 months match year (previous to August survey)
-         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
-  #extract the climate variable name from the prism long name
-  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
-  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
-                            Month>=8 & Month<=11 ~ "fall",
-                            Month>=4 & Month<=7 ~ "summer")) %>%
-  group_by(season, Prev12, Variable) %>%
-  dplyr::summarise(Value = sum(data), .groups = "keep")  %>%
-  ungroup() %>%
-  mutate(Value = scale(Value)) %>%
-  pivot_wider(names_from = c(Variable,season), values_from = Value) %>%
-  dplyr::rename(Year = Prev12)
-
-## Check running up to Prev12
-table(erbr.climate.monthly$Year, erbr.climate.monthly$Month)
-
-
-erbr.climate.monthly.tmin <- mins.avg %>%
-  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
-         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
-         # Make previous 12 months match year (previous to August survey)
-         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
-  # table(erbr.climate.monthly.tmin$Year, erbr.climate.monthly.tmin$Month) # missing December 2021
-  #extract the climate variable name from the prism long name
-  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
-  # mutate(season = "winter") %>%
-  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
-                            Month>=8 & Month<=11 ~ "fall",
-                            Month>=4 & Month<=7 ~ "summer")) %>%
-  group_by(season, Prev12, Variable) %>%
-  dplyr::summarise(Value = mean(data), .groups = "keep") %>%
-  ungroup() %>%
-  mutate(Value = scale(Value)) %>%
-  pivot_wider(names_from = c(Variable,season), values_from = Value) %>%
-  dplyr::rename(Year = Prev12)
-
-erbr.climate.monthly.tmax <- maxs.avg %>%
-  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
-         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
-         # Make previous 12 months match year (previous to August survey)
-         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
-  # table(erbr.climate.monthly.tmin$Year, erbr.climate.monthly.tmin$Month) # missing December 2021
-  #extract the climate variable name from the prism long name
-  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
-  # mutate(season = "winter") %>%
-  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
-                            Month>=8 & Month<=11 ~ "fall",
-                            Month>=4 & Month<=7 ~ "summer")) %>%
-  group_by(season, Prev12, Variable) %>%
-  dplyr::summarise(Value = mean(data), .groups = "keep") %>%
-  ungroup() %>%
-  mutate(Value = scale(Value)) %>%
-  pivot_wider(names_from = c(Variable,season), values_from = Value) %>%
-  dplyr::rename(Year = Prev12)
-
-erbr.climate.monthly.wvdm <- wvdm.avg %>%
-  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
-         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
-         # Make previous 12 months match year (previous to August survey)
-         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
-  # table(erbr.climate.monthly.wvdm$Year, erbr.climate.monthly.wvdm$Month) 
-  #extract the climate variable name from the prism long name
-  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
-  # mutate(season = "winter") %>%
-  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
-                            Month>=8 & Month<=11 ~ "fall",
-                            Month>=4 & Month<=7 ~ "summer")) %>%
-  group_by(season, Prev12, Variable) %>%
-  dplyr::summarise(Value = mean(data), .groups = "keep") %>%
-  ungroup() %>%
-  mutate(Value = scale(Value)) %>%
-  pivot_wider(names_from = c(Variable,season), values_from = Value) %>%
-  dplyr::rename(Year = Prev12)
-
-erbr.seasons <- erbr.climate.monthly %>%
-  left_join(erbr.climate.monthly.tmin, by = "Year") %>%
-  left_join(erbr.climate.monthly.tmax, by = "Year") %>%
-  left_join(erbr.climate.monthly.wvdm, by = "Year") %>%
-  filter(Year < 2023 & Year > 2003)
-
-save(erbr.seasons, file = "C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/2022_Eriogonum-brandegeei/erbrseasons.Rdata")
-
-wbdm.long <- wvdm.avg %>%
-  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
-         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
-         # Make previous 12 months match year (previous to August survey)
-         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
-  # table(erbr.climate.monthly.wvdm$Year, erbr.climate.monthly.wvdm$Month) 
-  #extract the climate variable name from the prism long name
-  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
-  # mutate(season = "winter") %>%
-  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
-                            Month>=8 & Month<=11 ~ "fall",
-                            Month>=4 & Month<=7 ~ "summer")) %>%
-  group_by(season, Prev12, Variable) %>%
-  dplyr::summarise(Value = mean(data), .groups = "keep")
-
-max.long <- maxs.avg %>%
-  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
-         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
-         # Make previous 12 months match year (previous to August survey)
-         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
-  # table(erbr.climate.monthly.tmin$Year, erbr.climate.monthly.tmin$Month) # missing December 2021
-  #extract the climate variable name from the prism long name
-  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
-  # mutate(season = "winter") %>%
-  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
-                            Month>=8 & Month<=11 ~ "fall",
-                            Month>=4 & Month<=7 ~ "summer")) %>%
-  group_by(season, Prev12, Variable) %>%
-  dplyr::summarise(Value = mean(data), .groups = "keep") 
-
-tmin.long <- mins.avg %>%
-  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
-         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
-         # Make previous 12 months match year (previous to August survey)
-         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
-  # table(erbr.climate.monthly.tmin$Year, erbr.climate.monthly.tmin$Month) # missing December 2021
-  #extract the climate variable name from the prism long name
-  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
-  # mutate(season = "winter") %>%
-  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
-                            Month>=8 & Month<=11 ~ "fall",
-                            Month>=4 & Month<=7 ~ "summer")) %>%
-  group_by(season, Prev12, Variable) %>%
-  dplyr::summarise(Value = mean(data), .groups = "keep") 
-
-ppt.long <- ppt.avg %>%
-  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
-         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
-         # Make previous 12 months match year (previous to August survey)
-         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
-  #extract the climate variable name from the prism long name
-  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
-  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
-                            Month>=8 & Month<=11 ~ "fall",
-                            Month>=4 & Month<=7 ~ "summer")) %>%
-  group_by(season, Prev12, Variable) %>%
-  dplyr::summarise(Value = sum(data), .groups = "keep")
-
-climate.long <- wbdm.long %>%
-  bind_rows(max.long) %>%
-  bind_rows(tmin.long) %>%
-  bind_rows(ppt.long) %>%
-  dplyr::rename(Year = Prev12)
-
-save(climate.long, file ="C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/2022_Eriogonum-brandegeei/climatelong.Rdata")
-```
 
 Demography     
     
@@ -425,7 +212,7 @@ ggplot( aes(Year, SumOfRosettes, color = Site, linetype = as.factor(Transect)))+
   theme_bw()
 ```
 
-#Really? Those are defined as drought how?
+# Figure 4
 ```{r}
 
 erbr.summary %>%
@@ -650,86 +437,6 @@ ggsave(filename = paste("C:/Users/deprengm/Denver Botanic Gardens/Conservation -
  width=240, height=100,units='mm', dpi=300)
 ```
 
-
-Figure 4
-```{r}
-precip <- aggregate(ppt~Prev12,
-                    data = erbr.c, sum)
-
-erbr.seasons %>%
-  
-
-mean(precip$ppt)
-
-fig4a <- ggplot(precip[precip$Prev12>1994&precip$Prev12<=currentyr,], aes(Prev12, ppt))+
-  geom_line()+
-  geom_hline(linetype = "dashed", aes(yintercept = mean(ppt)))+
-  annotate("text", x=1998, y=mean(precip$ppt)-5, label=paste(round(mean(precip$ppt),0),"mm", sep=""))+
-  theme_bw()+
-  geom_rect(aes(xmin=-Inf,xmax=2003.5,
-                ymin=-Inf, ymax=Inf),
-            fill= "grey", alpha = 0.03)+
-  scale_x_continuous(breaks = seq(1995,currentyr,by = 2))+
-  ylab("Annual precipition (mm previous Aug-Jul)")+
-  xlab("Survey year")+
-  ggtitle("a)") +
-  theme(plot.title=element_text(hjust=0))
-
-#figure 4b
-
-mintemp <- aggregate(tmin~Prev12,
-                     data = erbr.c, mean)
-
-mintemp <- mintemp[mintemp$Prev12>1994&mintemp$Prev12<=currentyr,]
-
-meantempmin <- mean(mintemp$tmin)
-
-fig4b <- ggplot(mintemp, aes(Prev12, tmin))+
-  geom_line()+
-  geom_hline(linetype = "dashed", aes(yintercept = mean(tmin)))+
-  annotate("text", x=1995, y=mean(mintemp$tmin)+0.06, label=bquote(.(round(meantempmin,1)))) +
-  theme_bw()+
-  geom_rect(aes(xmin=-Inf,xmax=2003.5,
-                ymin=-Inf, ymax=Inf),
-            fill= "grey", alpha = 0.03)+
-  scale_x_continuous(breaks = seq(1995,currentyr,by = 2))+  
-  ylab(expression("Average minimum temperature ("~degree*C~"previous Aug-Jul)"))+
-  xlab("Survey year")+
-  ggtitle("b)") +
-  theme(plot.title=element_text(hjust=0))
-
-```
-
-## New figure 4 being all climate data and study period data
-
-figure 4c
-```{r}
-
-
-maxtemp <- maxtemp[maxtemp$Prev12>1994&maxtemp$Prev12<=currentyr,]
-meantempmax <- mean(maxtemp$tmax)
-
-fig4c <- ggplot(maxtemp, aes(Prev12, tmax))+
-  geom_line()+
-  geom_hline(linetype = "dashed", aes(yintercept = mean(tmax)))+
-  annotate("text", x=1994.7, y=mean(maxtemp$tmax)+0.09, 
-           label= bquote(.(round(meantempmax,1)))) +   #~degree*C
-  theme_bw()+
-  geom_rect(aes(xmin=-Inf,xmax=2003.5,
-                ymin=-Inf, ymax=Inf),
-            fill= "grey", alpha = 0.03)+
-  scale_x_continuous(breaks = seq(1995,currentyr,by = 2))+
-  ylab(expression("Average maximum temperature ("~degree*C~"previous Aug-Jul)"))+
-  xlab("Survey year")+
-  ggtitle("c)") +
-  theme(plot.title=element_text(hjust=0))
-
-
-ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/Eriogonum_brandegeei/",currentyr,"_ErBr/Fig4abc.jpg", sep=""), 
-       # (fig4a | fig4b)/(fig4c | plot_spacer()),
-       fig4a + fig4b + fig4c + plot_layout(ncol = 2),
- width=240, height=200,units='mm', dpi=300)
-```
 
 
 ```{r}
@@ -1042,3 +749,222 @@ ggsave("Q:/Research/MEDL_folder/ErBr_yr.jpg",device="jpeg",
 write.csv(erbr_yr,"Q:/Research/MEDL_folder/ErBr_yr.csv" )
 
 ```
+
+
+
+
+# Climate Data
+just use the data downloaded for AsMi
+```{r}
+prism_set_dl_dir("Q:/Research/All_Projects_by_Species/Astragalus SPECIES/Astragalus_microcymbus/PRISM_asmiclimate")
+#Precipitation total, rain and snow
+get_prism_monthlys(type="ppt", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
+#Maximum temperature (average)
+get_prism_monthlys(type="tmax", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
+#Minimum temperature (average)
+get_prism_monthlys(type="tmin", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
+
+get_prism_monthlys(type = "vpdmax", mon = 1:12, keepZip = FALSE, years = (currentyr-1):currentyr)
+```
+cleanup
+```{r}
+
+get_prism_monthlys(type="ppt", mon = 1:7, keepZip = FALSE, years = currentyr)
+#Maximum temperature (average)
+get_prism_monthlys(type="tmax", mon = 1:7, keepZip = FALSE, years = currentyr)
+#Minimum temperature (average)
+get_prism_monthlys(type="tmin", mon = 1:7, keepZip = FALSE, years = currentyr)
+get_prism_monthlys(type="tmin", mon = 12, keepZip = FALSE, years = 2021)
+
+```
+
+
+```{r}
+erbrlatlong <- data.frame(Lat = 38.5434, Long = -105.2184)
+
+maxs <- prism_archive_subset(type = "tmax", temp_period = "monthly")
+mins <- prism_archive_subset(type = "tmin", temp_period = "monthly")
+ppt <- prism_archive_subset(type = "ppt", temp_period = "monthly")
+wvdm <- prism_archive_subset(type = "vpdmax", temp_period = "monthly")
+length(maxs) # 490, 510
+length(mins) # 490
+length(ppt) # 490
+
+avgTemps.max <- lapply(maxs, function(x){
+  rastertemps <- raster(pd_to_file(x))
+  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = x)
+})
+
+avgTemps.min <- lapply(mins, function(x){
+  rastertemps <- raster(pd_to_file(x))
+  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = x)
+})
+
+avgPrecip <- lapply(ppt, function(x){
+  rastertemps <- raster(pd_to_file(x))
+  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = x)
+})
+
+avgwvdm <- lapply(wvdm, function(x){
+  rastertemps <- raster(pd_to_file(x))
+  data.frame(data = raster::extract(rastertemps, erbrlatlong[,c("Long","Lat")]), date = x)
+})
+
+mins.avg <- do.call(rbind, avgTemps.min)
+maxs.avg <- do.call(rbind, avgTemps.max)
+ppt.avg <- do.call(rbind, avgPrecip)
+wvdm.avg <- do.call(rbind, avgwvdm)
+
+erbr.climate.monthly <- ppt.avg %>%
+  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
+         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
+         # Make previous 12 months match year (previous to August survey)
+         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
+  #extract the climate variable name from the prism long name
+  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
+  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
+                            Month>=8 & Month<=11 ~ "fall",
+                            Month>=4 & Month<=7 ~ "summer")) %>%
+  group_by(season, Prev12, Variable) %>%
+  dplyr::summarise(Value = sum(data), .groups = "keep")  %>%
+  ungroup() %>%
+  mutate(Value = scale(Value)) %>%
+  pivot_wider(names_from = c(Variable,season), values_from = Value) %>%
+  dplyr::rename(Year = Prev12)
+
+## Check running up to Prev12
+table(erbr.climate.monthly$Year, erbr.climate.monthly$Month)
+
+
+erbr.climate.monthly.tmin <- mins.avg %>%
+  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
+         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
+         # Make previous 12 months match year (previous to August survey)
+         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
+  # table(erbr.climate.monthly.tmin$Year, erbr.climate.monthly.tmin$Month) # missing December 2021
+  #extract the climate variable name from the prism long name
+  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
+  # mutate(season = "winter") %>%
+  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
+                            Month>=8 & Month<=11 ~ "fall",
+                            Month>=4 & Month<=7 ~ "summer")) %>%
+  group_by(season, Prev12, Variable) %>%
+  dplyr::summarise(Value = mean(data), .groups = "keep") %>%
+  ungroup() %>%
+  mutate(Value = scale(Value)) %>%
+  pivot_wider(names_from = c(Variable,season), values_from = Value) %>%
+  dplyr::rename(Year = Prev12)
+
+erbr.climate.monthly.tmax <- maxs.avg %>%
+  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
+         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
+         # Make previous 12 months match year (previous to August survey)
+         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
+  # table(erbr.climate.monthly.tmin$Year, erbr.climate.monthly.tmin$Month) # missing December 2021
+  #extract the climate variable name from the prism long name
+  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
+  # mutate(season = "winter") %>%
+  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
+                            Month>=8 & Month<=11 ~ "fall",
+                            Month>=4 & Month<=7 ~ "summer")) %>%
+  group_by(season, Prev12, Variable) %>%
+  dplyr::summarise(Value = mean(data), .groups = "keep") %>%
+  ungroup() %>%
+  mutate(Value = scale(Value)) %>%
+  pivot_wider(names_from = c(Variable,season), values_from = Value) %>%
+  dplyr::rename(Year = Prev12)
+
+erbr.climate.monthly.wvdm <- wvdm.avg %>%
+  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
+         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
+         # Make previous 12 months match year (previous to August survey)
+         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
+  # table(erbr.climate.monthly.wvdm$Year, erbr.climate.monthly.wvdm$Month) 
+  #extract the climate variable name from the prism long name
+  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
+  # mutate(season = "winter") %>%
+  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
+                            Month>=8 & Month<=11 ~ "fall",
+                            Month>=4 & Month<=7 ~ "summer")) %>%
+  group_by(season, Prev12, Variable) %>%
+  dplyr::summarise(Value = mean(data), .groups = "keep") %>%
+  ungroup() %>%
+  mutate(Value = scale(Value)) %>%
+  pivot_wider(names_from = c(Variable,season), values_from = Value) %>%
+  dplyr::rename(Year = Prev12)
+
+erbr.seasons <- erbr.climate.monthly %>%
+  left_join(erbr.climate.monthly.tmin, by = "Year") %>%
+  left_join(erbr.climate.monthly.tmax, by = "Year") %>%
+  left_join(erbr.climate.monthly.wvdm, by = "Year") %>%
+  filter(Year < 2023 & Year > 2003)
+
+save(erbr.seasons, file = paste("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/",currentyr,"_Eriogonum-brandegeei/erbrseasons.Rdata", sep=""))
+
+wbdm.long <- wvdm.avg %>%
+  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
+         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
+         # Make previous 12 months match year (previous to August survey)
+         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
+  # table(erbr.climate.monthly.wvdm$Year, erbr.climate.monthly.wvdm$Month) 
+  #extract the climate variable name from the prism long name
+  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
+  # mutate(season = "winter") %>%
+  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
+                            Month>=8 & Month<=11 ~ "fall",
+                            Month>=4 & Month<=7 ~ "summer")) %>%
+  group_by(season, Prev12, Variable) %>%
+  dplyr::summarise(Value = mean(data), .groups = "keep")
+
+max.long <- maxs.avg %>%
+  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
+         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
+         # Make previous 12 months match year (previous to August survey)
+         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
+  # table(erbr.climate.monthly.tmin$Year, erbr.climate.monthly.tmin$Month) # missing December 2021
+  #extract the climate variable name from the prism long name
+  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
+  # mutate(season = "winter") %>%
+  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
+                            Month>=8 & Month<=11 ~ "fall",
+                            Month>=4 & Month<=7 ~ "summer")) %>%
+  group_by(season, Prev12, Variable) %>%
+  dplyr::summarise(Value = mean(data), .groups = "keep") 
+
+tmin.long <- mins.avg %>%
+  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
+         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
+         # Make previous 12 months match year (previous to August survey)
+         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
+  # table(erbr.climate.monthly.tmin$Year, erbr.climate.monthly.tmin$Month) # missing December 2021
+  #extract the climate variable name from the prism long name
+  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
+  # mutate(season = "winter") %>%
+  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
+                            Month>=8 & Month<=11 ~ "fall",
+                            Month>=4 & Month<=7 ~ "summer")) %>%
+  group_by(season, Prev12, Variable) %>%
+  dplyr::summarise(Value = mean(data), .groups = "keep") 
+
+ppt.long <- ppt.avg %>%
+  mutate(Year = as.numeric(substr(date,  (nchar(date)+1)-10,nchar(date)-6)),
+         Month = as.numeric(substr(date, (nchar(date)+1)-6, nchar(date)-4)),
+         # Make previous 12 months match year (previous to August survey)
+         Prev12 = ifelse(Month > 7, Year+1, Year)) %>%
+  #extract the climate variable name from the prism long name
+  separate(date, sep = "_", into = c(NA,"Variable",NA,NA,NA,NA)) %>%
+  mutate(season = case_when(Month %in% c(1:3,12) ~ "winter",
+                            Month>=8 & Month<=11 ~ "fall",
+                            Month>=4 & Month<=7 ~ "summer")) %>%
+  group_by(season, Prev12, Variable) %>%
+  dplyr::summarise(Value = sum(data), .groups = "keep")
+
+climate.long <- wbdm.long %>%
+  bind_rows(max.long) %>%
+  bind_rows(tmin.long) %>%
+  bind_rows(ppt.long) %>%
+  dplyr::rename(Year = Prev12)
+
+save(climate.long, file = paste("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/",currentyr,"_Eriogonum-brandegeei/climatelong.Rdata", sep=""))
+```
+
