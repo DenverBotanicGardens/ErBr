@@ -20,8 +20,8 @@ library(stringr)
 
 ```{r, echo=FALSE }
 
-## LOAD MATRICES FOR EACH YEAR (STUDY AND NON-STUDY PERIOD) & TRANSECT FROM SSDMdeterm CODE 
-mx.list <- readRDS("erbrSSDMmxList_P1k")  #Output generated from erbr_4SSDMdeterm script 
+## LOAD MATRICES FOR EACH YEAR (STUDY AND NON-STUDY PERIOD) & TRANSECT FROM DETERMINISTIC SIZE STRUCTURED DEMOGRAPHIC MODEL CODE 
+mx.list <- readRDS("erbrSSDMmxList_P1k")   
 
 erbr <- read.csv("erbr_TagClust2022_20230408.csv", header=TRUE)
 erbr$Year <- as.factor(erbr$Year)
@@ -33,7 +33,7 @@ erbr$Year <- as.factor(erbr$Year)
 ```{r}
 
 ## OBTAIN STABLE STAGE STRUCTURE
-N.startNum <- 61              #Set starting pop size as 2022 observed size
+N.startNum <- 61              #Set starting populate size as 2022 observed size
 
 mx.num <- length(mx.list)
 mx.mean <- Reduce('+', mx.list)/mx.num  #Calculate mean of all matrices 
@@ -62,7 +62,7 @@ mx.list <- readRDS("erbrSSDMmxList_9to13_P1k_20231028")
 
 
 ## OBTAIN STABLE STAGE STRUCTURE
-N.startNum <- 61                  #Set starting pop size as 2022 observed size
+N.startNum <- 61                  #Set starting population size as 2022 observed size
 
 mx.num <- length(mx.list)
 mx.mean <- Reduce('+', mx.list)/mx.num  #Calculate mean of all matrices 
@@ -76,7 +76,7 @@ names.yr <- unique(sub('.*\\-', '', names.yr))        #Keep text following '-'
 names.param <- unique(sub('\\-.*', '', names.mx))     #Keep text preceding '-'
 
 sim.yrs <- 100  #Number of years to simulate, e.g. 100
-reps <- 100     #Number of replicate runs to make for env variability, e.g. 100
+reps <- 100     #Number of replicate runs to make for environmental variability, e.g. 100
 
 ## Variables for output 
 stoch.lams.template <- as.data.frame(matrix(NA, nrow=(reps*length(names.param)), ncol=3))  
