@@ -39,10 +39,15 @@ dats <- read.csv("erbr_TagClust2022_20230408.csv", header = TRUE)
 
 
 
-## SET WD (WHERE JAGS SCRIPT IS LOCATED) ----------------------------------------------------------
-setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
-#setwd("~/ErBr")
-## ------------------------------------------------------------------------------------------------
+# #rescale all climate variables at onset so always rescaled
+clim32yrMAXES <- read.csv("erbr_climData3seas32yr_MAXES.csv", header=TRUE)
+dats$Tot_fall_ppt	 =dats$Tot_fall_ppt/clim32yrMAXES$Tot_fall_ppt
+dats$Tot_winter_ppt	= dats$Tot_winter_ppt/clim32yrMAXES$Tot_winter_ppt
+dats$Tot_summer_ppt =	dats$Tot_summer_ppt/clim32yrMAXES$Tot_summer_ppt
+dats$Mean_fall_temp	= dats$Mean_fall_temp/clim32yrMAXES$Mean_fall_temp
+dats$Mean_winter_temp	=dats$Mean_winter_temp/clim32yrMAXES$Mean_winter_temp
+dats$Mean_summer_temp =dats$Mean_summer_temp/clim32yrMAXES$Mean_summer_temp
+
 
 
 
@@ -208,13 +213,16 @@ dats[1217,]$InflYesNo <- 0
 
 ## LOOK AT MODEL OUTPUT ---------------------------------------------------------------------------
 #jags.modNYE <- jags.mod
-jags.mod <- readRDS("Results_data_ms_archive/erbr_JAGSmod_c3t10s30b10_noYRE_4to13even_210617.rds")
+#jags.mod <- readRDS("Results_data_ms_archive/erbr_JAGSmod_c3t10s30b10_noYRE_4to13even_210617.rds")
+jags.mod <- readRDS("Results_data_ms_archive/erbr_JAGSmodBest_c3t10s30b10_noYRE_20230420.rds")
+
 summary(jags.mod)
 #plot(jags.mod)
 summ.mod <- summary(jags.mod)
 tail(summ.mod[,1:3], n=31)
 gelman.diag(jags.mod, confidence = 0.95, transform=FALSE)
 
+#jags.modTNB <- readRDS(Manuscript/MS_DataAndCode_archive/) ******
 
 ## Compare median param estimates b/w models (e.g. with and without RE)
 #summ.modNYE <- summary(jags.modNYE)
