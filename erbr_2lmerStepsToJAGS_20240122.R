@@ -39,7 +39,7 @@ dats <- read.csv("erbr_TagClust2022_20230408.csv", header = TRUE)
 
 
 
-# #rescale all climate variables at onset so always rescaled
+## Rescale all climate variables at onset so always rescaled
 clim32yrMAXES <- read.csv("erbr_climData3seas32yr_MAXES.csv", header=TRUE)
 dats$Tot_fall_ppt	 =dats$Tot_fall_ppt/clim32yrMAXES$Tot_fall_ppt
 dats$Tot_winter_ppt	= dats$Tot_winter_ppt/clim32yrMAXES$Tot_winter_ppt
@@ -222,7 +222,7 @@ summ.mod <- summary(jags.mod)
 tail(summ.mod[,1:3], n=31)
 gelman.diag(jags.mod, confidence = 0.95, transform=FALSE)
 
-#jags.modTNB <- readRDS(Manuscript/MS_DataAndCode_archive/) ******
+jags.modTNB <- readRDS("Manuscript/MS_DataAndCode/erbr_JAGSmodBest_truncNegBin_c3t10s30b10_20241113.rds") 
 
 ## Compare median param estimates b/w models (e.g. with and without RE)
 #summ.modNYE <- summary(jags.modNYE)
@@ -256,14 +256,15 @@ gelman.diag(jags.mod, confidence = 0.95, transform=FALSE)
 ## Show median param ests b/w diff datasets as points and 90% limits; include glmm estimates
 
 ## Load data from previous JAGS runs
-#setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
-chains <- readRDS("chains.c3t10s30b10_noYRE_20230420.rds")
-chains.4to13 <- readRDS("chains.c3t10s30b10_noYRE_4to13_210616.rds")
-chains.4to13evn <- readRDS("chains.c3t10s30b10_noYRE_4to13even_210617.rds")
-chains.4to13odd <- readRDS("chains.c3t10s30b10_noYRE_4to13odd_210621.rds")
-chains.4to8 <- readRDS("chains.c3t10s30b10_noYRE_4to8_210701.rds")
-chains.9to13 <- readRDS("chains.c3t10s30b10_noYRE_9to13_210623.rds")
+setwd("C:/Users/april/Dropbox/CU_Boulder_PhD/DBG_Internship")
+chains <- readRDS("Manuscript/chains.c3t10s30b10_noYRE_20230420.rds")
+chains.4to13 <- readRDS("Manuscript/chains.c3t10s30b10_noYRE_4to13_210616.rds")
+chains.4to13evn <- readRDS("Manuscript/chains.c3t10s30b10_noYRE_4to13even_210617.rds")
+chains.4to13odd <- readRDS("Manuscript/chains.c3t10s30b10_noYRE_4to13odd_210621.rds")
+chains.4to8 <- readRDS("Manuscript/chains.c3t10s30b10_noYRE_4to8_210701.rds")
+chains.9to13 <- readRDS("Manuscript/chains.c3t10s30b10_noYRE_9to13_210623.rds")
 
+chainsTNB <- readRDS("Manuscript/MS_DataAndCode/chains.c3t10s30b10_full_tnb_20241119.rds")
 
 
 ## CALCULATE MEDIAN PARAMETER VALUES 
@@ -278,6 +279,23 @@ medComb <- as.data.frame(cbind(medParams, medParams.4to13, medParams.4to13evn, m
                                medParams.4to8, medParams.9to13))
 colnames(medComb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13")
 medComb$Names <- colnames(chains)
+
+
+
+## Compare truncated neg binom to original neg binom models
+colnames(chains)
+colnames(chainsTNB)
+chains.mod <- chains[,-2]
+chainsTNB.mod <- chainsTNB[,1:84]
+cbind(colnames(chains.mod),colnames(chainsTNB.mod))
+
+medParams <- as.data.frame(colMedians(as.matrix(chains.mod)))
+medParams.tnb <- as.data.frame(colMedians(as.matrix(chainsTNB.mod)))
+
+medComb <- as.data.frame(cbind(medParams, medParams.tnb))
+colnames(medComb) <- c("Full", "TNB")
+medComb$Names <- colnames(chains.mod)
+## ---------------------------------
 
 
 
@@ -302,6 +320,21 @@ colnames(quantComb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13
 quantComb$Names <- colnames(chains)
 
 
+
+## Truncated neg binom --------
+quantParams <- chains.mod %>% summarise_all(funs(list(quantile(., probs=0.9))))
+quantParams <- as.data.frame(t(quantParams))
+quantParams.tnb <- chainsTNB.mod %>% summarise_all(funs(list(quantile(., probs=0.9))))
+quantParams.tnb <- as.data.frame(t(quantParams.tnb))
+
+quantComb <- as.data.frame(cbind(quantParams, quantParams.tnb))
+colnames(quantComb) <- c("Full", "TNB")
+quantComb$Names <- colnames(chains.mod)
+## ---------------------------------
+
+
+
+
 ## CALCULATE 10th PERCENTILE ON JAGS ESTIMATES
 quant10Params <- chains %>% summarise_all(funs(list(quantile(., probs=0.1)))) 
 quant10Params <- as.data.frame(t(quant10Params))
@@ -320,12 +353,44 @@ quant10Comb <- as.data.frame(cbind(quant10Params, quant10Params.4to13, quant10Pa
                                    quant10Params.4to8, quant10Params.9to13))
 colnames(quant10Comb) <- c("Full", "4to13", "4to13evn", "4to13odd", "4to8", "9to13")
 quant10Comb$Names <- colnames(chains)
+
+
+
+## Truncated neg binom ------
+quant10Params <- chains.mod %>% summarise_all(funs(list(quantile(., probs=0.1))))
+quant10Params <- as.data.frame(t(quant10Params))
+quant10Params.tnb <- chainsTNB.mod %>% summarise_all(funs(list(quantile(., probs=0.1))))
+quant10Params.tnb <- as.data.frame(t(quant10Params.tnb))
+
+quant10Comb <- as.data.frame(cbind(quant10Params, quant10Params.tnb))
+colnames(quant10Comb) <- c("Full", "TNB")
+quant10Comb$Names <- colnames(chains.mod)
+## ---------------------------------
 ## ----------------------------------------------------------------------------
+
 
 
 
 ## SUBSET OUTPUT TO JUST KEEP PARAMS OF INTEREST
 names.param <- colnames(chains)[55:85]
+names.param <- names.param[c(2:8,12:16,18:23,25:30)] #Remove intercept plots 
+names.paramTitles <- c("Grwth Size","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
+                       "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Size",
+                       "Surv Winter Precip","Surv Fall Temp","Surv Summer Temp","Surv Winter Temp",
+                       "p(Repro) Size","p(Repro) Fall Precip","p(Repro) Summer Precip",
+                       "p(Repro) Fall Temp","p(Repro) Summer Temp","p(Repro) Winter Temp",
+                       "Repro Size","Repro Fall Precip","Repro Summer Precip",
+                       "Repro Winter Temp","Repro Fall Temp","Repro Summer Temp")
+
+## Re-order parameter names for plotting 
+index<-c(1,9,5,13,20,17,23,2,24,10,6,14,3,21,18,11,7,15,4,22,19,16,12,8)
+names.paramOrd <- names.param[order(index)]
+names.paramTitlesOrd <- names.paramTitles[order(index)]
+
+
+
+## Truncated neg binom --------
+names.param <- colnames(chains.mod)[54:84]
 names.param <- names.param[c(2:8,12:16,18:23,25:30)] #Remove intercept plots 
 names.paramTitles <- c("Grwth Size","Grwth Fall Temp","Grwth Summer Temp","Grwth Winter Temp",
                        "Grwth Fall Precip","Grwth Summer Precip","Grwth Winter Precip","Surv Size",
@@ -394,23 +459,97 @@ paramsMM.repro <- as.data.frame(cbind(as.data.frame(summary(glmm.repro)$coeffici
                                              "Repro Fall Temp","Repro Winter Temp","Repro Summer Temp")))
 colnames(paramsMM.repro) <- c("GLMM","SE","ParamTitle")
 paramsMM <- rbind(paramsMM.grwth, paramsMM.surv, paramsMM.reproYesNo, paramsMM.repro)
-paramsMM$SE_upr <- paramsMM$GLMM + paramsMM$SE
-paramsMM$SE_lwr <- paramsMM$GLMM - paramsMM$SE
+
+
+## Back scale GLMM estimates for climate variables
+paramsMM$GLMMsc[paramsMM$ParamTitle=="Grwth Fall Temp"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Grwth Fall Temp"] / clim32yrMAXES$Mean_fall_temp
+paramsMM$GLMMsc[paramsMM$ParamTitle=="Grwth Summer Temp"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Grwth Summer Temp"] / clim32yrMAXES$Mean_summer_temp
+paramsMM$GLMMsc[paramsMM$ParamTitle=="Grwth Winter Temp"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Grwth Winter Temp"] / clim32yrMAXES$Mean_winter_temp
+paramsMM$GLMMsc[paramsMM$ParamTitle=="Grwth Fall Precip"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Grwth Fall Precip"] / clim32yrMAXES$Tot_fall_ppt
+paramsMM$GLMMsc[paramsMM$ParamTitle=="Grwth Summer Precip"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Grwth Summer Precip"] / clim32yrMAXES$Tot_summer_ppt
+paramsMM$GLMMsc[paramsMM$ParamTitle=="Grwth Winter Precip"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Grwth Winter Precip"] / clim32yrMAXES$Tot_winter_ppt
+
+paramsMM$GLMMsc[paramsMM$ParamTitle=="Surv Fall Temp"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Surv Fall Temp"] / clim32yrMAXES$Mean_fall_temp
+paramsMM$GLMMsc[paramsMM$ParamTitle=="Surv Summer Temp"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Surv Summer Temp"] / clim32yrMAXES$Mean_summer_temp
+paramsMM$GLMMsc[paramsMM$ParamTitle=="Surv Winter Temp"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Surv Winter Temp"] / clim32yrMAXES$Mean_winter_temp
+paramsMM$GLMMsc[paramsMM$ParamTitle=="Surv Winter Precip"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Surv Winter Precip"] / clim32yrMAXES$Tot_winter_ppt
+
+paramsMM$GLMMsc[paramsMM$ParamTitle=="p(Repro) Fall Temp"] <- paramsMM$GLMM[paramsMM$ParamTitle=="p(Repro) Fall Temp"] / clim32yrMAXES$Mean_fall_temp
+paramsMM$GLMMsc[paramsMM$ParamTitle=="p(Repro) Summer Temp"] <- paramsMM$GLMM[paramsMM$ParamTitle=="p(Repro) Summer Temp"] / clim32yrMAXES$Mean_summer_temp
+paramsMM$GLMMsc[paramsMM$ParamTitle=="p(Repro) Winter Temp"] <- paramsMM$GLMM[paramsMM$ParamTitle=="p(Repro) Winter Temp"] / clim32yrMAXES$Mean_winter_temp
+paramsMM$GLMMsc[paramsMM$ParamTitle=="p(Repro) Fall Precip"] <- paramsMM$GLMM[paramsMM$ParamTitle=="p(Repro) Fall Precip"] / clim32yrMAXES$Tot_fall_ppt
+paramsMM$GLMMsc[paramsMM$ParamTitle=="p(Repro) Summer Precip"] <- paramsMM$GLMM[paramsMM$ParamTitle=="p(Repro) Summer Precip"] / clim32yrMAXES$Tot_summer_ppt
+
+paramsMM$GLMMsc[paramsMM$ParamTitle=="Repro Fall Temp"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Repro Fall Temp"] / clim32yrMAXES$Mean_fall_temp
+paramsMM$GLMMsc[paramsMM$ParamTitle=="Repro Summer Temp"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Repro Summer Temp"] / clim32yrMAXES$Mean_summer_temp
+paramsMM$GLMMsc[paramsMM$ParamTitle=="Repro Winter Temp"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Repro Winter Temp"] / clim32yrMAXES$Mean_winter_temp
+paramsMM$GLMMsc[paramsMM$ParamTitle=="Repro Fall Precip"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Repro Fall Precip"] / clim32yrMAXES$Tot_fall_ppt
+paramsMM$GLMMsc[paramsMM$ParamTitle=="Repro Summer Precip"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Repro Summer Precip"] / clim32yrMAXES$Tot_summer_ppt
+
+## No need to back scale size estimates
+paramsMM$GLMMsc[paramsMM$ParamTitle=="Grwth Size"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Grwth Size"]
+paramsMM$GLMMsc[paramsMM$ParamTitle=="Surv Size"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Surv Size"]
+paramsMM$GLMMsc[paramsMM$ParamTitle=="p(Repro) Size"] <- paramsMM$GLMM[paramsMM$ParamTitle=="p(Repro) Size"]
+paramsMM$GLMMsc[paramsMM$ParamTitle=="Repro Size"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Repro Size"]
+
+paramsMM <- paramsMM %>% relocate(GLMMsc, .before=GLMM)
+
+
+## Back scale standard error
+paramsMM$SEsc[paramsMM$ParamTitle=="Grwth Fall Temp"] <- paramsMM$SE[paramsMM$ParamTitle=="Grwth Fall Temp"] / clim32yrMAXES$Mean_fall_temp
+paramsMM$SEsc[paramsMM$ParamTitle=="Grwth Summer Temp"] <- paramsMM$SE[paramsMM$ParamTitle=="Grwth Summer Temp"] / clim32yrMAXES$Mean_summer_temp
+paramsMM$SEsc[paramsMM$ParamTitle=="Grwth Winter Temp"] <- paramsMM$SE[paramsMM$ParamTitle=="Grwth Winter Temp"] / clim32yrMAXES$Mean_winter_temp
+paramsMM$SEsc[paramsMM$ParamTitle=="Grwth Fall Precip"] <- paramsMM$SE[paramsMM$ParamTitle=="Grwth Fall Precip"] / clim32yrMAXES$Tot_fall_ppt
+paramsMM$SEsc[paramsMM$ParamTitle=="Grwth Summer Precip"] <- paramsMM$SE[paramsMM$ParamTitle=="Grwth Summer Precip"] / clim32yrMAXES$Tot_summer_ppt
+paramsMM$SEsc[paramsMM$ParamTitle=="Grwth Winter Precip"] <- paramsMM$SE[paramsMM$ParamTitle=="Grwth Winter Precip"] / clim32yrMAXES$Tot_winter_ppt
+
+paramsMM$SEsc[paramsMM$ParamTitle=="Surv Fall Temp"] <- paramsMM$SE[paramsMM$ParamTitle=="Surv Fall Temp"] / clim32yrMAXES$Mean_fall_temp
+paramsMM$SEsc[paramsMM$ParamTitle=="Surv Summer Temp"] <- paramsMM$SE[paramsMM$ParamTitle=="Surv Summer Temp"] / clim32yrMAXES$Mean_summer_temp
+paramsMM$SEsc[paramsMM$ParamTitle=="Surv Winter Temp"] <- paramsMM$SE[paramsMM$ParamTitle=="Surv Winter Temp"] / clim32yrMAXES$Mean_winter_temp
+paramsMM$SEsc[paramsMM$ParamTitle=="Surv Winter Precip"] <- paramsMM$SE[paramsMM$ParamTitle=="Surv Winter Precip"] / clim32yrMAXES$Tot_winter_ppt
+
+paramsMM$SEsc[paramsMM$ParamTitle=="p(Repro) Fall Temp"] <- paramsMM$SE[paramsMM$ParamTitle=="p(Repro) Fall Temp"] / clim32yrMAXES$Mean_fall_temp
+paramsMM$SEsc[paramsMM$ParamTitle=="p(Repro) Summer Temp"] <- paramsMM$SE[paramsMM$ParamTitle=="p(Repro) Summer Temp"] / clim32yrMAXES$Mean_summer_temp
+paramsMM$SEsc[paramsMM$ParamTitle=="p(Repro) Winter Temp"] <- paramsMM$SE[paramsMM$ParamTitle=="p(Repro) Winter Temp"] / clim32yrMAXES$Mean_winter_temp
+paramsMM$SEsc[paramsMM$ParamTitle=="p(Repro) Fall Precip"] <- paramsMM$SE[paramsMM$ParamTitle=="p(Repro) Fall Precip"] / clim32yrMAXES$Tot_fall_ppt
+paramsMM$SEsc[paramsMM$ParamTitle=="p(Repro) Summer Precip"] <- paramsMM$SE[paramsMM$ParamTitle=="p(Repro) Summer Precip"] / clim32yrMAXES$Tot_summer_ppt
+
+paramsMM$SEsc[paramsMM$ParamTitle=="Repro Fall Temp"] <- paramsMM$SE[paramsMM$ParamTitle=="Repro Fall Temp"] / clim32yrMAXES$Mean_fall_temp
+paramsMM$SEsc[paramsMM$ParamTitle=="Repro Summer Temp"] <- paramsMM$SE[paramsMM$ParamTitle=="Repro Summer Temp"] / clim32yrMAXES$Mean_summer_temp
+paramsMM$SEsc[paramsMM$ParamTitle=="Repro Winter Temp"] <- paramsMM$SE[paramsMM$ParamTitle=="Repro Winter Temp"] / clim32yrMAXES$Mean_winter_temp
+paramsMM$SEsc[paramsMM$ParamTitle=="Repro Fall Precip"] <- paramsMM$SE[paramsMM$ParamTitle=="Repro Fall Precip"] / clim32yrMAXES$Tot_fall_ppt
+paramsMM$SEsc[paramsMM$ParamTitle=="Repro Summer Precip"] <- paramsMM$SE[paramsMM$ParamTitle=="Repro Summer Precip"] / clim32yrMAXES$Tot_summer_ppt
+
+## No need to back scale size estimates
+paramsMM$SEsc[paramsMM$ParamTitle=="Grwth Size"] <- paramsMM$SE[paramsMM$ParamTitle=="Grwth Size"]
+paramsMM$SEsc[paramsMM$ParamTitle=="Surv Size"] <- paramsMM$SE[paramsMM$ParamTitle=="Surv Size"]
+paramsMM$SEsc[paramsMM$ParamTitle=="p(Repro) Size"] <- paramsMM$SE[paramsMM$ParamTitle=="p(Repro) Size"]
+paramsMM$SEsc[paramsMM$ParamTitle=="Repro Size"] <- paramsMM$SE[paramsMM$ParamTitle=="Repro Size"]
+
+paramsMM$SE_upr <- paramsMM$GLMMsc + paramsMM$SEsc
+paramsMM$SE_lwr <- paramsMM$GLMMsc - paramsMM$SEsc
+
+saveRDS(paramsMM, "20241121_paramsMM.rds")
 ## --------------------------------------------------------------
 
 
 
 
-## Make dataframe of selected relevant values for plotting 
+
+
+## Make data frame of selected relevant values for plotting 
 medComb.sel <- NULL
 for (nn in 1:length(names.paramOrd)) {
   medComb.sel <- rbind(medComb.sel, as.data.frame(medComb[which(medComb$Names == names.paramOrd[nn]),1:6]))
 }
 
+
 ## Combine JAGS and GLMM estimates
 medComb.sel$ParamTitle <- names.paramTitlesOrd
 medComb.sel <- dplyr::left_join(medComb.sel, paramsMM, by="ParamTitle")
 medComb.sel <- medComb.sel %>% relocate(ParamTitle, .after=last_col())
+
+
 
 quantComb.sel <- NULL
 for (uu in 1:length(names.paramOrd)) {
@@ -423,6 +562,63 @@ for (uu in 1:length(names.paramOrd)) {
   quant10Comb.sel <- rbind(quant10Comb.sel, as.data.frame(quant10Comb[which(quant10Comb$Names == names.paramOrd[uu]),1:6]))
 }
 quant10Comb.sel$GLMM_SElwr <- medComb.sel$SE_lwr
+
+
+
+## Truncated neg binom ----
+medComb.sel <- NULL
+for (nn in 1:length(names.paramOrd)) {
+  medComb.sel <- rbind(medComb.sel, as.data.frame(medComb[which(medComb$Names == names.paramOrd[nn]),1:2]))
+}
+
+medComb.sel$ParamTitle <- names.paramTitlesOrd
+
+## Back scale TNB estimates for climate variables
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="Grwth Fall Temp"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Grwth Fall Temp"] / clim32yrMAXES$Mean_fall_temp
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="Grwth Summer Temp"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Grwth Summer Temp"] / clim32yrMAXES$Mean_summer_temp
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="Grwth Winter Temp"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Grwth Winter Temp"] / clim32yrMAXES$Mean_winter_temp
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="Grwth Fall Precip"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Grwth Fall Precip"] / clim32yrMAXES$Tot_fall_ppt
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="Grwth Summer Precip"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Grwth Summer Precip"] / clim32yrMAXES$Tot_summer_ppt
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="Grwth Winter Precip"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Grwth Winter Precip"] / clim32yrMAXES$Tot_winter_ppt
+
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="Surv Fall Temp"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Surv Fall Temp"] / clim32yrMAXES$Mean_fall_temp
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="Surv Summer Temp"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Surv Summer Temp"] / clim32yrMAXES$Mean_summer_temp
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="Surv Winter Temp"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Surv Winter Temp"] / clim32yrMAXES$Mean_winter_temp
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="Surv Winter Precip"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Surv Winter Precip"] / clim32yrMAXES$Tot_winter_ppt
+
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="p(Repro) Fall Temp"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="p(Repro) Fall Temp"] / clim32yrMAXES$Mean_fall_temp
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="p(Repro) Summer Temp"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="p(Repro) Summer Temp"] / clim32yrMAXES$Mean_summer_temp
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="p(Repro) Winter Temp"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="p(Repro) Winter Temp"] / clim32yrMAXES$Mean_winter_temp
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="p(Repro) Fall Precip"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="p(Repro) Fall Precip"] / clim32yrMAXES$Tot_fall_ppt
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="p(Repro) Summer Precip"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="p(Repro) Summer Precip"] / clim32yrMAXES$Tot_summer_ppt
+
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="Repro Fall Temp"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Repro Fall Temp"] / clim32yrMAXES$Mean_fall_temp
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="Repro Summer Temp"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Repro Summer Temp"] / clim32yrMAXES$Mean_summer_temp
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="Repro Winter Temp"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Repro Winter Temp"] / clim32yrMAXES$Mean_winter_temp
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="Repro Fall Precip"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Repro Fall Precip"] / clim32yrMAXES$Tot_fall_ppt
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="Repro Summer Precip"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Repro Summer Precip"] / clim32yrMAXES$Tot_summer_ppt
+
+## No need to back scale size estimates
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="Grwth Size"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Grwth Size"]
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="Surv Size"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Surv Size"]
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="p(Repro) Size"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="p(Repro) Size"]
+medComb.sel$TNBsc[medComb.sel$ParamTitle=="Repro Size"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Repro Size"]
+
+medComb.sel <- medComb.sel %>% relocate(TNBsc, .before=TNB)
+
+
+quantComb.sel <- NULL
+for (uu in 1:length(names.paramOrd)) {
+  quantComb.sel <- rbind(quantComb.sel, as.data.frame(quantComb[which(quantComb$Names == names.paramOrd[uu]),1:2]))
+}
+#quantComb.sel$GLMM_SEupr <- medComb.sel$SE_upr
+
+quant10Comb.sel <- NULL
+for (uu in 1:length(names.paramOrd)) {
+  quant10Comb.sel <- rbind(quant10Comb.sel, as.data.frame(quant10Comb[which(quant10Comb$Names == names.paramOrd[uu]),1:2]))
+}
+#quant10Comb.sel$GLMM_SElwr <- medComb.sel$SE_lwr
+## ---------------------
 
 
 
@@ -446,11 +642,28 @@ yMin <- c(quant10.min[1:4] - (quant10.min[1:4]*0.05), quant10.min[5:24] - (quant
 
 
 
+## Truncated neg binom ---------
+quantComb.selMod <- cbind(as.numeric(quantComb.sel[,1]),as.numeric(quantComb.sel[,2]))
+quant.max <- rowMaxs(as.matrix(quantComb.selMod[,c(1:2)]))
+yMax <- quant.max + (quant.max*0.1)
+
+quant10Comb.selMod <- cbind(as.numeric(quant10Comb.sel[,1]),as.numeric(quant10Comb.sel[,2]))
+quant10.min <- rowMins(as.matrix(quant10Comb.selMod[,c(1:2)]))
+#Since some min values are positive (all sz ests) and some are negative (all the rest), do separately
+yMin <- c(quant10.min[1:8] - (quant10.min[1:8]*0.1), quant10.min[9:13] - (quant10.min[9:13]*-0.1),
+          quant10.min[14:16] - (quant10.min[14:16]*0.1), quant10.min[17] - (quant10.min[17]*-0.1),
+          quant10.min[18:19] - (quant10.min[18:19]*0.1), quant10.min[20] - (quant10.min[20]*-0.1),
+          quant10.min[21] - (quant10.min[21]*0.1), quant10.min[22] - (quant10.min[22]*-0.1),
+          quant10.min[23:24] - (quant10.min[23:24]*0.1))
+## ----------------------------------------------------
+
+
+
 
 ## Assign colors
 colz <- c("#d73027","#fc8d59","#91bfdb","#4575b4","#fdcb44","#fee090","grey60")
 
-
+colz <- c("grey30","seagreen3")
 #saveRDS(medComb.sel, "20240117_medCombSel.rds")
 #saveRDS(quantComb.sel, "20240117_quantCombSel.rds")
 #saveRDS(quant10Comb.sel, "20240117_quant10CombSel.rds")
@@ -461,28 +674,29 @@ colz <- c("#d73027","#fc8d59","#91bfdb","#4575b4","#fdcb44","#fee090","grey60")
 
 
 ## PLOT
-#tiff('20230122_ErBr_fig2.tiff', res=400, pointsize=6, compression="lzw")
-pdf('20240402_ErBr_fig2.pdf', width=6.7, height=9)
+#tiff('20241121_ErBr_fig2.tiff', res=400, pointsize=6, compression="lzw", width=400, height=600)
+jpeg('20241121_ErBr_fig2.jpeg', width=6.5, height=8.8, units="in",res=600,pointsize=12)
+#pdf('20241121_ErBr_fig2.pdf', width=6.7, height=9)
 par(mfrow=c(7,4), mar=c(1.25,2,1.9,2))  #Plot so 4 VR models are in cols and upto 7 predictor vars are in rows
 #bottom, left, top, and right
 for (nn in 1:17) {
   plot(c(1:7), medComb.sel[nn,1:7], col=colz, ylab=NA,
        xaxt = "n", main=names.paramTitlesOrd[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
-       ylim=c(yMin[nn],yMax[nn]), cex=1.2)
+       ylim=c(yMin[nn],yMax[nn]), cex=1.1)
   abline(h=0, col="grey80")
   abline(h=medComb.sel[nn,1], col="grey80", lty="dotted")
-  arrows(1:6,as.numeric(medComb.sel[nn,1:6]),
-         1:6, as.numeric(as.matrix(quantComb.sel[nn,1:6])),
+  arrows(1:7,as.numeric(medComb.sel[nn,1:7]),
+         1:7, as.numeric(as.matrix(quantComb.sel[nn,1:7])),
          lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
-  arrows(1:6, as.numeric(medComb.sel[nn,1:6]),
-         1:6, as.numeric(as.matrix(quant10Comb.sel[nn,1:6])), 
+  arrows(1:7, as.numeric(medComb.sel[nn,1:7]),
+         1:7, as.numeric(as.matrix(quant10Comb.sel[nn,1:7])), 
          lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
 }
 plot.new()
 for (nn in 18:20) {
   plot(c(1:7), medComb.sel[nn,1:7], col=colz, ylab=NA, 
        xaxt = "n", main=names.paramTitlesOrd[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
-       ylim=c(yMin[nn],yMax[nn]), cex=1.2)
+       ylim=c(yMin[nn],yMax[nn]), cex=1.1)
   abline(h=0, col="grey80")
   abline(h=medComb.sel[nn,1], col="grey80", lty="dotted")
   arrows(1:7,as.numeric(medComb.sel[nn,1:7]),
@@ -496,7 +710,7 @@ plot.new()
 for (nn in 21:24) {
   plot(c(1:7), medComb.sel[nn,1:7], col=colz, ylab=NA,
        xaxt = "n", main=names.paramTitlesOrd[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
-       ylim=c(yMin[nn],yMax[nn]), cex=1.2)
+       ylim=c(yMin[nn],yMax[nn]), cex=1.1)
   abline(h=0, col="grey80")
   abline(h=medComb.sel[nn,1], col="grey80", lty="dotted")
   arrows(1:7,as.numeric(medComb.sel[nn,1:7]),
@@ -510,12 +724,65 @@ plot.new()
 
 #legend("center", colnames(medComb.sel)[1:7], col=colz, pch=19, cex=1,
 #       horiz=FALSE, bty="y",seg.len=1, xpd="NA")
-legend("center", c("Full dataset","2004-2013","2004-2013 even yrs only","2004-2013 odd yrs only",
+legend("center", c("Full dataset","2004-2013","2004-2013 even years","2004-2013 odd years",
                    "2004-2008","2009-2013","GLMM"), col=colz, pch=19, cex=1,
        horiz=FALSE, bty="y",seg.len=1, xpd="NA")
 
 dev.off()
 ## -----------------------------------------------------------------
+
+
+
+## Truncated neg binom
+par(mfrow=c(7,4), mar=c(1.25,2,1.9,2))  #Plot so 4 VR models are in cols and upto 7 predictor vars are in rows
+#bottom, left, top, and right
+for (nn in 1:17) {
+  plot(c(1:2), medComb.sel[nn,1:2], col=colz, ylab=NA,
+       xaxt = "n", main=names.paramTitlesOrd[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
+       ylim=c(yMin[nn],yMax[nn]), cex=1.2)
+  abline(h=0, col="grey80")
+  abline(h=medComb.sel[nn,1], col="grey80", lty="dotted")
+  arrows(1:2,as.numeric(medComb.sel[nn,1:2]),
+         1:2, as.numeric(as.matrix(quantComb.sel[nn,1:2])),
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
+  arrows(1:2, as.numeric(medComb.sel[nn,1:2]),
+         1:2, as.numeric(as.matrix(quant10Comb.sel[nn,1:2])), 
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
+}
+plot.new()
+for (nn in 18:20) {
+  plot(c(1:2), medComb.sel[nn,1:2], col=colz, ylab=NA, 
+       xaxt = "n", main=names.paramTitlesOrd[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
+       ylim=c(yMin[nn],yMax[nn]), cex=1.2)
+  abline(h=0, col="grey80")
+  abline(h=medComb.sel[nn,1], col="grey80", lty="dotted")
+  arrows(1:2,as.numeric(medComb.sel[nn,1:2]),
+         1:2, as.numeric(as.matrix(quantComb.sel[nn,1:2])),
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
+  arrows(1:2, as.numeric(medComb.sel[nn,1:2]),
+         1:2, as.numeric(as.matrix(quant10Comb.sel[nn,1:2])), 
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
+}
+plot.new()
+for (nn in 21:24) {
+  plot(c(1:2), medComb.sel[nn,1:2], col=colz, ylab=NA,
+       xaxt = "n", main=names.paramTitlesOrd[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
+       ylim=c(yMin[nn],yMax[nn]), cex=1.2)
+  abline(h=0, col="grey80")
+  abline(h=medComb.sel[nn,1], col="grey80", lty="dotted")
+  arrows(1:2,as.numeric(medComb.sel[nn,1:2]),
+         1:2, as.numeric(as.matrix(quantComb.sel[nn,1:2])),
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
+  arrows(1:2, as.numeric(medComb.sel[nn,1:2]),
+         1:2, as.numeric(as.matrix(quant10Comb.sel[nn,1:2])), 
+         lwd = 1.25, angle = 90, code = 3, length=0, col=colz)
+}
+plot.new()
+legend("center", c("Original neg binom","Truncated neg bionom"), col=colz, pch=19, cex=1,
+       horiz=FALSE, bty="y",seg.len=1, xpd="NA")
+## --------------------------------------------------------------------------------------
+
+
 
 
 
