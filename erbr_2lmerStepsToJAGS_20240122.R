@@ -213,8 +213,8 @@ dats[1217,]$InflYesNo <- 0
 
 ## LOOK AT MODEL OUTPUT ---------------------------------------------------------------------------
 #jags.modNYE <- jags.mod
-#jags.mod <- readRDS("Results_data_ms_archive/erbr_JAGSmod_c3t10s30b10_noYRE_4to13even_210617.rds")
-jags.mod <- readRDS("Results_data_ms_archive/erbr_JAGSmodBest_c3t10s30b10_noYRE_20230420.rds")
+#jags.mod <- readRDS("erbr_JAGSmod_c3t10s30b10_noYRE_4to13even_210617.rds")
+jags.mod <- readRDS("erbr_JAGSmodBest_c3t10s30b10_noYRE_20230420.rds")
 
 summary(jags.mod)
 #plot(jags.mod)
@@ -282,7 +282,7 @@ medComb$Names <- colnames(chains)
 
 
 
-## Compare truncated neg binom to original neg binom models
+## Compare truncated neg binom to original neg binom models -----
 colnames(chains)
 colnames(chainsTNB)
 chains.mod <- chains[,-2]
@@ -461,7 +461,7 @@ colnames(paramsMM.repro) <- c("GLMM","SE","ParamTitle")
 paramsMM <- rbind(paramsMM.grwth, paramsMM.surv, paramsMM.reproYesNo, paramsMM.repro)
 
 
-## Back scale GLMM estimates for climate variables
+## Back scale GLMM estimates for climate variables -------------
 paramsMM$GLMMsc[paramsMM$ParamTitle=="Grwth Fall Temp"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Grwth Fall Temp"] / clim32yrMAXES$Mean_fall_temp
 paramsMM$GLMMsc[paramsMM$ParamTitle=="Grwth Summer Temp"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Grwth Summer Temp"] / clim32yrMAXES$Mean_summer_temp
 paramsMM$GLMMsc[paramsMM$ParamTitle=="Grwth Winter Temp"] <- paramsMM$GLMM[paramsMM$ParamTitle=="Grwth Winter Temp"] / clim32yrMAXES$Mean_winter_temp
@@ -565,7 +565,7 @@ quant10Comb.sel$GLMM_SElwr <- medComb.sel$SE_lwr
 
 
 
-## Truncated neg binom ----
+## Truncated neg binom -------
 medComb.sel <- NULL
 for (nn in 1:length(names.paramOrd)) {
   medComb.sel <- rbind(medComb.sel, as.data.frame(medComb[which(medComb$Names == names.paramOrd[nn]),1:2]))
@@ -605,6 +605,7 @@ medComb.sel$TNBsc[medComb.sel$ParamTitle=="p(Repro) Size"] <- medComb.sel$TNB[me
 medComb.sel$TNBsc[medComb.sel$ParamTitle=="Repro Size"] <- medComb.sel$TNB[medComb.sel$ParamTitle=="Repro Size"]
 
 medComb.sel <- medComb.sel %>% relocate(TNBsc, .before=TNB)
+## -------
 
 
 quantComb.sel <- NULL
@@ -612,12 +613,84 @@ for (uu in 1:length(names.paramOrd)) {
   quantComb.sel <- rbind(quantComb.sel, as.data.frame(quantComb[which(quantComb$Names == names.paramOrd[uu]),1:2]))
 }
 #quantComb.sel$GLMM_SEupr <- medComb.sel$SE_upr
+quantComb.sel$ParamTitle <- names.paramTitlesOrd
+
+
+## Back scale quantiles
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="Grwth Fall Temp"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="Grwth Fall Temp"]) / clim32yrMAXES$Mean_fall_temp
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="Grwth Summer Temp"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="Grwth Summer Temp"]) / clim32yrMAXES$Mean_summer_temp
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="Grwth Winter Temp"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="Grwth Winter Temp"]) / clim32yrMAXES$Mean_winter_temp
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="Grwth Fall Precip"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="Grwth Fall Precip"]) / clim32yrMAXES$Tot_fall_ppt
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="Grwth Summer Precip"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="Grwth Summer Precip"]) / clim32yrMAXES$Tot_summer_ppt
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="Grwth Winter Precip"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="Grwth Winter Precip"]) / clim32yrMAXES$Tot_winter_ppt
+
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="Surv Fall Temp"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="Surv Fall Temp"]) / clim32yrMAXES$Mean_fall_temp
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="Surv Summer Temp"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="Surv Summer Temp"]) / clim32yrMAXES$Mean_summer_temp
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="Surv Winter Temp"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="Surv Winter Temp"]) / clim32yrMAXES$Mean_winter_temp
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="Surv Winter Precip"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="Surv Winter Precip"]) / clim32yrMAXES$Tot_winter_ppt
+
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="p(Repro) Fall Temp"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="p(Repro) Fall Temp"]) / clim32yrMAXES$Mean_fall_temp
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="p(Repro) Summer Temp"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="p(Repro) Summer Temp"]) / clim32yrMAXES$Mean_summer_temp
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="p(Repro) Winter Temp"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="p(Repro) Winter Temp"]) / clim32yrMAXES$Mean_winter_temp
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="p(Repro) Fall Precip"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="p(Repro) Fall Precip"]) / clim32yrMAXES$Tot_fall_ppt
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="p(Repro) Summer Precip"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="p(Repro) Summer Precip"]) / clim32yrMAXES$Tot_summer_ppt
+
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="Repro Fall Temp"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="Repro Fall Temp"]) / clim32yrMAXES$Mean_fall_temp
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="Repro Summer Temp"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="Repro Summer Temp"]) / clim32yrMAXES$Mean_summer_temp
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="Repro Winter Temp"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="Repro Winter Temp"]) / clim32yrMAXES$Mean_winter_temp
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="Repro Fall Precip"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="Repro Fall Precip"]) / clim32yrMAXES$Tot_fall_ppt
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="Repro Summer Precip"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="Repro Summer Precip"]) / clim32yrMAXES$Tot_summer_ppt
+
+## No need to back scale size estimates
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="Grwth Size"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="Grwth Size"])
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="Surv Size"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="Surv Size"])
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="p(Repro) Size"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="p(Repro) Size"])
+quantComb.sel$TNBsc[quantComb.sel$ParamTitle=="Repro Size"] <- as.numeric(quantComb.sel$TNB[quantComb.sel$ParamTitle=="Repro Size"])
+
+quantComb.sel <- quantComb.sel %>% relocate(TNBsc, .before=TNB)
+
+
 
 quant10Comb.sel <- NULL
 for (uu in 1:length(names.paramOrd)) {
   quant10Comb.sel <- rbind(quant10Comb.sel, as.data.frame(quant10Comb[which(quant10Comb$Names == names.paramOrd[uu]),1:2]))
 }
 #quant10Comb.sel$GLMM_SElwr <- medComb.sel$SE_lwr
+quant10Comb.sel$ParamTitle <- names.paramTitlesOrd
+
+
+## Back scale quantiles
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="Grwth Fall Temp"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="Grwth Fall Temp"]) / clim32yrMAXES$Mean_fall_temp
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="Grwth Summer Temp"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="Grwth Summer Temp"]) / clim32yrMAXES$Mean_summer_temp
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="Grwth Winter Temp"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="Grwth Winter Temp"]) / clim32yrMAXES$Mean_winter_temp
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="Grwth Fall Precip"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="Grwth Fall Precip"]) / clim32yrMAXES$Tot_fall_ppt
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="Grwth Summer Precip"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="Grwth Summer Precip"]) / clim32yrMAXES$Tot_summer_ppt
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="Grwth Winter Precip"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="Grwth Winter Precip"]) / clim32yrMAXES$Tot_winter_ppt
+
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="Surv Fall Temp"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="Surv Fall Temp"]) / clim32yrMAXES$Mean_fall_temp
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="Surv Summer Temp"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="Surv Summer Temp"]) / clim32yrMAXES$Mean_summer_temp
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="Surv Winter Temp"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="Surv Winter Temp"]) / clim32yrMAXES$Mean_winter_temp
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="Surv Winter Precip"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="Surv Winter Precip"]) / clim32yrMAXES$Tot_winter_ppt
+
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="p(Repro) Fall Temp"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="p(Repro) Fall Temp"]) / clim32yrMAXES$Mean_fall_temp
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="p(Repro) Summer Temp"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="p(Repro) Summer Temp"]) / clim32yrMAXES$Mean_summer_temp
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="p(Repro) Winter Temp"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="p(Repro) Winter Temp"]) / clim32yrMAXES$Mean_winter_temp
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="p(Repro) Fall Precip"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="p(Repro) Fall Precip"]) / clim32yrMAXES$Tot_fall_ppt
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="p(Repro) Summer Precip"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="p(Repro) Summer Precip"]) / clim32yrMAXES$Tot_summer_ppt
+
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="Repro Fall Temp"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="Repro Fall Temp"]) / clim32yrMAXES$Mean_fall_temp
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="Repro Summer Temp"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="Repro Summer Temp"]) / clim32yrMAXES$Mean_summer_temp
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="Repro Winter Temp"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="Repro Winter Temp"]) / clim32yrMAXES$Mean_winter_temp
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="Repro Fall Precip"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="Repro Fall Precip"]) / clim32yrMAXES$Tot_fall_ppt
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="Repro Summer Precip"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="Repro Summer Precip"]) / clim32yrMAXES$Tot_summer_ppt
+
+## No need to back scale size estimates
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="Grwth Size"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="Grwth Size"])
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="Surv Size"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="Surv Size"])
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="p(Repro) Size"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="p(Repro) Size"])
+quant10Comb.sel$TNBsc[quant10Comb.sel$ParamTitle=="Repro Size"] <- as.numeric(quant10Comb.sel$TNB[quant10Comb.sel$ParamTitle=="Repro Size"])
+
+quant10Comb.sel <- quant10Comb.sel %>% relocate(TNBsc, .before=TNB)
 ## ---------------------
 
 
@@ -739,7 +812,7 @@ par(mfrow=c(7,4), mar=c(1.25,2,1.9,2))  #Plot so 4 VR models are in cols and upt
 for (nn in 1:17) {
   plot(c(1:2), medComb.sel[nn,1:2], col=colz, ylab=NA,
        xaxt = "n", main=names.paramTitlesOrd[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
-       ylim=c(yMin[nn],yMax[nn]), cex=1.2)
+       ylim=c(yMin[nn],yMax[nn]), cex=1.3)
   abline(h=0, col="grey80")
   abline(h=medComb.sel[nn,1], col="grey80", lty="dotted")
   arrows(1:2,as.numeric(medComb.sel[nn,1:2]),
@@ -753,7 +826,7 @@ plot.new()
 for (nn in 18:20) {
   plot(c(1:2), medComb.sel[nn,1:2], col=colz, ylab=NA, 
        xaxt = "n", main=names.paramTitlesOrd[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
-       ylim=c(yMin[nn],yMax[nn]), cex=1.2)
+       ylim=c(yMin[nn],yMax[nn]), cex=1.3)
   abline(h=0, col="grey80")
   abline(h=medComb.sel[nn,1], col="grey80", lty="dotted")
   arrows(1:2,as.numeric(medComb.sel[nn,1:2]),
@@ -767,7 +840,7 @@ plot.new()
 for (nn in 21:24) {
   plot(c(1:2), medComb.sel[nn,1:2], col=colz, ylab=NA,
        xaxt = "n", main=names.paramTitlesOrd[nn], cex.axis=0.9,cex.main=0.9, pch=19, 
-       ylim=c(yMin[nn],yMax[nn]), cex=1.2)
+       ylim=c(yMin[nn],yMax[nn]), cex=1.3)
   abline(h=0, col="grey80")
   abline(h=medComb.sel[nn,1], col="grey80", lty="dotted")
   arrows(1:2,as.numeric(medComb.sel[nn,1:2]),
