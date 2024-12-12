@@ -64,6 +64,13 @@ erbr.cleora <- erbr.summary[erbr.summary$Site == "Cleora" & erbr.summary$Year ==
 erbr.summary <- erbr.summary[erbr.summary$Site != "Cleora",]
 erbr.summary$Site <- factor(erbr.summary$Site)
 
+erbr.summary %>%
+  filter(Year == 2020)
+
+# Discussion
+### our demographic monitoring of Erbr spanning 
+length(2004:currentyr)
+
 
 #Table 1
 erbr.summary[erbr.summary$Year == currentyr,]
@@ -106,7 +113,11 @@ ggsave(filename = paste("C:/Users/deprengm/Denver Botanic Gardens/Conservation -
                        labels = c("Garden Park East","Garden Park West"))+
     scale_shape_manual(values=c(1,2),
                        labels = c("Garden Park East","Garden Park West"))+
-    theme(legend.justification=c(1,1), legend.position=c(0.85,1), legend.background = element_blank()) ,
+    theme(
+      legend.justification=c(1,1),
+      legend.position = "inside",
+      legend.position.inside=c(0.95,1), 
+      legend.background = element_blank()) ,
 width=250, height=125,units='mm', dpi=300)
   
 ```
@@ -272,6 +283,47 @@ ggplot(  aes(Year, scale_value, color = Variable))+
   ggtitle("b)")+
   geom_hline(yintercept = 0, col="grey30", linetype = "dotted"),
 width=250, height=125,units='mm', dpi=300)
+
+
+# Lowest precip in 2011? and consistantly high vpdmax across seasons
+climate.long %>%
+  group_by(Variable) %>%
+  mutate(scale_value = scale(Value)) %>%
+  filter(Year > 2003) %>%
+  filter(Variable == "ppt") %>%
+ggplot(  aes(Year, scale_value, color = Variable))+
+  geom_line()+
+  geom_point()+
+  theme_bw()+
+  facet_grid(season ~ Variable, scales = "free")+
+  ylab("scaled and centered")+
+  stat_smooth(method = "lm")+
+  scale_color_discrete(guide = "none")+
+  ggtitle("b)")+
+  geom_hline(yintercept = 0, col="grey30", linetype = "dotted")+
+  geom_vline(xintercept = 2011)+
+  geom_vline(xintercept = 2018)
+
+climate.long %>%
+  group_by(Variable) %>%
+  mutate(scale_value = scale(Value)) %>%
+  filter(Year > 2003) %>%
+  filter(Variable == "vpdmax") %>%
+ggplot(  aes(Year, scale_value, color = Variable))+
+  geom_line()+
+  geom_point()+
+  theme_bw()+
+  facet_grid(season ~ Variable, scales = "free")+
+  ylab("scaled and centered")+
+  stat_smooth(method = "lm")+
+  scale_color_discrete(guide = "none")+
+  ggtitle("b)")+
+  geom_hline(yintercept = 0, col="grey30", linetype = "dotted")+
+  geom_vline(xintercept = 2011)+
+  geom_vline(xintercept = 2018)
+
+
+
 ```
 
 Figure 5a
@@ -371,15 +423,22 @@ ggsave(filename = paste("Q:/Research/All_Projects_by_Species/Eriogonum SPECIES/E
 
 Figure 6a
 ```{r}
+## Why 2011 is just zero but 2020 are NA? 
 erbr.summary %>%
+  mutate(SumOfBrowsedInfl = case_when(is.na(SumOfBrowsedInfl) ~ 0,
+                                      TRUE ~ SumOfBrowsedInfl)) %>%
   group_by(Year, Site) %>%
   summarize(mean = mean(SumOfBrowsedInfl, na.rm = TRUE), 
             se = std.error(SumOfBrowsedInfl, na.rm = TRUE)) %>%
   print(n=50)
 
 erbr.summary[erbr.summary$Year == 2020,]
+erbr.summary[erbr.summary$Year == 2011,]
 
-fig6a <- ggplot(erbr.summary, aes(Year,SumOfBrowsedInfl,colour = Site, shape = Site))+
+fig6a <- erbr.summary %>%
+  mutate(SumOfBrowsedInfl = case_when(is.na(SumOfBrowsedInfl) ~ 0,
+                                      TRUE ~ SumOfBrowsedInfl)) %>%
+  ggplot(  aes(Year,SumOfBrowsedInfl,colour = Site, shape = Site))+
   stat_summary(fun = mean, position=position_dodge(width=0.25),
                fun.min = function(x) mean(x) - std.error(x),
                fun.max = function(x) mean(x) + std.error(x),
@@ -408,7 +467,12 @@ Figure 6b
 
 erbr.summary$InflBrperInfl <- erbr.summary$SumOfBrowsedInfl/erbr.summary$SumOfInfl
 
-fig6b <- ggplot(erbr.summary, aes(Year,InflBrperInfl,colour = Site, shape = Site))+
+fig6b <- erbr.summary %>%
+  mutate(SumOfBrowsedInfl = case_when(is.na(SumOfBrowsedInfl) ~ 0,
+                                      TRUE ~ SumOfBrowsedInfl),
+         InflBrperInfl = case_when(is.na(InflBrperInfl) ~ 0,
+                                      TRUE ~ InflBrperInfl)) %>%
+ggplot(   aes(Year,InflBrperInfl,colour = Site, shape = Site))+
   stat_summary(fun = mean, position=position_dodge(width=0.25),
                fun.min = function(x) mean(x) - std.error(x),
                fun.max = function(x) mean(x) + std.error(x),
@@ -466,15 +530,20 @@ library(jtools)
 library(lme4)
 
 pairs(erbr.seasons)
+pairs(erbr.seasons[,grepl("tm", names(erbr.seasons))])
 cor.climate <- as.data.frame(as.table(cor(erbr.seasons[,-1])))
-cor.climate[abs(cor.climate$Freq) > 0.7,]
+cor.climate[abs(cor.climate$Freq) > 0.7,] %>%
+  arrange(Freq) 
 
 exclude <- c("ppt_fall","tmax_fall","ppt_summer","tmax_summer","tmax_winter")
 keep <- c("vpdmax_fall","vpdmax_summer","tmin_fall","vpdmax_winter")
+```
 
+```{r}
 erbr.all[,!(names(erbr.all) %in% exclude)]
 erbr.all$SiteTran <- paste(erbr.all$Site,erbr.all$Transect,sep="")
-erbr.lms <- erbr.all[erbr.all$SumOfRosettes >0,!(names(erbr.all) %in% exclude)]
+erbr.lms <- erbr.all[erbr.all$SumOfRosettes >0,!(names(erbr.all) %in% exclude)]%>%
+  filter(!is.na(Site))
 
 lm1 <- glmer(SumOfRosettes ~ vpdmax_fall + vpdmax_summer + tmin_fall + vpdmax_winter + (1|Site), 
               data = erbr.lms, family = poisson(link = "log"))
@@ -488,9 +557,43 @@ lm5 <- glmer(SumOfRosettes ~ tmin_fall + (1|Site),
               data = erbr.lms, family = poisson(link = "log"))
 lm6 <- glmer(SumOfRosettes ~ 1 + (1|Site), 
               data = erbr.lms, family = poisson(link = "log"))
+lm7 <- glmer(SumOfRosettes ~  vpdmax_fall + vpdmax_summer + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm8 <- glmer(SumOfRosettes ~  vpdmax_fall + tmin_fall + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm22 <- glmer(SumOfRosettes ~  vpdmax_fall + vpdmax_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm9 <- glmer(SumOfRosettes ~ vpdmax_summer + tmin_fall + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm10 <- glmer(SumOfRosettes ~ vpdmax_summer + vpdmax_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm11 <- glmer(SumOfRosettes ~ tmin_fall + vpdmax_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm12 <- glmer(SumOfRosettes ~  vpdmax_fall * vpdmax_summer + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm13 <- glmer(SumOfRosettes ~  vpdmax_fall * tmin_fall + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm14 <- glmer(SumOfRosettes ~  vpdmax_fall * vpdmax_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm15 <- glmer(SumOfRosettes ~ vpdmax_summer * tmin_fall + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm16 <- glmer(SumOfRosettes ~ vpdmax_summer * vpdmax_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm17 <- glmer(SumOfRosettes ~ tmin_fall * vpdmax_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm18 <- glmer(SumOfRosettes ~  vpdmax_summer + tmin_fall + vpdmax_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm19 <- glmer(SumOfRosettes ~ vpdmax_fall + tmin_fall + vpdmax_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm20 <- glmer(SumOfRosettes ~ vpdmax_fall + vpdmax_summer + vpdmax_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm21 <- glmer(SumOfRosettes ~ vpdmax_fall + vpdmax_summer + tmin_fall + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
 
 
-lm.list <- list(lm1,lm6, lm2,lm3,lm4, lm5)
+lm.list <- list(lm1,lm2,lm3,lm4, lm5, lm6, lm7, lm8, lm9, lm10, lm11,
+                lm12, lm13, lm14, lm15, lm16, lm17,
+                lm18, lm19, lm20, lm21, lm22)
 lm.names <- as.character(unlist(lapply(lm.list,formula)))
 (lm.results <- aictab(lm.list, modnames=lm.names))
 #evidence ratio 
@@ -503,7 +606,7 @@ evidence(lm.results)
 ## correct standard error? Compare with quasipoisson can't with glmer
 # lm1a <- glmer(SumOfRosettes ~ vpdmax_fall + vpdmax_summer + tmin_fall + vpdmax_winter + (1|SiteTran), 
 #               data = erbr.lms, family = quasipoisson(link = "log"))
-plot_summs(lm1, lm5, scale = TRUE, plot.distributions = TRUE)
+plot_summs(lm1, lm18, scale = TRUE, plot.distributions = TRUE)
 effect_plot(lm1, pred = vpdmax_fall, interval = TRUE)
 ## predictions generated
 vpdw <- effect_plot(lm1, pred = vpdmax_winter, 
@@ -521,7 +624,7 @@ vpds <- effect_plot(lm1, pred = vpdmax_summer, interval = TRUE, plot.points = TR
 ```{r}
 ggsave(filename = paste("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/",
                         currentyr,"_Eriogonum-brandegeei/",currentyr,"_Fig7a.jpg", sep=""),
-(plot_summs(lm1, lm5, scale = TRUE, plot.distributions = TRUE)+
+(plot_summs(lm1, lm18, scale = TRUE, plot.distributions = TRUE)+
   ggtitle("a)"))/
 (
 erbr.lms %>%
@@ -586,9 +689,43 @@ lm5 <- glmer(SumOfInfl ~ tmin_fall + (1|Site),
               data = erbr.lms, family = poisson(link = "log"))
 lm6 <- glmer(SumOfInfl ~ 1 + (1|Site), 
               data = erbr.lms, family = poisson(link = "log"))
+lm7 <- glmer(SumOfInfl ~  vpdmax_fall + vpdmax_summer + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm8 <- glmer(SumOfInfl ~  vpdmax_fall + tmin_fall + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm22 <- glmer(SumOfInfl ~  vpdmax_fall + vpdmax_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm9 <- glmer(SumOfInfl ~ vpdmax_summer + tmin_fall + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm10 <- glmer(SumOfInfl ~ vpdmax_summer + vpdmax_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm11 <- glmer(SumOfInfl ~ tmin_fall + vpdmax_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm12 <- glmer(SumOfInfl ~  vpdmax_fall * vpdmax_summer + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm13 <- glmer(SumOfInfl ~  vpdmax_fall * tmin_fall + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm14 <- glmer(SumOfInfl ~  vpdmax_fall * vpdmax_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm15 <- glmer(SumOfInfl ~ vpdmax_summer * tmin_fall + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm16 <- glmer(SumOfInfl ~ vpdmax_summer * vpdmax_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm17 <- glmer(SumOfInfl ~ tmin_fall * vpdmax_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm18 <- glmer(SumOfInfl ~  vpdmax_summer + tmin_fall + vpdmax_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm19 <- glmer(SumOfInfl ~ vpdmax_fall + tmin_fall + vpdmax_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm20 <- glmer(SumOfInfl ~ vpdmax_fall + vpdmax_summer + vpdmax_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm21 <- glmer(SumOfInfl ~ vpdmax_fall + vpdmax_summer + tmin_fall + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
 
 
-lm.list <- list(lm1,lm6, lm2,lm3,lm4, lm5)
+lm.list <- list(lm1,lm2,lm3,lm4, lm5, lm6, lm7, lm8, lm9, lm10, lm11,
+                lm12, lm13, lm14, lm15, lm16, lm17,
+                lm18, lm19, lm20, lm21, lm22)
 lm.names <- as.character(unlist(lapply(lm.list,formula)))
 (lm.results <- aictab(lm.list, modnames=lm.names))
 #evidence ratio 
@@ -597,6 +734,7 @@ for(i in 2:length(lm.list)){
 }
 
 evidence(lm.results)
+
 
 ## correct standard error? Compare with quasipoisson can't with glmer
 # lm1a <- glmer(SumOfInfl ~ vpdmax_fall + vpdmax_summer + tmin_fall + vpdmax_winter + (1|SiteTran), 
@@ -617,7 +755,8 @@ vpds <- effect_plot(lm1, pred = vpdmax_summer, interval = TRUE, plot.points = TR
 ```{r}
 ggsave(filename = paste("C:/Users/deprengm/Denver Botanic Gardens/Conservation - General/AllProjectsBySpecies/Eriogonum-brandegeei/Eriogonum-brandegeei_AnnualReports/",
                         currentyr,"_Eriogonum-brandegeei/",currentyr,"_Fig8aflowers.jpg", sep=""),
-(plot_summs(lm1, lm5, scale = TRUE, plot.distributions = TRUE)+
+(plot_summs(lm1, #lm5, 
+            scale = TRUE, plot.distributions = TRUE)+
   ggtitle("a)"))/
 (
 erbr.lms %>%
@@ -671,7 +810,8 @@ width=250, height=250,units='mm', dpi=300)
 ## Other set of variables to see if precip differs from temp
 ```{r}
 erbr.all[,!(names(erbr.all) %in% keep)]
-erbr.lms <- erbr.all[erbr.all$SumOfRosettes >0,!(names(erbr.all) %in% keep)]
+erbr.lms <- erbr.all[erbr.all$SumOfRosettes >0,!(names(erbr.all) %in% keep)] %>%
+  filter(!is.na(Site))
 
 lm1 <- glmer(SumOfRosettes ~ ppt_fall + tmax_winter + tmax_fall + tmax_summer + (1|Site), 
               data = erbr.lms, family = poisson(link = "log"))
@@ -685,15 +825,33 @@ lm5 <- glmer(SumOfRosettes ~ tmax_fall + (1|Site),
               data = erbr.lms, family = poisson(link = "log"))
 lm6 <- glmer(SumOfRosettes ~ 1 + (1|Site), 
               data = erbr.lms, family = poisson(link = "log"))
+lm7 <- glmer(SumOfRosettes ~ ppt_winter + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm8 <- glmer(SumOfRosettes ~ ppt_summer + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
+lm9 <- glmer(SumOfRosettes ~ tmax_summer + (1|Site), 
+              data = erbr.lms, family = poisson(link = "log"))
 
-
-lm.list <- list(lm1,lm6, lm2,lm3,lm4, lm5)
+lm.list <- list(lm6, lm2,lm3,lm4, lm5, lm7, lm8, lm9)
 lm.names <- as.character(unlist(lapply(lm.list,formula)))
 (lm.results <- aictab(lm.list, modnames=lm.names))
 #evidence ratio 
 for(i in 2:length(lm.list)){
   print(exp(0.5*lm.results$Delta_AICc[i]))
 }
+
+
+
+
+erbr.lms %>%
+  filter(!is.na(Site)) %>%
+ggplot(  aes(ppt_winter, SumOfRosettes, color = Site)) +
+  geom_point()+
+  geom_smooth(method = glm,
+              method.args = list(family = poisson))+
+  theme_bw()
+  
+
 ```
 
 ```{r}
