@@ -1,22 +1,13 @@
-######################################################################################################
-######################################################################################################
-#### JAGS model file written by runjags version 2.0.4-6 on 2020-10-23 09:28:28 
-######################################################################################################
-######################################################################################################
-
-
-
-### Model template as follows - ensure this is syntactically correct before running the model!
 
 model{
 
 # In the BUGS/JAGS language we must use an explicit for loop:
 
 #########################################################################
-## Doing one loop to generate the estimated sz for each plt in each yr w a survival data point (all these have sz, except the surv=0 yrs) 
-## This loop also estimates the survival to each yr: for unobserved yrs, this includes the chances of surv each unobserved yr in the past 
-## Cases in this loop are pairs of observation yrs, that can include yrs without any observations 
-for(i in 1:Ncases){
+  ## Doing one loop to generate the estimated size for each plant in each year with a survival data point (all these have size, except the survival=0 years) 
+  ## This loop also estimates the survival to each year: for unobserved years, this includes the chances of survival each unobserved year in the past 
+  ## Cases in this loop are pairs of observation years, that can include years without any observations 
+  for(i in 1:Ncases){
   
   ## Do first lag, which must use the starting size (RosNew)
   regression_mean[goodrows[i]-lagvals[i]+1] <- exp(grwth_intercept + grwth_RosCoef*log(RosNew[goodrows[i]-lagvals[i]]) + grwth_TempFallCoef*TempFall[goodrows[i]-lagvals[i]+1] 
@@ -31,8 +22,9 @@ for(i in 1:Ncases){
                                        + surv_TempWinterCoef*TempWinter[goodrows[i]-lagvals[i]+1] + surv_TempFallCoef*TempFall[goodrows[i]-lagvals[i]+1] 
                                        + surv_TempSummerCoef*TempSummer[goodrows[i]-lagvals[i]+1] + surv_Transect_randomeffect[TransectNew.num[goodrows[i]-lagvals[i]]])))
 
-     
-  ## This is the loop of remaining lagged yrs for this row i: note that the : operator is diff in jags than r & can't be decreasing, hence the use of negative lag: also, if lag=1, then this will be from 0 to -1, & the loop will be skipped 
+  
+  ## This is the loop of remaining lagged years for this row i: note that the : operator is different in jags than R & can't be decreasing, hence the use of negative lag: 
+  ## also, if lag=1, then this will be from 0 to -1, & the loop will be skipped 
   ## Survival rates are based on the inferred previous year size, since it was not observed 
   for (j in (goodrows[i]-lagvals[i]+1):(goodrows[i]-1)) { 
     
@@ -55,7 +47,7 @@ for(i in 1:Ncases){
   
   
   #####################################################################
-  ## Then, a loop that matches the estimated sizes with the observed sizes, just for rows with observed sizes
+  ## Then a loop that matches the estimated sizes with the observed sizes, just for rows with observed sizes
   for(i in 1:Ngrowcases){
     ## These lines describe the response distribution and linear model terms
     
@@ -63,7 +55,7 @@ for(i in 1:Ncases){
     
     p[goodgrowrows[i]] <- r.growth[goodgrowrows[i]]/(r.growth[goodgrowrows[i]]+regression_mean[goodgrowrows[i]])
     
-    RosNew[goodgrowrows[i]] ~ dnegbin( p[goodgrowrows[i]], r.growth[goodgrowrows[i]])
+    RosNew[goodgrowrows[i]] ~ dnegbin(p[goodgrowrows[i]], r.growth[goodgrowrows[i]])T(1,)
     
   } #End of going through cases for sizes
   #####################################################################
@@ -82,10 +74,7 @@ for(i in 1:Ncases){
 ########################################
 ########################################    
 ## These lines give the prior distributions for the parameters to be estimated
- # r_disp ~ dgamma(0.01, 0.01) # this is the dispersion for all cases, as is standard
-  r_disp ~ dunif(0,50)
 	# Note: the prior for the dispersion parameter k is quite important for convergence
-	# [A DuMouchel prior may be better than a Gamma prior]
 
 ## GROWTH  
 grwth_intercept ~ dunif(-5,5) 
@@ -129,7 +118,6 @@ surv_Transect_precision ~ dunif(0,1)
 } # end of model specification 
 
 
-## ADD BACK TO MONITOR (optional): dic
 # These lines are hooks to be read by runjags (they are ignored by JAGS):
 #monitor# deviance,grwth_Transect_randomeffect,surv_Transect_randomeffect,grwth_intercept,grwth_RosCoef,grwth_TempFallCoef,grwth_TempSummerCoef,grwth_TempWinterCoef,grwth_PptFallCoef,grwth_PptSummerCoef,grwth_PptWinterCoef,grwthvar_intercept,grwthvar_RosCoef,surv_intercept,surv_RosCoef,surv_PptWinterCoef,surv_TempFallCoef,surv_TempSummerCoef,surv_TempWinterCoef,surv_Transect_precision,grwth_Transect_precision
 #modules# glm on
